@@ -1,0 +1,14 @@
+/control/verbose 2
+/run/verbose 2
+#/gun/particle e-
+#/gun/particle proton
+#/gun/particle kaon+
+#/gun/particle pi+
+#/gun/particle kaon+
+
+#30min
+#/run/beamOn 1000000
+
+#/run/beamOn 100000 
+
+/run/beamOn 50000

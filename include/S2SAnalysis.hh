@@ -1,0 +1,203 @@
+/*
+  "S2SAnalysis.hh"
+  
+  K.Shirotori, 2007/4
+  Modified by Toshi Gogami , 10Nov2014
+*/
+
+#ifndef S2SAnalysis_h
+#define S2SAnalysis_h 1
+
+#include "globals.hh"
+#include "G4ThreeVector.hh"
+#include "G4String.hh"
+#include "RootHelper.hh"
+#include "TFile.h"
+#include "ConfMan.hh"
+#include "TRandom3.h"
+
+#include <fstream>
+
+class G4Run;
+class G4Event;
+class PrimaryInfo;
+
+#ifndef NumDC
+#define NumDC 30
+#endif
+#ifndef NumTOFSeg
+#define NumTOFSeg 17
+#endif
+#ifndef NumWCSeg
+#define NumWCSeg 16
+#endif
+#ifndef NumDC
+#define NumDC 4
+#endif
+#ifndef MaxHits1 
+#define MaxHits1 10
+#endif
+#ifndef MaxHits2 
+#define MaxHits2 60
+#endif
+#ifndef MaxHits3 
+#define MaxHits3 80
+#endif
+
+
+const int TOFSTOREMAX = 10;
+
+struct Event{
+  double x0In;
+  double y0In;
+  double z0In;
+  double u0In;
+  double v0In;
+  double uDeg;
+  double vDeg;
+  double phi0;
+  double theta0;
+  double p0;
+  double t0;
+  int Id;
+  
+  G4int nP, nN, nL, nSm, nSz, nSp, nXm, nXz, nXsm, nXsz;
+  G4int nPim, nPiz, nPip, nKm, nKp;
+  
+  double DCXObs[NumDC];
+  double DCYObs[NumDC];
+  double DCX[NumDC];
+  double DCY[NumDC];
+  double DCt[NumDC];
+  double DCp[NumDC];
+  int DCNhits;
+  int DC1Hit;
+  int DC2Hit;
+  int DC3Hit;
+  int DC4Hit;
+  int DC5Hit;
+  double SlituDeg[11];
+  double SlitvDeg[11];
+  double SlitX[11];
+  double SlitY[11];
+  double Slitt[11];
+  double SlitMom[11];
+  double Slitp[11];
+  int SlitNh[11];
+  int SlitNP[11];
+  int SlitNK[11];
+  int SlitNPi[11];
+  int SlitF[11];
+  
+  // ---- TOF detectors ----
+  //int tofco[17];
+  int TOFNhits;
+  double toftime[17];
+  double toftime_reso[17];
+  double tofdE[17];
+  double tofn[17];
+  
+  // ---- Water Cherenkov detector ----
+  int WCNhits;
+  double wctime[12];
+  double wcdE[12];
+  double wcn[12];
+  double wcnpe[12];
+  double wctime1[6];
+  double wcdE1[6];
+  double wcn1[6];
+  double wcnpe1[6];
+  double wctime2[6];
+  double wcdE2[6];
+  double wcn2[6];
+  double wcnpe2[6];
+  //int wclayer;
+  //int wcseg;
+  
+  // ----- Trigger -----
+  G4bool TOFTrig;
+  G4bool VDTrig; 
+  G4bool WCTrig;
+  G4bool Q1Trig;
+  G4bool Q2Trig;
+  
+  //double toftime[TOFSTOREMAX];
+  //double tofdE[TOFSTOREMAX];
+//   double TOFAll;
+//   double TOFt[NumTOFSeg];
+//   double TOFtObs[NumTOFSeg];
+  
+
+//   int TOFHit;
+//   double ACX;
+//   double ACY;
+//   double ACt;
+//   double ACp;
+//  int ACNhits;
+  ///int ACHit;
+//   double WCt[NumWCSeg];
+//   double WCp[NumWCSeg];
+  //int WCNhits;
+  //int WCHit;
+};
+
+class S2SAnalysis
+{
+public:
+  S2SAnalysis( G4String histname );
+  S2SAnalysis( ConfMan* );
+  S2SAnalysis();
+  //S2SAnalysis( Conf );
+  virtual ~S2SAnalysis();
+
+public:
+  void BeginOfRun( const G4Run *aRun );
+  void EndOfRun( const G4Run *aRun );
+  void BeginOfPrimaryAction();
+  void SetPrimaryData(G4double x0, G4double y0, G4double z0, 
+		      G4double u0, G4double v0, G4double phi, 
+		      G4double theta, G4double p0, G4double t0, 
+		      G4int ParIdNb);
+  void SetProcessData(G4int nP, G4int nN, G4int nL, 
+		      G4int nSm, G4int nSz, G4int nSp, 
+		      G4int nXm, G4int nXz, G4int nXsm, 
+		      G4int nXsz,G4int nPim,G4int nPiz,
+		      G4int nPip,G4int nKm,G4int nKp);
+  void BeginOfEvent( const G4Event *anEvent );
+  void EndOfEvent( const G4Event *anEvent );
+
+  void SetFileName( const G4String &filename ) { filename_=filename; }
+  //void DefineHistograms( void );
+  void DefineTree( void );
+  G4bool GetTriggerStatus( void ) const { return fTriggered; }
+  void SaveFile( void ) const;
+  void Terminate( void ) const;
+  const G4String &GetFileName( void ) const { return filename_; }
+  void SetActive( void ) { fActive_=true; }
+  void SetInActive( void ) { fActive_=false; }
+  void ShowStatus( void ) const;
+
+  void SetDataFile( const char *datafile );
+
+private:
+  Event event;
+  G4String filename_;
+  G4bool fActive_;
+  G4bool fTriggered;
+  ConfMan* conf;
+  TRandom3* nperand;
+
+  G4int trigNum;
+  std::ofstream DataFile_;
+  //   G4String datafile_;
+
+  TFile *anafile;
+
+private:
+  void PrintHitsInformation( const G4Event *anEvent, 
+			    std::ostream &ost ) const;
+public:
+  void InitializeEvent(void);
+};
+
+#endif

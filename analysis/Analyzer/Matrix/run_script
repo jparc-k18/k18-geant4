@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Author : Hitoshi Sugimura
+
+magfile=$1
+magfield=$2
+outputfile=$3
+
+if [ $# = 3 ]
+then
+    ./make_inputfile $magfile $magfield
+    ./orbit <test.out > $outputfile
+else
+    echo "Usage:>./run_script [current file name] [D4status] [orbit outputfile]"
+fi

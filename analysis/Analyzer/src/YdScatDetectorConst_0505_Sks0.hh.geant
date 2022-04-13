@@ -1,0 +1,253 @@
+#ifndef YdScatDetectorConst_H
+#define YdScatDetectorConst_H 1
+
+#include "RadDeg.hh"
+
+//const double pi=acos(-1.);
+
+const G4double LH2TgtX = 2.*cm;
+const G4double LH2TgtY = 30.*cm;
+const G4double LH2TgtZ = 4.*cm;
+
+const G4double LD2TgtX = 2.*cm;
+const G4double LD2TgtY = 30.*cm;
+const G4double LD2TgtZ = 4.*cm;
+
+// Slice target
+const G4double SLH2TgtX = 4.*cm;
+const G4double SLH2TgtY = 2.*cm;
+const G4double SLH2TgtZ = 2.*cm;
+
+const G4double SLD2TgtX = 4.*cm;
+//const G4double SLD2TgtY = 2.*cm;
+const G4double SLD2TgtY = 3.0*cm;
+const G4double SLD2TgtZ = 2.*cm;
+
+const G4double STgtSpace = 0.5*cm;
+const G4int    STgtLayNum = 5;
+
+// Cylindrical target
+const G4double CyLH2TgtR = 4.*cm; //tyokkei
+const G4double CyLH2TgtZ = 30.*cm;
+const G4double TargetVessThickness = 0.25 * mm;
+
+const G4int    FiberLayerNum = 10;
+const G4int    FiberSegMax   = 1200;
+
+const G4double OffsetCylindricalFromTgt = 10*cm;
+const G4double zFiberFromTgt = 15*cm;
+const G4double rMinCylindricalDetCont = 2.5*cm;
+const G4double rMaxCylindricalDetCont = 16.*cm;
+const G4double zCylindricalDetCont = 52.*cm;
+
+const G4double OffsetFiberFromCly = -5*cm;
+const G4double rMinFiberDetCont = 5.*cm;
+const G4double rMaxFiberDetCont = 9.*cm;
+const G4double zFiberDetCont = 40.*cm;
+
+const G4double rFiberLayer1 = 50.*mm;
+const G4double startAngle1 = 0.;        // degree
+const G4double durationAngle1 = 360.;   // degree
+
+const G4double FiberSize1_XY = 1.0*mm;
+const G4double FiberSize1_X  = 0.5*mm;
+const G4double FiberSize1_Y  = 0.5*mm;
+const G4double FiberSize1_Z  = 400.0*mm;
+//const G4double FiberAngle1   = 2.*atan((FiberSize1_XY/2.)/(rFiberLayer1-FiberSize1_XY/2.))*Rad2Deg; // degree
+const G4double FiberAngle1   = 2.*atan((FiberSize1_Y/2.)/(rFiberLayer1-FiberSize1_X/2.))*Rad2Deg; // degree
+//const G4int    segNumFiber1 = (int)(durationAngle1/FiberAngle1);
+//Calculate segNumFiber1 using the above equation
+const G4int    segNumFiber1 = 625;
+
+const G4double rFiberLayer2 = 51.*mm;
+const G4double startAngle2 = 0.;        // degree
+const G4double durationAngle2 = 360.;   // degree
+
+const G4double FiberSize2_XY = 1.0*mm;
+const G4double FiberSize2_X  = 0.5*mm;
+const G4double FiberSize2_Y  = 0.5*mm;
+const G4double FiberSize2_Z  = 400.0*mm;
+//const G4int    segNumFiber2 = (int)(zCylindricalDetCont/FiberSize2_XY);
+//Calculate segNumFiber1 using the above equation
+const G4double tiltAngleFiber2 = atan(2.*Pi*rFiberLayer2/FiberSize2_Z)*Rad2Deg;
+const G4int    segNumFiber2 = 500;
+
+const G4double rFiberLayer3 = 60.*mm;
+const G4double startAngle3 = 0.;        // degree
+const G4double durationAngle3 = 360.;   // degree
+
+const G4double FiberSize3_XY = 1.0*mm;
+const G4double FiberSize3_X  = 0.5*mm;
+const G4double FiberSize3_Y  = 0.5*mm;
+const G4double FiberSize3_Z  = 400.0*mm;
+const G4double FiberAngle3   = 2.*atan((FiberSize3_Y/2.)/(rFiberLayer3-FiberSize3_X/2.))*Rad2Deg; // degree
+//const G4int    segNumFiber3 = (int)(durationAngle3/FiberAngle3);
+//Calculate segNumFiber3 using the above equation
+const G4int    segNumFiber3 = 750;
+
+const G4double rFiberLayer4 = 61.*mm;
+const G4double startAngle4 = 0.;        // degree
+const G4double durationAngle4 = 360.;   // degree
+
+const G4double FiberSize4_XY = 1.0*mm;
+const G4double FiberSize4_X  = 0.5*mm;
+const G4double FiberSize4_Y  = 0.5*mm;
+const G4double FiberSize4_Z  = 400.0*mm;
+//const G4int    segNumFiber4 = (int)(zCylindricalDetCont/FiberSize4_XY);
+//Calculate segNumFiber1 using the above equation
+const G4double tiltAngleFiber4 = -atan(2.*Pi*rFiberLayer4/FiberSize4_Z)*Rad2Deg;
+const G4int    segNumFiber4 = 552;
+
+const G4double rFiberLayer5 = 70.*mm;
+const G4double startAngle5 = 0.;        // degree
+const G4double durationAngle5 = 360.;   // degree
+
+const G4double FiberSize5_XY = 1.0*mm;
+const G4double FiberSize5_X  = 0.5*mm;
+const G4double FiberSize5_Y  = 0.5*mm;
+const G4double FiberSize5_Z  = 400.0*mm;
+const G4double FiberAngle5   = 2.*atan((FiberSize5_Y/2.)/(rFiberLayer5-FiberSize5_X/2.))*Rad2Deg; // degree
+//const G4int    segNumFiber5 = (int)(durationAngle5/FiberAngle5);
+//Calculate segNumFiber5 using the above equation
+const G4int    segNumFiber5 = 876;
+
+const G4double rFiberLayer6 = 71.*mm;
+const G4double startAngle6 = 0.;        // degree
+const G4double durationAngle6 = 360.;   // degree
+
+const G4double FiberSize6_XY = 1.0*mm;
+const G4double FiberSize6_X  = 0.5*mm;
+const G4double FiberSize6_Y  = 0.5*mm;
+const G4double FiberSize6_Z  = 400.0*mm;
+//const G4int    segNumFiber6 = (int)(zCylindricalDetCont/FiberSize6_XY);
+//Calculate segNumFiber6 using the above equation
+const G4double tiltAngleFiber6 = atan(2.*Pi*rFiberLayer6/FiberSize6_Z)*Rad2Deg;
+const G4int    segNumFiber6 = 594;
+
+const G4double rFiberLayer7 = 80.*mm;
+const G4double startAngle7 = 0.;        // degree
+const G4double durationAngle7 = 360.;   // degree
+
+const G4double FiberSize7_XY = 1.0*mm;
+const G4double FiberSize7_X  = 0.5*mm;
+const G4double FiberSize7_Y  = 0.5*mm;
+const G4double FiberSize7_Z  = 400.0*mm;
+const G4double FiberAngle7   = 2.*atan((FiberSize7_Y/2.)/(rFiberLayer7-FiberSize7_X/2.))*Rad2Deg; // degree
+//const G4int    segNumFiber7 = (int)(durationAngle7/FiberAngle7);
+//Calculate segNumFiber7 using the above equation
+const G4int    segNumFiber7 = 1002;
+
+const G4double rFiberLayer8 = 81.*mm;
+const G4double startAngle8 = 0.;        // degree
+const G4double durationAngle8 = 360.;   // degree
+
+const G4double FiberSize8_XY = 1.0*mm;
+const G4double FiberSize8_X  = 0.5*mm;
+const G4double FiberSize8_Y  = 0.5*mm;
+const G4double FiberSize8_Z  = 400.0*mm;
+//const G4int    segNumFiber8 = (int)(zCylindricalDetCont/FiberSize8_XY);
+//Calculate segNumFiber8 using the above equation
+const G4double tiltAngleFiber8 = -atan(2.*Pi*rFiberLayer8/FiberSize8_Z)*Rad2Deg;
+const G4int    segNumFiber8 = 628;
+
+const G4double rFiberLayer9 = 90.*mm;
+const G4double startAngle9 = 0.;        // degree
+const G4double durationAngle9 = 360.;   // degree
+
+const G4double FiberSize9_XY = 1.0*mm;
+const G4double FiberSize9_X  = 0.5*mm;
+const G4double FiberSize9_Y  = 0.5*mm;
+const G4double FiberSize9_Z  = 400.0*mm;
+const G4double FiberAngle9   = 2.*atan((FiberSize9_Y/2.)/(rFiberLayer9-FiberSize9_X/2.))*Rad2Deg; // degree
+//const G4int    segNumFiber9 = (int)(durationAngle9/FiberAngle9);
+//Calculate segNumFiber9 using the above equation
+const G4int    segNumFiber9 = 1127;
+
+const G4double rFiberLayer10 = 91.*mm;
+const G4double startAngle10 = 0.;        // degree
+const G4double durationAngle10 = 360.;   // degree
+
+const G4double FiberSize10_XY = 1.0*mm;
+const G4double FiberSize10_X  = 0.5*mm;
+const G4double FiberSize10_Y  = 0.5*mm;
+const G4double FiberSize10_Z  = 400.0*mm;
+//const G4int    segNumFiber10 = (int)(zCylindricalDetCont/FiberSize10_XY);
+//Calculate segNumFiber10 using the above equation
+const G4double tiltAngleFiber10 = atan(2.*Pi*rFiberLayer10/FiberSize10_Z)*Rad2Deg;
+const G4int    segNumFiber10 = 654;
+
+const int segNumFiber[FiberLayerNum+1] = {0, segNumFiber1, segNumFiber2,
+					  segNumFiber3, segNumFiber4,
+					  segNumFiber5, segNumFiber6,
+					  segNumFiber7, segNumFiber8,
+					  segNumFiber9, segNumFiber10};
+
+const G4double rFiber[FiberLayerNum+1] = {0., rFiberLayer1, rFiberLayer2,
+					  rFiberLayer3, rFiberLayer4,
+					  rFiberLayer5, rFiberLayer6,
+					  rFiberLayer7, rFiberLayer8,
+					  rFiberLayer9, rFiberLayer10};
+
+const G4double tiltAngleFiber[FiberLayerNum+1] =   {0., 
+						    0., tiltAngleFiber2,
+						    0., tiltAngleFiber4,
+						    0., tiltAngleFiber6,
+						    0., tiltAngleFiber8,
+						    0., tiltAngleFiber10};
+
+const G4double OffsetCrystalFromCly = -5*cm;
+const G4double rCrystal = 100.*mm;
+const G4double startAngleCrystal = 0.;        // degree
+const G4double durationAngleCrystal = 360.;   // degree
+
+const G4double CrystalSize_X = 31.6*mm;
+const G4double CrystalSize_Y = 25.0*mm;
+const G4double CrystalSize_Z  = 400.0*mm;
+
+const G4double CrystalAngle   = 2.*atan((CrystalSize_X/2.)/rCrystal)*Rad2Deg; // degree
+const G4double CrystalSize_X2 = 2.*(rCrystal+CrystalSize_Y)*tan(CrystalAngle/2.*Deg2Rad);
+//const G4int    segNumCrystal = (int)(durationAngleCrystal/CrystalAngle)+1;
+//Calculate segNumFiber5 using the above equation
+const G4int    segNumCrystal = 20;
+
+
+const G4double OffsetForwardCrystalFromCly = 19*cm;
+const G4double rForwardCrystal = 70.*mm;
+const G4double startAngleForwardCrystal = 0.;        // degree
+const G4double durationAngleForwardCrystal = 360.;   // degree
+
+const G4double ForwardCrystalSize_Y = 55.0*mm;
+const G4double ForwardCrystalSize_Z  = 80.0*mm;
+const G4double ForwardCrystalSize_X = 2.*(rForwardCrystal)*tan(CrystalAngle/2.*Deg2Rad);
+const G4double ForwardCrystalSize_X2 = 2.*(rForwardCrystal+ForwardCrystalSize_Y)*tan(CrystalAngle/2.*Deg2Rad);
+//const G4int    segNumCrystal = (int)(durationAngleCrystal/CrystalAngle)+1;
+//Calculate segNumFiber5 using the above equation
+const G4int    segNumForwardCrystal = 20;
+
+
+const G4double OffsetRcFromCly = 0*cm;
+const G4double rRc = 130.*mm;
+const G4double startAngleRc = 0.;        // degree
+const G4double durationAngleRc = 360.;   // degree
+
+const G4double RcAngle = CrystalAngle;
+
+const G4double RcSize_Y = 20.0*mm;
+const G4double RcSize_Z  = 500.0*mm;
+const G4double RcSize_X = 2.*(rRc)*tan(RcAngle/2.*Deg2Rad);
+const G4double RcSize_X2 = 2.*(rRc+RcSize_Y)*tan(RcAngle/2.*Deg2Rad);
+const G4int    segNumRc = 20;
+
+const G4double OffsetForwardRcFromCly = 24*cm;
+const G4double rForwardRc = 70.*mm;
+const G4double startAngleForwardRc = 0.;        // degree
+const G4double durationAngleForwardRc = 360.;   // degree
+
+const G4double ForwardRcSize_Y = 60.0*mm;
+const G4double ForwardRcSize_Z  = 20.0*mm;
+const G4double ForwardRcSize_X = 2.*(rForwardRc)*tan(RcAngle/2.*Deg2Rad);
+const G4double ForwardRcSize_X2 = 2.*(rForwardRc+ForwardRcSize_Y)*tan(RcAngle/2.*Deg2Rad);
+const G4int    segNumForwardRc = 20;
+
+
+#endif

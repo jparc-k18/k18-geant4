@@ -1,0 +1,196 @@
+#
+#	Makefile for Sks Analyzers
+#
+#
+
+CC	= gcc
+C++	= g++
+
+CLHEPDIR        = /usr/local
+#
+CLHEPINCDIR     = $(CLHEPDIR)/include/CLHEP
+CLHEPLIBDIR     = $(CLHEPDIR)/lib
+#
+CLHEPINCLUDE    = -I$(CLHEPINCDIR)
+CLHEPLIBS	= -L$(CLHEPLIBDIR) -lCLHEP
+
+RTINCLUDE       = `root-config --cflags`
+RTLIBS          = `root-config --libs`
+
+
+CPPFLAGS	= $(DEFINEFLAGS) $(DEBUGFLAGS) -I.	\
+		$(CLHEPINCLUDE) $(RTINCLUDE) 	
+
+CFLAGS		= -g -O2
+
+
+LIBS		= $(CLHEPLIBS) $(RTLIBS)
+
+RM	= rm -f
+TOUCH	= touch
+
+.c.o:
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
+
+.cc.o:
+	$(C++) $(CFLAGS) $(CPPFLAGS) -c $<
+
+.cpp.o:
+	$(C++) $(CFLAGS) $(CPPFLAGS) -c $<
+
+all:
+	make lib; make programs
+
+
+LIBOBJS	= DCHit.o DCLocalTrack.o DCConfMan.o TrackHit.o		\
+	FieldMan.o SksFieldMap.o RungeKuttaUtilities.o		\
+	FieldElements.o QMag.o DMag1.o				\
+	DCGeomRecord.o SksTrack.o MathTools.o 
+
+LIBARC	= libSksAna.a
+
+SKSLIB	= -L. -lSksAna
+
+BINDIR 	= ..
+
+PROGRAMS = ../TestDCConfMan ../LocalTrackingIn 		\
+	../LocalTrackingOut ../SksTracking		\
+	../TestFieldMan ../QSksTracking			\
+	../D1SksTracking ../D1SksTrackingIniPdep		
+
+lib: $(LIBARC)
+
+$(LIBARC): $(LIBOBJS)
+	ar r $(LIBARC) $(LIBOBJS) 
+
+programs: $(PROGRAMS) $(LIBARC)
+
+clean:
+	$(RM) *~ *.o $(LIBOBJS) $(LIBARC) $(PROGRAMS)
+
+# Programs
+
+$(BINDIR)/TestDCConfMan: TestDCConfMan.o $(LIBARC)
+	$(C++) -o $@ $(CFLAGS) TestDCConfMan.o $(SKSLIB) $(LIBS)
+
+$(BINDIR)/LocalTrackingIn: LocalTrackingIn.o $(LIBARC) 
+	$(C++) -o $@ $(CFLAGS) LocalTrackingIn.o $(SKSLIB) $(LIBS)
+
+$(BINDIR)/LocalTrackingOut: LocalTrackingOut.o $(LIBARC)
+	$(C++) -o $@ $(CFLAGS) LocalTrackingOut.o $(SKSLIB) $(LIBS)
+
+$(BINDIR)/SksTracking: SksTracking.o $(LIBARC)
+	$(C++) -o $@ $(CFLAGS) SksTracking.o $(SKSLIB) $(LIBS)
+
+$(BINDIR)/QSksTracking: QSksTracking.o $(LIBARC)
+	$(C++) -o $@ $(CFLAGS) QSksTracking.o $(SKSLIB) $(LIBS)
+
+$(BINDIR)/D1SksTracking: D1SksTracking.o $(LIBARC)
+	$(C++) -o $@ $(CFLAGS) D1SksTracking.o $(SKSLIB) $(LIBS)
+
+$(BINDIR)/D1SksTrackingIniPdep: D1SksTrackingIniPdep.o $(LIBARC)
+	$(C++) -o $@ $(CFLAGS) D1SksTrackingIniPdep.o $(SKSLIB) $(LIBS)
+
+$(BINDIR)/TestFieldMan: TestFieldMan.o $(LIBARC)
+	$(C++) -o $@ $(CFLAGS) TestFieldMan.o $(SKSLIB) $(LIBS)
+
+TestDCConfMan.o: TestDCConfMan.cc DCConfMan.hh ThreeVector.hh
+
+TestLocalTrackingIn.o: TestLocalTrackingIn.cc DCLocalTrack.hh DCHit.hh	\
+	DCConfMan.hh RootHelper.hh
+
+TestLocalTrackingOut.o: TestLocalTrackingOut.cc DCLocalTrack.hh 	\
+	DCHit.hh DCConfMan.hh RootHelper.hh
+
+TestSksTracking.o: TestSksTracking.cc FieldMan.hh DCLocalTrack.hh	\
+	DCHit.hh DCConfMan.hh SksTrack.hh TrackHit.hh RootHelper.hh
+
+TestQSksTracking.o: TestQSksTracking.cc FieldMan.hh DCLocalTrack.hh	\
+	DCHit.hh DCConfMan.hh SksTrack.hh TrackHit.hh RootHelper.hh	\
+	QMag.hh
+
+TestD1SksTracking.o: TestD1SksTracking.cc FieldMan.hh DCLocalTrack.hh	\
+	DCHit.hh DCConfMan.hh SksTrack.hh TrackHit.hh RootHelper.hh	\
+	DMag1.hh
+
+TestD1SksTrackingIniPdep.o: TestD1SksTrackingIniPdep.cc FieldMan.hh 	\
+	DCLocalTrack.hh	DCHit.hh DCConfMan.hh SksTrack.hh TrackHit.hh 	\
+	RootHelper.hh DMag1.hh
+
+TestFieldMan.o: TestFieldMan.cc FieldMan.hh ThreeVector.hh
+
+# Object Files
+
+DCHit.o: DCHit.cc DCHit.hh
+
+DCLocalTrack.o: DCLocalTrack.cc DCLocalTrack.hh DCHit.hh DCConfMan.hh	\
+	MathTools.hh
+
+DCConfMan.o: DCConfMan.cc DCConfMan.hh DCGeomRecord.hh TemplateLib.hh
+
+TrackHit.o: TrackHit.cc TrackHit.hh DCConfMan.hh
+
+FieldMan.o: FieldMan.cc FieldMan.hh SksFieldMap.hh FieldElements.hh
+
+SksFieldMap.o: SksFieldMap.cc SksFieldMap.hh
+
+RungeKuttaUtilities.o: RungeKuttaUtilities.cc RungeKuttaUtilities.hh	\
+	FieldMan.hh DCConfMan.hh DCGeomRecord.hh
+
+FieldElements.o: FieldElements.cc FieldElements.hh
+
+QMag.o: QMag.cc QMag.hh
+
+DMag1.o: DMag1.cc DMag1.hh
+
+DCGeomRecord.o: DCGeomRecord.cc DCGeomRecord.hh
+
+SksTrack.o: SksTrack.cc SksTrack.hh DCLocalTrack.hh TrackHit.hh		\
+	DCConfMan.hh MathTools.hh
+
+MathTools.o: MathTools.cc MathTools.hh
+
+
+
+# Include Files
+
+DCHit.hh:
+
+DCLocalTrack.hh:
+
+DCConfMan.hh: ThreeVector.hh
+	$(TOUCH) $@
+
+DCGeomRecord.hh: ThreeVector.hh
+	$(TOUCH) $@
+
+TrackHit.hh: DCHit.hh ThreeVector.hh
+	$(TOUCH) $@
+
+FieldMan.hh: ThreeVector.hh
+	$(TOUCH) $@
+
+SksFieldMap.hh: 
+
+RungeKuttaUtilities.hh: ThreeVector.hh
+	$(TOUCH) $@
+
+FieldElements.hh: DCGeomRecord.hh ThreeVector.hh
+	$(TOUCH) $@
+
+QMag.hh: FieldElements.hh
+	$(TOUCH) $@
+
+DMag1.hh: FieldElements.hh
+	$(TOUCH) $@
+
+SksTrack.hh: RungeKuttaUtilities.hh ThreeVector.hh
+	$(TOUCH) $@
+
+
+MathTools.hh:
+
+ThreeVector.hh:
+
+TemplateLib.hh:
+

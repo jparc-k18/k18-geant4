@@ -1,0 +1,11 @@
+/vis/open DAWNFILE
+#/vis/viewer/set/viewpointThetaPhi  90.  110.
+#/vis/viewer/set/viewpointThetaPhi   0.  75.
+#/vis/viewer/set/viewpointThetaPhi   0. 180.
+#/vis/viewer/set/viewpointThetaPhi   0. 180.
+/vis/drawVolume
+/vis/viewer/flush
+
+/tracking/storeTrajectory 1
+/vis/scene/add/trajectories
+/vis/scene/endOfEventAction accumulate

@@ -1,0 +1,51 @@
+#####################################
+## README for                      ##
+## S-2S Geant4 simulation          ##
+##                                 ##
+## Toshiyuki Gogami , 21Nov2014    ##
+## Updated on 12Oct2018 by TG      ##
+#####################################
+
+
+(0) Modify the cmake file, CMakeLists.txt.
+    * ROOT_INCLUDE_DIR
+      This should be a result of "$ root-config --incdir"
+      	   
+    * ROOT_LIBRARIES
+      This should be a result of "$ root-config --libs"
+
+    * CMAKE_INSTALL_PREFIX
+      This should a location of your simulator
+
+
+(1) Compile the source codes: 
+    $ cd build/
+    $ cmake ..
+    $ make -j4
+
+
+(2) Execute your simulation: 
+    $ cd run/
+    $ S2S (macro file) (configuration file)
+
+    | example-->                            |
+    | $ ./S2S macro/run.mac conf/param.conf |
+
+
+(3) A ROOT file will be output to a location
+    which you specify in the configuration file.
+
+    |example-->                             |
+    | "analysis/root/***.root"              |
+
+
+(4) Check simulation data:
+    $ root analysis/root/XXXX.root
+    $ tree->Draw("p0");
+    $ tree->Draw("p0","TOFTrig","same");
+
+
+
+
+
+

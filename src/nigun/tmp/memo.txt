@@ -1,0 +1,48 @@
+//BC
+
+  G4Material *DCframeMater = mList_->Vacuum;
+
+  G4SubtractionSolid *solidBc1Frame =
+    new G4SubtractionSolid( "BC1Frame", solidBc1Box, solidBc1Area );
+  G4LogicalVolume *logBc1Frame =
+    new G4LogicalVolume( solidBc1Frame, DCframeMater,  "BC1Frame", 0, 0, 0 );
+  G4VPhysicalVolume *physBc1Frame =
+    new G4PVPlacement( 0, G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
+                       "BC1Frame", logBc1Frame, physBc1Box, false, 0 );
+  logBc1Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
+
+  G4SubtractionSolid *solidBc2Frame =
+    new G4SubtractionSolid( "BC2Frame", solidBc2Box, solidBc2Area );
+  G4LogicalVolume *logBc2Frame =
+    new G4LogicalVolume( solidBc2Frame, DCframeMater,  "BC2Frame", 0, 0, 0 );
+  G4VPhysicalVolume *physBc2Frame =
+    new G4PVPlacement( 0, G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
+                       "BC2Frame", logBc2Frame, physBc2Box, false, 0 );
+  logBc2Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
+
+  G4SubtractionSolid *solidBc3Frame =
+    new G4SubtractionSolid( "BC3Frame", solidBc3Box, solidBc3Area );
+  G4LogicalVolume *logBc3Frame =
+    new G4LogicalVolume( solidBc3Frame, DCframeMater,  "BC3Frame", 0, 0, 0 );
+  G4VPhysicalVolume *physBc3Frame =
+    new G4PVPlacement( 0, G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
+                       "BC3Frame", logBc3Frame, physBc3Box, false, 0 );
+  logBc3Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
+
+  G4SubtractionSolid *solidBc4Frame =
+    new G4SubtractionSolid( "BC4Frame", solidBc4Box, solidBc4Area );
+  G4LogicalVolume *logBc4Frame =
+    new G4LogicalVolume( solidBc4Frame, DCframeMater,  "BC4Frame", 0, 0, 0 );
+  G4VPhysicalVolume *physBc4Frame =
+    new G4PVPlacement( 0, G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
+                       "BC4Frame", logBc4Frame, physBc4Box, false, 0 );
+  logBc4Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
+
+  G4VisAttributes *DCLayerAttrib =
+    new G4VisAttributes( G4Colour::G4Colour( 0., 1.0, 1.0 ) );
+  G4VisAttributes *DCBoxAttrib =
+    new G4VisAttributes( G4Colour::G4Colour( 0., 1.0, 0. ) );
+  DCBoxAttrib->SetForceWireframe( true );
+  G4VisAttributes *DCFrameAttrib =
+    new G4VisAttributes( G4Colour::G4Colour( 1.0, 1.0, 1.0 ) );
+  DCFrameAttrib->SetForceWireframe( true );

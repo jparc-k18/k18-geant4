@@ -1,0 +1,14 @@
+/vis/open VRML2FILE
+#/vis/viewer/set/style surface
+/vis/drawVolume
+#/vis/viewer/flush
+/vis/scene/endOfEventAction accumulate
+
+/vis/scene/add/trajectories 
+/tracking/storeTrajectory 1
+#/vis/scene/add/hits
+
+#/gun/particle kaon+
+/run/beamOn 1000
+#/run/beamOn 2000
+#/run/beamOn 3000
