@@ -37,6 +37,10 @@ public:
 
   void GeneratePrimaries(G4Event* anEvent);
 
+  void GenerateUniform0(G4Event* anEvent);
+  void GenerateFocusCheck(G4Event* anEvent);
+
+
 private:
   // use G4 particle gun
   S2SAnalysis *anaMan_;
@@ -50,6 +54,7 @@ private:
   G4double thetamax;
   ConfMan* confman;
   G4int GenPID;
+  G4int generator;
   G4double beamx, beamy, beamz;
 };
 

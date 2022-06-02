@@ -23,7 +23,7 @@ ConfMan::ConfMan( const std::string & filename )
     GeomFlag_(0), EMFlag_(0), DecayFlag_(0),
     momcent(0.0), mombite(0.0),
     tof_overlap(0.0),tof_distance(-20.0),
-    mag_scale(1.00)
+    mag_scale(1.00), generator(0)
 {
   static const std::string funcname = "[ConfMan::ConfMan]";
   if( confManager_ ){
@@ -124,6 +124,10 @@ bool ConfMan::Initialize( void )
       else if( sscanf(buf,"Mag_Scale: %lf", &val )==1 ){
 	mag_scale=val;
       }
+      else if( sscanf(buf,"Generator: %lf", &val )==1 ){
+	generator=val;
+      }
+      
       // Event display
       //else if( sscanf(buf,"EVDISP: %d",&intval)==1 )
       //if(intval==1) FlagEvDisp_=true;
@@ -188,6 +192,7 @@ void ConfMan::ShowParam(){
   G4cout << "EMFlag:      " << EMFlag_      << G4endl;
   G4cout << "DecayFlag:   " << DecayFlag_   << G4endl;
   G4cout << "HadronFlag:  " << HadronFlag_  << G4endl;
+  G4cout << "Generator:  " << generator  << G4endl;
   G4cout << "                 ╭( ･ㅂ･)و ̑̑" << G4endl;
 }
 
@@ -218,6 +223,7 @@ void ConfMan::OutputLog(){
   *ofs << "EMFlag:      " << EMFlag_      << G4endl;
   *ofs << "DecayFlag:   " << DecayFlag_   << G4endl;
   *ofs << "HadronFlag:  " << HadronFlag_  << G4endl;
+  *ofs << "Generator:  " << generator  << G4endl;
   //*ofs << "                 ╭( ･ㅂ･)و ̑̑" << G4endl;
   ofs->close();
 }

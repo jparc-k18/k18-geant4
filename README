@@ -45,7 +45,10 @@
     $ tree->Draw("p0","TOFTrig","same");
 
 
-
+#for KEKCC users
+. /sw/packages/geant4/10.4.3-mt/bin/geant4.sh
+. /sw/packages/geant4/10.4.3-mt/share/Geant4-10.4.3/geant4make/geant4make.sh
+(please use 10.4.3 version)
 
 
 

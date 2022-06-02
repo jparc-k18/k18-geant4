@@ -44,6 +44,7 @@ private:
   Int_t HadronFlag_;
   Int_t GenPID;
   Int_t TargetID;
+  Int_t generator;
   double tposz;
   double tthickness;
   double momcent, mombite;
@@ -74,6 +75,7 @@ public:
   double GetMagScale()   const     { return mag_scale;   };
   double GetTargetPositionZ()      { return tposz;       };
   Int_t  GetTargetID()             { return TargetID;    };
+  Int_t  GetGenerator()             { return generator;    };
   double GetTThickness()           { return tthickness;  };
   double GetBeamX()                { return beamx;  };
   double GetBeamY()                { return beamy;  };
