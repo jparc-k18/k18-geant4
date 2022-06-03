@@ -61,7 +61,7 @@ private:
   // hide assignment operator as private 
   S2SMinEkineCuts(S2SMinEkineCuts&);
   S2SMinEkineCuts& operator=(const S2SMinEkineCuts& right);
-  
+  int EMFlag;
 };
 
 #endif

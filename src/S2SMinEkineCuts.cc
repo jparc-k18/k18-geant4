@@ -42,14 +42,17 @@
 #include "G4UserLimits.hh"
 #include "G4VParticleChange.hh"
 #include "G4LossTableManager.hh"
+#include "ConfMan.hh"
 
 S2SMinEkineCuts::S2SMinEkineCuts(const G4String& aName)
-  : S2SSpecialCuts(aName)
+  : S2SSpecialCuts(aName), EMFlag(1)
 {
     if (verboseLevel>1) {
     G4cout << GetProcessName() << " is created "<< G4endl;
    }
   SetProcessType(fUserDefined);
+  ConfMan *confMan = ConfMan::GetConfManager();
+  EMFlag = confMan->GetEMFlag();
 }
 
 S2SMinEkineCuts::~S2SMinEkineCuts()
@@ -74,7 +77,7 @@ G4double S2SMinEkineCuts::PostStepGetPhysicalInteractionLength(
   const G4DynamicParticle* aParticle = aTrack.GetDynamicParticle();
   G4ParticleDefinition* aParticleDef = aTrack.GetDefinition();
   
-  if (pUserLimits && aParticleDef->GetPDGCharge() != 0.0) {
+  if (pUserLimits && aParticleDef->GetPDGCharge() != 0.0 && EMFlag == 1) {
     //min kinetic energy
     G4double temp = DBL_MAX;
     G4double    eKine     = aParticle->GetKineticEnergy();

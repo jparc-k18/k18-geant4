@@ -64,10 +64,10 @@ G4VParticleChange* S2SSpecialCuts::PostStepDoIt(
 // Stop the current particle, if requested by G4UserLimits 
 // 			    			    			    
 {
-   aParticleChange.Initialize(aTrack);
-   aParticleChange.ProposeEnergy(0.) ;
-   aParticleChange.ProposeLocalEnergyDeposit (aTrack.GetKineticEnergy()) ;
-   aParticleChange.ProposeTrackStatus(fStopButAlive);
+  aParticleChange.Initialize(aTrack);
+  aParticleChange.ProposeEnergy(0.) ;
+  aParticleChange.ProposeLocalEnergyDeposit (aTrack.GetKineticEnergy()) ;
+  aParticleChange.ProposeTrackStatus(fStopButAlive);
    return &aParticleChange;
 }
 
