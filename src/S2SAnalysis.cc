@@ -42,7 +42,8 @@ S2SAnalysis::S2SAnalysis( G4String file )
 {
   //G4cout<<"S2SAnalysis constructor"<<G4endl;
   //DefineHistograms();
-  DefineTree();
+  //DefineTree();
+  nperand = new TRandom3();
 }
 
 S2SAnalysis::S2SAnalysis()
@@ -65,6 +66,7 @@ S2SAnalysis::S2SAnalysis(ConfMan* conf_)
   //TRandom3* nperand = new TRandom3(aaatemp);
   nperand = new TRandom3();
 }
+
 
 S2SAnalysis::~S2SAnalysis()
 {

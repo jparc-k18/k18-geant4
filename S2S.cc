@@ -66,9 +66,15 @@ int main(int argc, char** argv) {//##
     macFile  = argv[1];
     confFile = argv[2];
   }
+  else if(argc == 5){
+    macFile  = argv[1];
+    confFile = argv[2];
+    histFile = argv[3];
+    dataFile = argv[4];
+  }
   else{
     G4cout << G4endl;
-    G4cout << "Please type: S2S (macro file) (configuration file) " << G4endl;
+    G4cout << "Please type: S2S (macro file) (configuration file) (outputroot) (outputdat)" << G4endl;
     G4cout << G4endl;
     return 99;
   }
@@ -85,12 +91,16 @@ int main(int argc, char** argv) {//##
 //  }
 
   // ===== Configuration Manager ===================
-  ConfMan * confManager = new ConfMan( confFile );
+  ConfMan * confManager;
+  if(argc==5) confManager= new ConfMan( confFile, histFile);
+  else confManager= new ConfMan( confFile);
   confManager->Initialize();
 
   // ===== Analysis Manager =======================
   //S2SAnalysis * anaMan = new S2SAnalysis( histFile );
-  S2SAnalysis * anaMan = new S2SAnalysis( confManager );
+  S2SAnalysis * anaMan;
+  if(argc==5) anaMan = new S2SAnalysis( histFile );
+  else anaMan = new S2SAnalysis( confManager );
   anaMan->SetDataFile( dataFile );
 
   // ======== Detector Construction ==========================

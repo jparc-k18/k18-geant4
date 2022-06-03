@@ -19,6 +19,7 @@ class ConfMan
 {
 public:
   explicit ConfMan( const std::string & filename );
+  explicit ConfMan( const std::string & filename, const std::string & filename2 );
   ~ConfMan();
 private:
   ConfMan( const ConfMan & );

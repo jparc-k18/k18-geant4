@@ -23,7 +23,22 @@ ConfMan::ConfMan( const std::string & filename )
     GeomFlag_(0), EMFlag_(0), DecayFlag_(0),
     momcent(0.0), mombite(0.0),
     tof_overlap(0.0),tof_distance(-20.0),
-    mag_scale(1.00), generator(0)
+    mag_scale(1.00), generator(0), oROOTFile("0")
+{
+  static const std::string funcname = "[ConfMan::ConfMan]";
+  if( confManager_ ){
+    std::cerr << funcname << ": constructing twice" << std::endl;
+    exit(-1);
+  }
+  confManager_ = this;
+}
+
+ConfMan::ConfMan( const std::string & filename, const std::string & filename2)
+  : ConfFileName_(filename),DCGeomManager_(0),// K18Momentum_(1.8),
+    GeomFlag_(0), EMFlag_(0), DecayFlag_(0),
+    momcent(0.0), mombite(0.0),
+    tof_overlap(0.0),tof_distance(-20.0),
+    mag_scale(1.00), generator(0), oROOTFile(filename2)
 {
   static const std::string funcname = "[ConfMan::ConfMan]";
   if( confManager_ ){
@@ -113,6 +128,7 @@ bool ConfMan::Initialize( void )
 	HadronFlag_=intval;
       }
       else if( sscanf(buf,"ROOTFile: %s",buf1)==1 ){
+	if(oROOTFile[0]=='0')
 	oROOTFile = buf1;
       }
       else if( sscanf(buf,"TOF_OVERLAP[mm]: %lf", &val )==1 ){
