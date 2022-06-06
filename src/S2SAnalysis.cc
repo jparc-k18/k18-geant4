@@ -788,7 +788,7 @@ void S2SAnalysis::DefineTree(){
   */
   
   // Order -->
-  // vd8 | TOF | vd9 | AC | vd10 | WC | vd11 (vd[10])
+  // vd8 | TOF | vd9 | AC | vd10 | WC | vd11 (vd[10]) | SDC1 
   tree->Branch("vdx",   event.SlitX, "vdx[11]/D");
   tree->Branch("vdy",   event.SlitY, "vdy[11]/D");
   tree->Branch("vdtime",event.Slitt, "vdtime[11]/D");

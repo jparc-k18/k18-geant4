@@ -13,7 +13,7 @@
 class S2SFieldMap
 {
 public:
-  S2SFieldMap( const char *filename=0, double ScaleFactor=1.0 );
+  S2SFieldMap( const char *filename=0,double ScaleFactorQ1=1.0, double ScaleFactorQ2=1.0, double ScaleFactor=1.0 );
   ~S2SFieldMap();
 
 private:
@@ -22,7 +22,7 @@ private:
   
 private:
   std::string filename_;
-  double ScaleFactor_;
+  double ScaleFactorQ1_, ScaleFactorQ2_, ScaleFactor_;
   
 public:
   bool Initialize( void );

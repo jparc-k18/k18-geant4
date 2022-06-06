@@ -23,7 +23,8 @@ ConfMan::ConfMan( const std::string & filename )
     GeomFlag_(0), EMFlag_(0), DecayFlag_(0),
     momcent(0.0), mombite(0.0),
     tof_overlap(0.0),tof_distance(-20.0),
-    mag_scale(1.00), generator(0), oROOTFile("0")
+    mag_scale(1.00), mag_scale_Q1(1.00), mag_scale_Q2(1.00),
+    generator(0), oROOTFile("0")
 {
   static const std::string funcname = "[ConfMan::ConfMan]";
   if( confManager_ ){
@@ -38,7 +39,8 @@ ConfMan::ConfMan( const std::string & filename, const std::string & filename2)
     GeomFlag_(0), EMFlag_(0), DecayFlag_(0),
     momcent(0.0), mombite(0.0),
     tof_overlap(0.0),tof_distance(-20.0),
-    mag_scale(1.00), generator(0), oROOTFile(filename2)
+    mag_scale(1.00), mag_scale_Q1(1.00), mag_scale_Q2(1.00),
+    generator(0), oROOTFile(filename2)
 {
   static const std::string funcname = "[ConfMan::ConfMan]";
   if( confManager_ ){
@@ -80,7 +82,8 @@ bool ConfMan::Initialize( void )
     std::cerr << funcname << ": file open fail" << std::endl;
     exit(-1);
   }
-
+  bool mag_Q1 =false;
+  bool mag_Q2 =false;
   // ~~~~~~~~~ Read configuration file ~~~~~~~~~~~~~~~~~~~~~~
   while( fgets(buf,BufSize,fp)!=0 ){
     if( buf[0]!='#' ){
@@ -140,6 +143,14 @@ bool ConfMan::Initialize( void )
       else if( sscanf(buf,"Mag_Scale: %lf", &val )==1 ){
 	mag_scale=val;
       }
+      else if( sscanf(buf,"Mag_Scale_Q1: %lf", &val )==1 ){
+	mag_scale_Q1=val;
+	mag_Q1 = true;
+      }
+      else if( sscanf(buf,"Mag_Scale_Q2: %lf", &val )==1 ){
+	mag_scale_Q2=val;
+	mag_Q2 = true;
+      }
       else if( sscanf(buf,"Generator: %lf", &val )==1 ){
 	generator=val;
       }
@@ -152,6 +163,11 @@ bool ConfMan::Initialize( void )
     } /* if( buf[0]... ) */
   } /* while(...) */
 
+  if(!mag_Q1)
+    mag_scale_Q1 = mag_scale;
+  if(!mag_Q2)
+    mag_scale_Q2 = mag_scale;
+  
   fclose(fp);
 
   /*
@@ -194,6 +210,8 @@ void ConfMan::ShowParam(){
   G4cout << "DCGeometry:  " << DCGeomFileName_ << G4endl;
   G4cout << "FieldMap:    " << BfieldMap_   << G4endl;
   G4cout << "Mag Scale:   " << mag_scale   << G4endl;
+  G4cout << "Mag Scale Q1:   " << mag_scale_Q1   << G4endl;
+  G4cout << "Mag Scale Q2:   " << mag_scale_Q2   << G4endl;
   //G4cout << "Momentum:    " << K18Momentum_ << G4endl;
   G4cout << "TargetID:    " << TargetID << G4endl;
   G4cout << "TargetThickness: " << tthickness  << " g/cm^{2}"<< G4endl;
@@ -225,6 +243,8 @@ void ConfMan::OutputLog(){
   *ofs << "DCGeometry:  " << DCGeomFileName_ << G4endl;
   *ofs << "FieldMap:    " << BfieldMap_   << G4endl;
   *ofs << "Mag Scale:   " << mag_scale   << G4endl;
+  *ofs << "Mag Scale Q1:   " << mag_scale_Q1   << G4endl;
+  *ofs << "Mag Scale Q2:   " << mag_scale_Q2   << G4endl;
   *ofs << "TargetID:    " << TargetID << G4endl;
   *ofs << "TargetThickness: " << tthickness << " g/cm^{2}" << G4endl;
   *ofs << "TargetPosZ:  " << tposz << " mm" << G4endl;

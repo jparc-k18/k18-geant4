@@ -91,6 +91,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   // World
   /////////
   solidWorld = new G4Box("World", 5.0*m, 5.0*m, 5.0*m);
+  //  solidWorld = new G4Box("World", 6.0*m, 6.0*m, 6.0*m);
 
   //logicWorld = new G4LogicalVolume(solidWorld, mList_->Vacuum, "World"); // Vacuum world
   logicWorld = new G4LogicalVolume(solidWorld, mList_->Air, "World"); // (original)
@@ -137,8 +138,12 @@ void S2SDetectorConstruction::MakeField()
   //S2SField *field = new S2SField(confMan->GetFieldMap(),0.95); // with factor 0.95
   //S2SField *field = new S2SField(confMan->GetFieldMap(),0.93); // with factor 0.93
   //S2SField *field = new S2SField(confMan->GetFieldMap(),0.90); // with factor 0.90
+  // S2SField *field = new S2SField(confMan->GetFieldMap(),
+  // 				 confMan->GetMagScale() );
   S2SField *field = new S2SField(confMan->GetFieldMap(),
-				 confMan->GetMagScale() );
+   				 confMan->GetMagScaleQ1(),
+				 confMan->GetMagScaleQ2(),
+				 confMan->GetMagScale());
   G4cout<<" Called S2SField in Makefield."<<G4endl;
 
   G4FieldManager *fieldManager = G4TransportationManager::GetTransportationManager()->GetFieldManager();
@@ -1306,6 +1311,7 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
       new G4PVPlacement( G4Transform3D(rotQ, gloPosSlit[i]),
 			 name[i], logicSlit, pMother, false, i );
   }
+
   for(int i=5;i<11;i++){
     physSlit[i] = 
       new G4PVPlacement( G4Transform3D(rotSlit5, gloPosSlit[i]),

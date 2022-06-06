@@ -3,7 +3,7 @@
   
   Modified by Toshi Gogami , 21Nov2014
 */
-
+#include "MagnetConstant.hh"
 #include "S2SFieldMap.hh"
 
 #include <string>
@@ -16,8 +16,8 @@
 const double Deg2Rad = acos(-1.)/180.;
 const double Rad2Deg = 180./acos(-1.);
 
-S2SFieldMap::S2SFieldMap( const char *filename, double ScaleFactor )
-  : filename_(filename), ScaleFactor_(ScaleFactor), Nx(0), Ny(0), Nz(0)
+S2SFieldMap::S2SFieldMap( const char *filename, double ScaleFactorQ1, double ScaleFactorQ2, double ScaleFactor)
+  : filename_(filename), ScaleFactorQ1_(ScaleFactorQ1), ScaleFactorQ2_(ScaleFactorQ2), ScaleFactor_(ScaleFactor), Nx(0), Ny(0), Nz(0)
 {
 }
 
@@ -31,7 +31,7 @@ bool S2SFieldMap::Initialize( void )
   static const std::string funcname = "S2SFieldMap::Initialize";
 
   std::ifstream fsin( filename_.c_str() );
-
+  
   if(!fsin){
     std::cerr << "[" << funcname << "]: file open fail" << std::endl;
     std::exit(-1);
@@ -51,7 +51,11 @@ bool S2SFieldMap::Initialize( void )
       B[ix][iy].resize(Nz);
     }
   }
+  
 
+  double xlim_Q1 = -(rhoD*tan(bendAngleD/2.*Deg2Rad) + driftL2 + Q2z + driftL1/2.);
+  double xlim_Q2 = -(rhoD*tan(bendAngleD/2.*Deg2Rad) + driftL2/2.);
+  
   double x,y,z,bx,by,bz;  
   int npoint=0;
   int readn = 0;
@@ -78,9 +82,21 @@ bool S2SFieldMap::Initialize( void )
     int iy = int((y-Y0+0.1*dY)/dY);
     int iz = int((z-Z0+0.1*dZ)/dZ);
     if( ix>=0 && ix<Nx && iy>=0 && iy<Ny && iz>=0 && iz<Nz ){
-      B[ix][iy][iz].x = bx*ScaleFactor_;
-      B[ix][iy][iz].y = by*ScaleFactor_;
-      B[ix][iy][iz].z = bz*ScaleFactor_;
+      if(x<xlim_Q1){
+	B[ix][iy][iz].x = bx*ScaleFactorQ1_;
+	B[ix][iy][iz].y = by*ScaleFactorQ1_;
+	B[ix][iy][iz].z = bz*ScaleFactorQ1_;
+      }
+      else if (x<xlim_Q2){
+	B[ix][iy][iz].x = bx*ScaleFactorQ2_;
+	B[ix][iy][iz].y = by*ScaleFactorQ2_;
+	B[ix][iy][iz].z = bz*ScaleFactorQ2_;
+      }
+      else{
+	B[ix][iy][iz].x = bx*ScaleFactor_;
+	B[ix][iy][iz].y = by*ScaleFactor_;
+	B[ix][iy][iz].z = bz*ScaleFactor_;
+      }
     }
   }
   std::cout << std::endl << "Finished reading Field Map " << std::endl;;

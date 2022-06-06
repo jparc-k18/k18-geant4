@@ -52,7 +52,7 @@ private:
   double thetamax;
   double tof_overlap;
   double tof_distance;
-  double mag_scale;
+  double mag_scale, mag_scale_Q1, mag_scale_Q2;
   double target_pos;
   double beamx, beamy, beamz;
 
@@ -74,6 +74,8 @@ public:
   double GetTOFDistance()const     { return tof_distance;};
   double GetTOFOverlap() const     { return tof_overlap; };
   double GetMagScale()   const     { return mag_scale;   };
+  double GetMagScaleQ1()   const     { return mag_scale_Q1;   };
+  double GetMagScaleQ2()   const     { return mag_scale_Q2;   };
   double GetTargetPositionZ()      { return tposz;       };
   Int_t  GetTargetID()             { return TargetID;    };
   Int_t  GetGenerator()             { return generator;    };

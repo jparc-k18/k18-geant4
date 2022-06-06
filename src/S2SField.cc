@@ -11,8 +11,8 @@
 #include "G4ThreeVector.hh"
 #include "G4SystemOfUnits.hh"
 
-S2SField::S2SField( const std::string &FieldMapName, double scaleFactor )
-  : fMap( FieldMapName.c_str(),scaleFactor )
+S2SField::S2SField( const std::string &FieldMapName, double scaleFactorQ1, double scaleFactorQ2, double scaleFactor)
+  : fMap( FieldMapName.c_str(),scaleFactorQ1,scaleFactorQ2,scaleFactor)
 {
   fMap.Initialize();
 }

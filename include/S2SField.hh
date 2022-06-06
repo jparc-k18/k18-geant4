@@ -19,6 +19,8 @@ class S2SField : public G4MagneticField
 public:
   S2SField();
   explicit S2SField( const std::string &FieldMapName, 
+		     double scaleFactorQ1=1.0,
+		     double scaleFactorQ2=1.0,
 		     double scaleFactor=1.0 );
   ~S2SField();
 

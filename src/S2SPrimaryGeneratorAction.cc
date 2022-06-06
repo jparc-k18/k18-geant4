@@ -252,7 +252,7 @@ void S2SPrimaryGeneratorAction::GenerateFocusCheck(G4Event* anEvent)
   // ~~~~~~~~~ Set Particle Momentum ~~~~~~~~~~~~~~~~
   G4double parMom = 0.0;
   //parMom = (momcent+ mombite*(G4UniformRand()-0.5)*2.0 ) * GeV;
-  parMom = (momcent + (double)((int)(G4UniformRand()*3.)-1)*0.0975)*GeV; 
+  parMom = (momcent + (double)((int)(G4UniformRand()*3.)-1)*mombite)*GeV; 
   std::cout<<"parMom="<<parMom<<std::endl;
   particleGun->SetParticleMomentum(parMom);
 
