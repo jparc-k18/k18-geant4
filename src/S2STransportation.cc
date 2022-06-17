@@ -16,7 +16,11 @@ AlongStepGetPhysicalInteractionLength( const G4Track &track,
                                        G4double &currentSafety, 
                                        G4GPILSelection *selection ){
   
-  if( DoesGlobalFieldExist() &&currentMinimumStep>MinimumStep ){
+  // modified by tharada on 2022.06.17 to change from geant4.10.4.3 to geant4.10.6.2
+  /////////////////////////////////////////////////////////////////////////////
+  //  if( DoesGlobalFieldExist() &&currentMinimumStep>MinimumStep ){ //////////
+  if( DoesAnyFieldExist() &&currentMinimumStep>MinimumStep ){        //////////
+    ///////////////////////////////////////////////////////////////////////////
     currentMinimumStep=MinimumStep;
   }
   

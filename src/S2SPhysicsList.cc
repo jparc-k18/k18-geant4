@@ -479,6 +479,13 @@ void S2SPhysicsList::ConstructEM()
 #include "G4ComponentAntiNuclNuclearXS.hh"
 //#include "G4GGNuclNuclCrossSection.hh"
 
+// added by tharada on 2022.06.17 to change from geant4.10.4.3 to geant4.10.6.2
+//////////////////////////////////////////////////
+#include "G4ChipsKaonPlusInelasticXS.hh"    //////
+#include "G4ChipsKaonZeroInelasticXS.hh"    //////
+#include "G4ChipsKaonMinusInelasticXS.hh"   //////
+//////////////////////////////////////////////////
+
 #include "G4HadronElastic.hh"
 #include "G4HadronCaptureProcess.hh"
 

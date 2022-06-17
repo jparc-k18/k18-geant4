@@ -6,6 +6,21 @@
 ## Updated on 12Oct2018 by TG      ##
 #####################################
 
+######
+~ Envirionmental setting (for KEKCC users) ~
+ This simulation code is confirmed to work with 
+   * gcc8.3.0.
+   * root-6.22.02
+   * Geant4-10.6.2-mt
+  So, please set up your bashrc as follows and use 'cmake3' for this Geant4 version.
+-------------------
+module load gcc/830
+source /group/had/sks/software/root/6.22.02/bin/thisroot.sh
+source /sw/packages/geant4/10.6.2-mt/bin/geant4.sh
+source /sw/packages/geant4/10.6.2-mt/share/Geant4-10.6.2/geant4make/geant4make.sh
+---------------------------------------------------------------------------------
+##### written by tharda on 2022.06.17
+
 (-1) copy CMakeLists.txt.org to CMakeLists.txt.
     $ cp CMakeLists.txt.org CMakeLists.txt
 
@@ -22,7 +37,7 @@
 
 (1) Compile the source codes: 
     $ cd build/
-    $ cmake ..
+    $ cmake3 ..
     $ make -j4
 
 
@@ -45,12 +60,3 @@
     $ root analysis/root/XXXX.root
     $ tree->Draw("p0");
     $ tree->Draw("p0","TOFTrig","same");
-
-
-#for KEKCC users
-. /sw/packages/geant4/10.4.3-mt/bin/geant4.sh
-. /sw/packages/geant4/10.4.3-mt/share/Geant4-10.4.3/geant4make/geant4make.sh
-(please use 10.4.3 version)
-
-
-
