@@ -6,6 +6,8 @@
 ## Updated on 12Oct2018 by TG      ##
 #####################################
 
+(-1) copy CMakeLists.txt.org to CMakeLists.txt.
+    $ cp CMakeLists.txt.org CMakeLists.txt
 
 (0) Modify the cmake file, CMakeLists.txt.
     * ROOT_INCLUDE_DIR

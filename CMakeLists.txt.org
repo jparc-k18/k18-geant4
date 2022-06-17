@@ -19,8 +19,8 @@ find_package(Geant4 REQUIRED)
 include(${Geant4_USE_FILE})
 #set(ROOT_INCLUDE_DIR /home/gogami/root/root-5.34.36-install/include/root)
 #set(ROOT_LIBRARIES -L/home/gogami/root/root-5.34.36-install/lib/root -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic)
-set(ROOT_INCLUDE_DIR /sw/packages/root/6.20.08/include)
-set(ROOT_LIBRARIES -L/sw/packages/root/6.20.08/lib/ -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic)
+set(ROOT_INCLUDE_DIR /usr/local/include)
+set(ROOT_LIBRARIES -L/usr/local/lib -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic)
 
 #----------------------------------------------------------------------------
 # Locate sources and headers for this project
@@ -37,7 +37,7 @@ add_executable(S2S S2S.cc ${sources} ${headers})
 target_link_libraries(S2S ${Geant4_LIBRARIES} ${ROOT_LIBRARIES})
 
 #----------------------------------------------------------------------------
-set(CMAKE_INSTALL_PREFIX /home/had/yudai/private/E27_ichikawa_new1_1/S2S/k18geant4)
+set(CMAKE_INSTALL_PREFIX /home/dragon/HD-PZU3/S2S)
 install(TARGETS S2S RUNTIME DESTINATION bin)
 
 
