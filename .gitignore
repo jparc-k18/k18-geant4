@@ -9,4 +9,16 @@ build/
 bin/
 lib/
 !.gitkeep
+
 CMakeLists.txt
+
+/analysis/root
+
+/run/conf/*
+!/run/conf/param.conf
+!/run/conf/Gene1_E70Tgt.conf
+
+/run/macro/*
+!/run/macro/dawn.mac
+!/run/macro/run.mac
+!/run/macro/vrml.mac
