@@ -32,7 +32,7 @@ source /sw/packages/geant4/10.6.2-mt/share/Geant4-10.6.2/geant4make/geant4make.s
       This should be a result of "$ root-config --libs"
 
     * CMAKE_INSTALL_PREFIX
-      This should a location of your simulator
+      This should be a location of your simulator
 
 
 (1) Compile the source codes: 
@@ -40,6 +40,14 @@ source /sw/packages/geant4/10.6.2-mt/share/Geant4-10.6.2/geant4make/geant4make.s
     $ cmake3 ..
     $ make -j4
 
+   *** comment ***
+   If gcc/g++ version 8.3.0 is not called when you run the cmake3 command (maybe 4.8.5 will be called)
+   and make command doesn't pass, add the following to CMakeLists.txt and specify gcc/g++.
+   ----------------------------------------------
+   # Setup the project
+   set(CMAKE_C_COMPILER /opt/gcc-8.3.0/bin/gcc)
+   set(CMAKE_CXX_COMPILER /opt/gcc-8.3.0/bin/g++)
+   ----------------------------------------------
 
 (2) Execute your simulation: 
     $ cd run/
