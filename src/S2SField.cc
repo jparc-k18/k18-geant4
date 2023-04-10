@@ -32,7 +32,7 @@ void S2SField::GetFieldValue( const double Point[4],
   if( InMagnet(X) ){
     
     //Map2 region -> conversion
-    if( X[1]>-tan(70*deg)*X[0] ){
+    if( X[1]>-tan(55*deg)*X[0] ){
       x = x - MagOrg;
       x.rotateZ(-70*deg);
       x = MagOrg + x;
@@ -45,7 +45,7 @@ void S2SField::GetFieldValue( const double Point[4],
       Bfield[2] *= tesla;
     }
     
-    if( X[1]>-tan(70*deg)*X[0] ){
+    if( X[1]>-tan(55*deg)*X[0] ){
       G4ThreeVector tmpB(Bfield[0],Bfield[1],Bfield[2]);
       tmpB.rotateZ(70*deg);
       Bfield[0] = tmpB.x();
@@ -82,7 +82,7 @@ bool S2SField::InMagnet(double *pos) const
   G4ThreeVector gPos(pos[0], pos[1], pos[2]);
   G4ThreeVector MagOrg(600/tan(55*deg),-600,0);
 
-  if( pos[1]>-tan(70*deg)*pos[0] ){
+  if( pos[1]>-tan(55*deg)*pos[0] ){
     gPos = gPos - MagOrg;
     gPos.rotateZ(-70*deg);
     gPos = MagOrg + gPos;
