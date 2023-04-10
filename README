@@ -68,3 +68,13 @@ source /sw/packages/geant4/10.6.2-mt/share/Geant4-10.6.2/geant4make/geant4make.s
     $ root analysis/root/XXXX.root
     $ tree->Draw("p0");
     $ tree->Draw("p0","TOFTrig","same");
+
+
+## Parameters
+
+Some parameter files that are out of the git control should be linked.
+
+```shell
+ln -s /group/had/sks/fieldmap/fieldmap_S2S run/fieldmap_S2S
+```
+
