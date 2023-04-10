@@ -39,6 +39,6 @@ target_link_libraries(S2S ${Geant4_LIBRARIES} ${ROOT_LIBRARIES})
 #----------------------------------------------------------------------------
 set(CMAKE_INSTALL_PREFIX /home/dragon/HD-PZU3/S2S)
 install(TARGETS S2S RUNTIME DESTINATION bin)
-
+add_compile_definitions(G4VIS_USE)
 
 
