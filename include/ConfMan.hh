@@ -33,6 +33,7 @@ private:
   std::string DCGeomFileName_;
   DCGeomMan *DCGeomManager_;
   std::string BfieldMap_;
+  std::string BfieldMap_link; // symbolic link for Bfield
   std::string oROOTFile;
   //std::string LogFileName;
   //G4String oROOTFile;
@@ -46,6 +47,7 @@ private:
   Int_t GenPID;
   Int_t TargetID;
   Int_t generator;
+  Int_t link_len; // symbolic link for Bfield
   double tposz;
   double tthickness;
   double momcent, mombite;

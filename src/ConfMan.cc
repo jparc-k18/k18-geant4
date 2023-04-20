@@ -8,6 +8,7 @@
 #include "ConfMan.hh"
 #include "DCGeomMan.hh"
 //#include "EvDisp.hh"
+#include "TString.h"
 
 #include <iostream>
 #include <iomanip>
@@ -74,7 +75,7 @@ bool ConfMan::Initialize( void )
   static const std::string funcname = "[ConfMan::Initialize]";
 
   FILE *fp;
-  char buf[BufSize], buf1[BufSize];
+  char buf[BufSize], buf1[BufSize], buf2[BufSize+1];
   int    intval;
   double val;
 
@@ -92,8 +93,12 @@ bool ConfMan::Initialize( void )
 	DCGeomFileName_=buf1;
       }
       //Primary generator
+	
       else if( sscanf(buf,"BMAP: %s",buf1)==1 ){
 	BfieldMap_=buf1;
+        link_len = readlink(buf1, buf2, BufSize); // read symboric link
+        if (link_len > 0) BfieldMap_link= Form(" -> %s", buf2);
+	else BfieldMap_link = "";
       }
       else if( sscanf(buf,"GenMomCent[GeV/c]: %lf", &val )==1 ){
 	momcent=val;
@@ -208,7 +213,7 @@ void ConfMan::ShowParam(){
   G4cout << " ------------ Used Parameters ------------ "  << G4endl;
   G4cout << "ROOT file:   " << oROOTFile    << G4endl;
   G4cout << "DCGeometry:  " << DCGeomFileName_ << G4endl;
-  G4cout << "FieldMap:    " << BfieldMap_   << G4endl;
+  G4cout << "FieldMap:    " << BfieldMap_  << BfieldMap_link  << G4endl;
   G4cout << "Mag Scale:   " << mag_scale   << G4endl;
   G4cout << "Mag Scale Q1:   " << mag_scale_Q1   << G4endl;
   G4cout << "Mag Scale Q2:   " << mag_scale_Q2   << G4endl;
@@ -241,7 +246,7 @@ void ConfMan::OutputLog(){
   *ofs << "  /// Used Parameters -->    ///"  << G4endl;
   *ofs << "ROOT file:   " << oROOTFile    << G4endl;
   *ofs << "DCGeometry:  " << DCGeomFileName_ << G4endl;
-  *ofs << "FieldMap:    " << BfieldMap_   << G4endl;
+  *ofs << "FieldMap:    " << BfieldMap_  << BfieldMap_link  << G4endl;
   *ofs << "Mag Scale:   " << mag_scale   << G4endl;
   *ofs << "Mag Scale Q1:   " << mag_scale_Q1   << G4endl;
   *ofs << "Mag Scale Q2:   " << mag_scale_Q2   << G4endl;
