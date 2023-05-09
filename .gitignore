@@ -11,7 +11,7 @@ lib/
 !.gitkeep
 
 CMakeLists.txt
-fieldmap_S2S
+fieldmap
 /analysis/root
 
 /run/conf/*
