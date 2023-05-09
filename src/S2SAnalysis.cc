@@ -257,6 +257,7 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
       event.SlitvDeg[Sllayer] = atan(pVec.z()/pVec.x())*Rad2Deg;
       event.SlitX[Sllayer]  = lx;
       // ------ High momentum: Large x (Toshi, 19Mar2015) ------
+      //G4cout<<"layer ="<<Sllayer<<" lx= "<<lx<<G4endl;
       event.SlitX[Sllayer] = -1.0 * event.SlitX[Sllayer];
       event.SlituDeg[Sllayer] = -1.0 * event.SlituDeg[Sllayer];
       if(Sllayer>4){ // ~~~~~ After the dipole magnet ~~~~~
@@ -659,7 +660,7 @@ void S2SAnalysis::InitializeEvent( void )
 //    event.SlitNPi[i]  = 0;
 //    event.SlitF[i]    = 0;
 //  }
-  for(int i=0 ; i<17 ; i++){
+  for(int i=0 ; i<18 ; i++){
     // ------- Virtual detectors (slits) ------ 
     if(i<11){
       event.SlitX[i]    = -2222.0;
@@ -805,8 +806,8 @@ void S2SAnalysis::DefineTree(){
   //tree->Branch("tofco",  &event.tofco,   "tofco[17]/I");
   
   tree->Branch("tofnhits",&event.TOFNhits, "tofnhits/I");
-  tree->Branch("toftime", &event.toftime,  "toftime[17]/D");
-  tree->Branch("tofdE",   &event.tofdE,    "tofdE[17]/D");
+  tree->Branch("toftime", &event.toftime,  "toftime[18]/D");
+  tree->Branch("tofdE",   &event.tofdE,    "tofdE[18]/D");
   
   tree->Branch("wcnhits",&event.WCNhits,  "wcnhits/I");
   //tree->Branch("wctime", &event.wctime,   "wctime[12]/D");

@@ -90,8 +90,8 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   /////////     
   // World
   /////////
-  solidWorld = new G4Box("World", 5.0*m, 5.0*m, 5.0*m);
-  //  solidWorld = new G4Box("World", 6.0*m, 6.0*m, 6.0*m);
+  //solidWorld = new G4Box("World", 5.0*m, 5.0*m, 5.0*m);
+    solidWorld = new G4Box("World", 6.0*m, 6.0*m, 6.0*m);
 
   //logicWorld = new G4LogicalVolume(solidWorld, mList_->Vacuum, "World"); // Vacuum world
   logicWorld = new G4LogicalVolume(solidWorld, mList_->Air, "World"); // (original)
@@ -1239,7 +1239,8 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
 
   //G4Box *solidSlit = new G4Box("solidSlit",4.0/2.*m, 4.0/2.*m, 0.000001/2.*mm); //Original
   //G4Box *solidSlit = new G4Box("solidSlit",1.5/2.*m, 1.5/2.*m, 0.000001/2.*mm); // Toshi , 25Nov2014
-  G4Box *solidSlit = new G4Box("solidSlit",1.5/2.*m, 0.8/2.*m, 0.000001/2.*mm); // Toshi , 25Nov2014
+  //G4Box *solidSlit = new G4Box("solidSlit",1.5/2.*m, 0.8/2.*m, 0.000001/2.*mm); // Toshi , 25Nov2014
+  G4Box *solidSlit = new G4Box("solidSlit",4.0/2.*m, 4.0/2.*m, 0.000001/2.*mm); // Toshi , 25Nov2014
   G4LogicalVolume *logicSlit = new G4LogicalVolume(solidSlit, SlitMater, "logicSlit");
   G4VPhysicalVolume *physSlit[11];
 
@@ -1270,7 +1271,7 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
   gloPosSlit[7]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1200, 0, 0);        // Toshi , 27Nov2014
   gloPosSlit[8]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1200+100, 0, 0);    // Toshi , 27Nov2014
   gloPosSlit[9]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1200+100+580, 0, 0);// Toshi , 27Nov2014
-  gloPosSlit[10]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1000+1400, 0, 0);   // Toshi , 25Nov2014
+  gloPosSlit[10]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1000+1400+140, 0, 0);   // Toshi , 25Nov2014
 
   gloPosSlit[5].rotateZ(bendAngleD*Deg2Rad);
   gloPosSlit[6].rotateZ(bendAngleD*Deg2Rad);
@@ -1325,7 +1326,7 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
 // 		       "physSlit[7]", logicSlit, pMother, false, 7 );
   
   //logicSlit->SetVisAttributes(G4VisAttributes(true,G4Colour(0.8,1.0,1.0)));//::Invisible);
-  logicSlit->SetVisAttributes(G4VisAttributes::Invisible);
+  //logicSlit->SetVisAttributes(G4VisAttributes::Invisible);
   
 
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();

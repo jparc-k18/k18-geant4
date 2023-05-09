@@ -26,7 +26,7 @@ class PrimaryInfo;
 #define NumDC 30
 #endif
 #ifndef NumTOFSeg
-#define NumTOFSeg 17
+#define NumTOFSeg 18
 #endif
 #ifndef NumWCSeg
 #define NumWCSeg 16
@@ -90,12 +90,12 @@ struct Event{
   int SlitF[11];
   
   // ---- TOF detectors ----
-  //int tofco[17];
+  //int tofco[18];
   int TOFNhits;
-  double toftime[17];
-  double toftime_reso[17];
-  double tofdE[17];
-  double tofn[17];
+  double toftime[18];
+  double toftime_reso[18];
+  double tofdE[18];
+  double tofn[18];
   
   // ---- Water Cherenkov detector ----
   int WCNhits;
