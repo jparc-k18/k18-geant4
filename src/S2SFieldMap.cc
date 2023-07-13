@@ -38,11 +38,17 @@ bool S2SFieldMap::Initialize( void )
   }
   cleanupMap();
 
-  if( !(fsin >> Nx >> Ny >> Nz >>
-	X0 >> Y0 >> Z0 >> dX >> dY >> dZ ) ){
+  if( !(fsin >> Ny >> Nz >> Nx >>
+	Y0 >> Z0 >> X0 >> dY >> dZ >> dX ) ){
     std::cerr << "[" << funcname << "]: Invalid format " << std::endl;
     std::exit(-1);
   }
+  dX = dX*10.; // [cm] -> [mm]
+  dY = dY*10.;
+  dZ = dZ*10.;
+  X0 = X0*10.; // [cm] -> [mm]
+  Y0 = Y0*10.;
+  Z0 = Z0*10.;
 
   B.resize(Nx);
   for( int ix=0; ix<Nx; ++ix ){
@@ -77,7 +83,10 @@ bool S2SFieldMap::Initialize( void )
     }
     npoint++;
 
-    fsin >> x >> y >> z >> bx >> by >> bz;
+    fsin >> y >> z >> x >> by >> bz >> bx;
+    x = x*10.; // [cm] -> [mm]
+    y = y*10.;
+    z = z*10.;
     int ix = int((x-X0+0.1*dX)/dX);
     int iy = int((y-Y0+0.1*dY)/dY);
     int iz = int((z-Z0+0.1*dZ)/dZ);

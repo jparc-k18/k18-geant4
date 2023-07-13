@@ -30,29 +30,11 @@ void S2SField::GetFieldValue( const double Point[4],
   G4ThreeVector MagOrg(600/tan(55*deg),-600,0);
   
   if( InMagnet(X) ){
-    
-    //Map2 region -> conversion
-    if( X[1]>-tan(55*deg)*X[0] ){
-      x = x - MagOrg;
-      x.rotateZ(-70*deg);
-      x = MagOrg + x;
-      X[0]=x.x(); X[1]=x.y(); X[2]=x.z();
-    }
-    
     if( fMap.GetFieldValue( X, Bfield ) ){
       Bfield[0] *= tesla;
       Bfield[1] *= tesla;
       Bfield[2] *= tesla;
     }
-    
-    if( X[1]>-tan(55*deg)*X[0] ){
-      G4ThreeVector tmpB(Bfield[0],Bfield[1],Bfield[2]);
-      tmpB.rotateZ(70*deg);
-      Bfield[0] = tmpB.x();
-      Bfield[1] = tmpB.y();
-      Bfield[2] = tmpB.z();
-    }
-    
   }
   else{
     Bfield[0]=Bfield[1]=Bfield[2]=0.0;
@@ -81,17 +63,11 @@ bool S2SField::InMagnet(double *pos) const
 
   G4ThreeVector gPos(pos[0], pos[1], pos[2]);
   G4ThreeVector MagOrg(600/tan(55*deg),-600,0);
-
-  if( pos[1]>-tan(55*deg)*pos[0] ){
-    gPos = gPos - MagOrg;
-    gPos.rotateZ(-70*deg);
-    gPos = MagOrg + gPos;
-  }
   bool bx,by,bz;
-  if(-5500<gPos.x() && gPos.x()<5400) bx=true; else bx=false;
-  if(-600<gPos.y() && gPos.y()<900) by=true; else by=false;
-  if(-320<gPos.z() && gPos.z()<320) bz=true; else bz=false;
 
+  if(-5500<gPos.x() && gPos.x()<6500) bx=true; else bx=false;
+  if(-600<gPos.y() && gPos.y()<3000) by=true; else by=false;
+  if(-320<gPos.z() && gPos.z()<320) bz=true; else bz=false;
   if(bx&&by&&bz) return true;
   else return false;
 }
