@@ -81,6 +81,7 @@ class S2SDetectorConstruction : public G4VUserDetectorConstruction
   G4Material* DMaterial;
 
   MaterialList* mList_;
+  G4bool m_check_overlaps;
   MaterialList* DefineMaterial();
   //  void DefineMaterials();
 

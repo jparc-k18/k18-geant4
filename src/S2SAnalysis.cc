@@ -35,7 +35,11 @@
 #include <sstream>
 #include <vector>
 
-using namespace CLHEP;
+namespace
+{
+  using namespace root;
+  using namespace CLHEP;
+}
 
 S2SAnalysis::S2SAnalysis( G4String file )
   : filename_(file), fActive_(true), fTriggered(false), DataFile_()
@@ -86,7 +90,7 @@ void S2SAnalysis::BeginOfRun( const G4Run *aRun )
 void S2SAnalysis::EndOfRun( const G4Run *aRun )
 {
   //  G4cout<<"S2SAnalysis EndOfRun"<<G4endl;
-  TTree *tree = dynamic_cast<TTree *>(anafile->Get("tree"));
+ TTree *tree = dynamic_cast<TTree *>(anafile->Get("s2s_g"));
   tree->Write();
   anafile->Close();
 }
@@ -158,7 +162,7 @@ void S2SAnalysis::BeginOfEvent( const G4Event *anEvent )
 void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
 {
   // =========== Tree =======================================
-  TTree *tree = dynamic_cast<TTree *>(anafile->Get("tree"));
+  TTree *tree = dynamic_cast<TTree *>(anafile->Get("s2s_g"));
   InitializeEvent();
 
   // ========== Hit Collection =========================
@@ -171,8 +175,8 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
   G4int nhWC=0;
   G4int nhSl=0;
   
-  //   G4int colIdDC = SDMan->GetCollectionID( "BcSD"/*"DCCollection"*/ );
-  //   DCHitsCollection *DCHC =  dynamic_cast<DCHitsCollection *>(  HCE->GetHC( colIdDC )  );
+  G4int colIdDC = SDMan->GetCollectionID( "BcSD"/*"DCCollection"*/ );
+  DCHitsCollection *DCHC =  dynamic_cast<DCHitsCollection *>(  HCE->GetHC( colIdDC )  );
   
   G4int colIdTOF = SDMan->GetCollectionID("TOFSD");
   TOFHitsCollection *TOFHC = dynamic_cast<TOFHitsCollection *>( HCE->GetHC( colIdTOF ) );
@@ -184,7 +188,7 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
   G4int colIdSl = SDMan->GetCollectionID("SlSD");
   SlHitsCollection *SlHC = dynamic_cast<SlHitsCollection *>( HCE->GetHC( colIdSl ) );
   
-  //  if( DCHC )     nhDc     = DCHC ->entries();
+   if( DCHC )     nhDc     = DCHC ->entries();
   if( TOFHC )nhTof = TOFHC ->entries();
   //   if( ACHC )     nhAc     = ACHC ->entries();
   if( WCHC ) nhWC  = WCHC ->entries();
@@ -193,50 +197,54 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
   // G4cout<<"DCHC : true, colID="<<colIdDC<<" TOFHC : true, colID="<<colIdTOF<<G4endl;
   
   //DC    
+   G4double pos_res = 0.0*mm; // 0 um
+   // G4double pos_res = 0.2*mm; // 200 um
   event.DCNhits = nhDc;
-  
-  //  G4double pos_res = 0.2*mm;//200um
+  if( DCHC ){
+    for( int i=0; i<nhDc; ++i ){
+      DCHit *aHit = (*DCHC)[i];
+      G4int dclayer = aHit->GetLayerID() - 101;
+      G4int nh = event.DCNh[dclayer];
+      double lx = aHit->GetXLocal()/mm;
+      double ly = aHit->GetYLocal()/mm;
+      double time = aHit->GetTime()/ns;
+      double de = aHit->GetEdep();
+      G4ThreeVector gPos = aHit->GetPos();
+      G4ThreeVector pVec = aHit->GetMom();
+      double mom = pVec.mag();
+      event.DCXObs[dclayer] = RandGauss::shoot(lx, pos_res);
+      event.DCYObs[dclayer] = RandGauss::shoot(ly, pos_res);
+      event.DCX[dclayer] = lx;
+      event.DCY[dclayer] = ly;
+      event.DCt[dclayer] = time;
+      event.DCp[dclayer] = mom;
+      event.DCgPosx[dclayer][nh] = gPos.getY();
+      event.DCgPosy[dclayer][nh] = gPos.getZ();
+      event.DCgPosz[dclayer][nh] = gPos.getX();
+      event.DCde[dclayer][nh] = de;
+      event.DCNh[dclayer]++;
+    }
+  }
 
-//   if( DCHC ){
-//     for( int i=0; i<nhDc; ++i ){
-//       DCHit *aHit = (*DCHC)[i];
-//       G4int dclayer = aHit->GetLayerID() - 101;
-//       //G4cout<<"dclayer="<<dclayer<<G4endl;
-//       double lx = aHit->GetXLocal()/mm;
-//       double ly = aHit->GetYLocal()/mm;
-//       double time = aHit->GetTime()/ns;
-//       G4ThreeVector pVec = aHit->GetMom();
-//       double mom = pVec.mag();
-// //       event.DCXObs[dclayer] = RandGauss::shoot(lx, pos_res);
-// //       event.DCYObs[dclayer] = RandGauss::shoot(ly, pos_res);
-//       event.DCX[dclayer] = lx;
-//       event.DCY[dclayer] = ly;
-//       event.DCt[dclayer] = time;
-//       event.DCp[dclayer] = mom;
-// //       if(dclayer==14||dclayer==20)
-// // 	G4cout<<lx<<" "<<ly<<G4endl;
-//     }
-//   }
+  for(int i=0;i<6;i++)
+    if(event.DCt[i]>0) event.DC1Hit += 1;
+  for(int i=6;i<12;i++)
+    if(event.DCt[i]>0) event.DC2Hit += 1;
+  for(int i=12;i<16;i++)
+    if(event.DCt[i]>0) event.DC3Hit += 1;
+  for(int i=16;i<22;i++)
+    if(event.DCt[i]>0) event.DC4Hit += 1;
+  for(int i=22;i<28;i++)
+    if(event.DCt[i]>0) event.DC5Hit += 1;
 
-//   for(int i=0;i<6;i++)
-//     if(event.DCt[i]>0) event.DC1Hit += 1;
-//   for(int i=6;i<12;i++)
-//     if(event.DCt[i]>0) event.DC2Hit += 1;
-//   for(int i=12;i<16;i++)
-//     if(event.DCt[i]>0) event.DC3Hit += 1;
-//   for(int i=16;i<22;i++)
-//     if(event.DCt[i]>0) event.DC4Hit += 1;
-//   for(int i=22;i<28;i++)
-//     if(event.DCt[i]>0) event.DC5Hit += 1;
-
-//   for(int i=0;i<4;i++){
-//     for(int j=0;j<6;j++){
-//       if(i==0 && event.DCt[i*6+j]>-999) event.DC1Hit = 1;
-//       if(i==1 && event.DCt[i*6+j]>-999) event.DC2Hit = 1;
-//       if(i==2 && event.DCt[i*6+j]>-999) event.DC3Hit = 1;
-//       if(i==3 && event.DCt[i*6+j]>-999) event.DC4Hit = 1;
-//     }
-//   }
+  for(int i=0;i<4;i++){
+    for(int j=0;j<6;j++){
+      if(i==0 && event.DCt[i*6+j]>-999) event.DC1Hit = 1;
+      if(i==1 && event.DCt[i*6+j]>-999) event.DC2Hit = 1;
+      if(i==2 && event.DCt[i*6+j]>-999) event.DC3Hit = 1;
+      if(i==3 && event.DCt[i*6+j]>-999) event.DC4Hit = 1;
+    }
+  }
 
   //int nhitSl1=0;
   // ~~~~ Bending angle of the S-2S dipole magnet ~~~~
@@ -246,6 +254,7 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
     for( int i=0; i<nhSl; ++i ){
       SlHit *aHit = (*SlHC)[i];
       G4int Sllayer = aHit->GetLayerID();
+      G4int nh = event.SlitNh[Sllayer];
       G4double lx = aHit->GetXLocal()/mm;
       G4double ly = aHit->GetYLocal()/mm;
       G4double time = aHit->GetTime()/ns;
@@ -255,10 +264,10 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
       G4double mom = pVec.mag();
       event.SlituDeg[Sllayer] = atan(pVec.y()/pVec.x())*Rad2Deg;
       event.SlitvDeg[Sllayer] = atan(pVec.z()/pVec.x())*Rad2Deg;
-      event.SlitX[Sllayer]  = lx;
+      event.SlitX[Sllayer][nh]  = lx;
       // ------ High momentum: Large x (Toshi, 19Mar2015) ------
       //G4cout<<"layer ="<<Sllayer<<" lx= "<<lx<<G4endl;
-      event.SlitX[Sllayer] = -1.0 * event.SlitX[Sllayer];
+      event.SlitX[Sllayer][nh] = -1.0 * event.SlitX[Sllayer][nh];
       event.SlituDeg[Sllayer] = -1.0 * event.SlituDeg[Sllayer];
       if(Sllayer>4){ // ~~~~~ After the dipole magnet ~~~~~
 	event.SlituDeg[Sllayer] = event.SlituDeg[Sllayer] + BendingAngle;
@@ -323,17 +332,17 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
     }
   }
   G4bool SlitFlag = false;
-  if ( event.SlitX[0]>-1000.0 && // Before Q1
+  if ( event.SlitX[0][0]>-1000.0 && // Before Q1
        //event.SlitX[1]>-1000.0 && 
        //event.SlitX[2]>-1000.0 && 
        //event.SlitX[3]>-1000.0 && 
        //event.SlitX[4]>-1000.0 && 
-       event.SlitX[5]>-1000.0 && //After Dipole
-       event.SlitX[6]>-1000.0 && //After Dipole end guard
-       event.SlitX[7]>-1000.0 && // After Chamber
-       event.SlitX[8]>-1000.0 && // After TOF
-       event.SlitX[9]>-1000.0 && // After AC
-       event.SlitX[10]>-1000.0 // After WC
+       event.SlitX[5][0]>-1000.0 && //After Dipole
+       event.SlitX[6][0]>-1000.0 && //After Dipole end guard
+       event.SlitX[7][0]>-1000.0 && // After Chamber
+       event.SlitX[8][0]>-1000.0 && // After TOF
+       event.SlitX[9][0]>-1000.0 && // After AC
+       event.SlitX[10][0]>-1000.0 // After WC
        ){
     SlitFlag = true;
   }
@@ -343,7 +352,7 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
   G4bool Q1Flag1 = false; // Q1 entrance
   G4bool Q1Flag2 = false; // Q1 exit
   G4bool Q1Flag  = false;
-  G4double qx = event.SlitX[0]; // at Q1 entrance
+  G4double qx = event.SlitX[0][0]; // at Q1 entrance
   G4double qy = event.SlitY[0]; // at Q1 entrance
   G4double a,b,c;
   a = 8.5;
@@ -360,7 +369,7 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
   }
   else Q1Flag1=false;
   
-  qx = event.SlitX[1]; // at Q1 exit
+  qx = event.SlitX[1][0]; // at Q1 exit
   qy = event.SlitY[1]; // at Q1 exit
   if( ( qy<a+b/qx+c/qx/qx && qx>56.0 && qy>56.0 )     || 
       ( qy<a-b/qx+c/qx/qx && qx<-56.0 && qy>56.0 )    || 
@@ -380,7 +389,7 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
   G4bool Q2Flag1 = false;
   G4bool Q2Flag2 = false;
   G4bool Q2Flag  = false;
-  qx = event.SlitX[2]; // at Q2 entrance
+  qx = event.SlitX[2][0]; // at Q2 entrance
   qy = event.SlitY[2]; // at Q2 entrance
   a = 0.7;
   b = 16073.4;
@@ -396,7 +405,7 @@ void S2SAnalysis::EndOfEvent( const G4Event *anEvent )
   }
   else Q2Flag1=false;
   
-  qx = event.SlitX[3]; // at Q2 exit
+  qx = event.SlitX[3][0]; // at Q2 exit
   qy = event.SlitY[3]; // at Q2 exit
   if( ( qy<a+b/qx+c/qx/qx && qx>60.0 && qy>32.4 )     || 
       ( qy<a-b/qx+c/qx/qx && qx<-60.0 && qy>32.4 )    || 
@@ -633,14 +642,21 @@ void S2SAnalysis::ShowStatus( void ) const
 
 void S2SAnalysis::InitializeEvent( void )
 {
-//   for(int i=0;i<NumDC;i++){
-//     event.DCXObs[i] = -999.;
-//     event.DCYObs[i] = -999.;
-//     event.DCX[i] = -999.;
-//     event.DCY[i] = -999.;
-//     event.DCt[i] = -999.;
-//     event.DCp[i] = -999.;
-//   }
+  for(int i=0;i<NumDC;i++){
+    event.DCXObs[i] = -999.;
+    event.DCYObs[i] = -999.;
+    event.DCX[i] = -999.;
+    event.DCY[i] = -999.;
+    event.DCt[i] = -999.;
+    event.DCp[i] = -999.;
+    event.DCNh[i] = 0;
+    for( int ihit = 0; ihit < MaxHits; ihit++ ){
+      event.DCgPosx[i][ihit] = -2222.0;
+      event.DCgPosy[i][ihit] = -2222.0;
+      event.DCgPosz[i][ihit] = -2222.0;
+      event.DCde[i][ihit] = -2222.0;
+    }
+  }
 //   for(int i=0;i<NumTOFSeg;i++){
 //     event.TOFt[i] = -999.;
 //     event.TOFtObs[i] = -999.;
@@ -663,7 +679,7 @@ void S2SAnalysis::InitializeEvent( void )
   for(int i=0 ; i<18 ; i++){
     // ------- Virtual detectors (slits) ------ 
     if(i<11){
-      event.SlitX[i]    = -2222.0;
+      for( int ihit = 0; ihit < MaxHits; ihit++ ) event.SlitX[i][ihit]    = -2222.0;
       event.SlitY[i]    = -2222.0;
       event.SlituDeg[i] = -2222.0;
       event.SlitvDeg[i] = -2222.0;
@@ -703,12 +719,12 @@ void S2SAnalysis::InitializeEvent( void )
     }
   }
 
-//   event.DCNhits = -999;
-//   event.DC1Hit = 0;
-//   event.DC2Hit = 0;
-//   event.DC3Hit = 0;
-//   event.DC4Hit = 0;
-//   event.DC5Hit = 0;
+  event.DCNhits = -999;
+  event.DC1Hit = 0;
+  event.DC2Hit = 0;
+  event.DC3Hit = 0;
+  event.DC4Hit = 0;
+  event.DC5Hit = 0;
   // event.TOFNhits = -999;
   // event.ACNhits = -999;
   // event.WCNhits = -999;
@@ -729,7 +745,7 @@ void S2SAnalysis::InitializeEvent( void )
 void S2SAnalysis::DefineTree(){
   //G4cout<<"S2SAnalysis DefineHistograms"<<G4endl;
   anafile = new TFile(filename_,"recreate");
-  TTree* tree = new TTree("tree","S-2S simulation");
+  TTree* tree = new TTree("s2s_g","S-2S simulation");
   fActive_=true;
 
   tree->Branch("x0",&event.x0In, "x0/D");
@@ -761,18 +777,23 @@ void S2SAnalysis::DefineTree(){
 //   tree->Branch("nKm",&event.nKm,"nKm/I");
 //   tree->Branch("nKp",&event.nKp,"nKp/I");
 
-//   tree->Branch("DCXObs",event.DCXObs, "DCXObs[26]/D");
-//   tree->Branch("DCYObs",event.DCYObs, "DCYObs[26]/D");
-//   tree->Branch("DCX",event.DCX, "DCX[26]/D");
-//   tree->Branch("DCY",event.DCY, "DCY[26]/D");
-//   tree->Branch("DCt",event.DCt, "DCt[26]/D");
-//   tree->Branch("DCp",event.DCp, "DCp[26]/D");
-//   tree->Branch("DCNhits",&event.DCNhits, "DCNhits/I");
-//   tree->Branch("DC1Hit", &event.DC1Hit, "DC1Hit/I");
-//   tree->Branch("DC2Hit", &event.DC2Hit, "DC2Hit/I");
-//   tree->Branch("DC3Hit", &event.DC3Hit, "DC3Hit/I");
-//   tree->Branch("DC4Hit", &event.DC4Hit, "DC4Hit/I");
-//   tree->Branch("DC5Hit", &event.DC5Hit, "DC5Hit/I");
+  tree->Branch("DCXObs",event.DCXObs, "DCXObs[26]/D");
+  tree->Branch("DCYObs",event.DCYObs, "DCYObs[26]/D");
+  tree->Branch("DCX",event.DCX, "DCX[26]/D");
+  tree->Branch("DCY",event.DCY, "DCY[26]/D");
+  tree->Branch("DCt",event.DCt, "DCt[26]/D");
+  tree->Branch("DCp",event.DCp, "DCp[26]/D");
+  tree->Branch("DCNh",event.DCNh, "DCNh[26]/I");
+  tree->Branch("DCgPosx",event.DCgPosx, Form("DCgPosx[26][%d]/D", MaxHits));
+  tree->Branch("DCgPosy",event.DCgPosy, Form("DCgPosy[26][%d]/D", MaxHits));
+  tree->Branch("DCgPosz",event.DCgPosz, Form("DCgPosz[26][%d]/D", MaxHits));
+  tree->Branch("DCde",   event.DCde, Form("DCde[26][%d]/D", MaxHits));
+  tree->Branch("DCNhits",&event.DCNhits, "DCNhits/I");
+  tree->Branch("DC1Hit", &event.DC1Hit, "DC1Hit/I");
+  tree->Branch("DC2Hit", &event.DC2Hit, "DC2Hit/I");
+  tree->Branch("DC3Hit", &event.DC3Hit, "DC3Hit/I");
+  tree->Branch("DC4Hit", &event.DC4Hit, "DC4Hit/I");
+  tree->Branch("DC5Hit", &event.DC5Hit, "DC5Hit/I");
   tree->Branch("vdxp", event.SlituDeg, "vdxp[11]/D");
   tree->Branch("vdyp", event.SlitvDeg, "vdyp[11]/D");
   /*
@@ -790,7 +811,7 @@ void S2SAnalysis::DefineTree(){
   
   // Order -->
   // vd8 | TOF | vd9 | AC | vd10 | WC | vd11 (vd[10]) | SDC1 
-  tree->Branch("vdx",   event.SlitX, "vdx[11]/D");
+  tree->Branch("vdx",   event.SlitX, Form("vdx[11][%d]/D", MaxHits));
   tree->Branch("vdy",   event.SlitY, "vdy[11]/D");
   tree->Branch("vdtime",event.Slitt, "vdtime[11]/D");
   tree->Branch("vdmom", event.SlitMom, "vdmom[11]/D");

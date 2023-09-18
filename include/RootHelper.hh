@@ -12,6 +12,11 @@
 #include "TTree.h"
 #include "TString.h"
 
+namespace root
+{
+const int MaxHits = 500;
+
+//___________________________________________________________
 inline void HB1( int id, const char *title, 
 		   int nbinx, double xlow, double xhigh )
 {
@@ -71,4 +76,5 @@ inline void HFProf( int id, double x, double y, double w=1.0 )
   HFProf( Form("h%d",id), x, y, w );
 }
 
+}
 #endif

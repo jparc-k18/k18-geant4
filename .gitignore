@@ -14,6 +14,8 @@ CMakeLists.txt
 fieldmap
 /analysis/root
 
+rootfile
+
 /run/conf/*
 !/run/conf/param.conf
 !/run/conf/Gene1_E70Tgt.conf

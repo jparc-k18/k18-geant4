@@ -50,8 +50,6 @@ void SlSD::Initialize( G4HCofThisEvent *HCE )
 G4bool SlSD::ProcessHits( G4Step *aStep,
 			     G4TouchableHistory *ROhist )
 {
-
-
   //ConfMan *confMan = ConfMan::GetConfManager();
   //  G4double edep = aStep->GetTotalEnergyDeposit();
 

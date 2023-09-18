@@ -17,7 +17,13 @@ const double Deg2Rad = acos(-1.)/180.;
 const double Rad2Deg = 180./acos(-1.);
 
 S2SFieldMap::S2SFieldMap( const char *filename, double ScaleFactorQ1, double ScaleFactorQ2, double ScaleFactor)
-  : filename_(filename), ScaleFactorQ1_(ScaleFactorQ1), ScaleFactorQ2_(ScaleFactorQ2), ScaleFactor_(ScaleFactor), Nx(0), Ny(0), Nz(0)
+  : filename_(filename),
+    ScaleFactorQ1_(ScaleFactorQ1),
+    ScaleFactorQ2_(ScaleFactorQ2),
+    ScaleFactor_(ScaleFactor),
+    Nx(0),
+    Ny(0),
+    Nz(0)
 {
 }
 
@@ -33,7 +39,7 @@ bool S2SFieldMap::Initialize( void )
   std::ifstream fsin( filename_.c_str() );
   
   if(!fsin){
-    std::cerr << "[" << funcname << "]: file open fail" << std::endl;
+    std::cerr << "[" << funcname << "]: file open fail : " << filename_ << std::endl;
     std::exit(-1);
   }
   cleanupMap();

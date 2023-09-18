@@ -14,9 +14,11 @@
 #include "RootHelper.hh"
 #include "TFile.h"
 #include "ConfMan.hh"
-#include "TRandom3.h"
 
 #include <fstream>
+
+#include <TVector3.h>
+#include <TRandom3.h>
 
 class G4Run;
 class G4Event;
@@ -47,6 +49,11 @@ class PrimaryInfo;
 
 const int TOFSTOREMAX = 10;
 
+namespace
+{
+  using namespace root;
+}
+
 struct Event{
   double x0In;
   double y0In;
@@ -70,6 +77,12 @@ struct Event{
   double DCY[NumDC];
   double DCt[NumDC];
   double DCp[NumDC];
+  Int_t DCNh[NumDC];
+  Double_t DCgPosx[NumDC][MaxHits];
+  Double_t DCgPosy[NumDC][MaxHits];
+  Double_t DCgPosz[NumDC][MaxHits];
+  Double_t DCde[NumDC][MaxHits];
+
   int DCNhits;
   int DC1Hit;
   int DC2Hit;
@@ -78,7 +91,7 @@ struct Event{
   int DC5Hit;
   double SlituDeg[11];
   double SlitvDeg[11];
-  double SlitX[11];
+  double SlitX[11][MaxHits];
   double SlitY[11];
   double Slitt[11];
   double SlitMom[11];

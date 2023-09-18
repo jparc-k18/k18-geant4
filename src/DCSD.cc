@@ -50,13 +50,13 @@ G4bool DCSD::ProcessHits( G4Step *aStep,
 			     G4TouchableHistory *ROhist )
 {
   //ConfMan *confMan = ConfMan::GetConfManager();
-  //  G4double edep = aStep->GetTotalEnergyDeposit();
+   G4double edep = aStep->GetTotalEnergyDeposit();
 
   //if( edep<=DEThreshold && EMFlag == 1) return true;
   
   G4Track *aTrack = aStep->GetTrack();
   G4String decayName= aTrack->GetDefinition()->GetParticleName();
-  if(decayName=="kaon+"){
+  // if(decayName=="kaon+"){
     G4StepPoint *preStepPoint = aStep->GetPreStepPoint();
     G4TouchableHandle theTouchable = preStepPoint->GetTouchableHandle();
     G4int hitLayer = theTouchable->GetReplicaNumber();
@@ -104,13 +104,14 @@ G4bool DCSD::ProcessHits( G4Step *aStep,
     aHit->SetPass();
     aHit->SetLayerID( hitLayer );//Need
     aHit->SetTime( hittime );//Need
-    //  aHit->SetPos( hitpos );
+    aHit->SetPos( hitpos );
     aHit->SetMom( hitmom );
+    aHit->SetEdep( edep );
     //  aHit->SetTrackNo( trackNo );
     aHit->SetLocalPos( hitposl.y(), hitposl.z() );
     //    aHit->SetDecayParticleName( decayName );
     DCCollection->insert( aHit );
-  }
+  // }
 #if 0
   G4cout << "[DCSD] " << "Layer=" << hitLayer 
     //	 << " edep=" << edep/keV << "keV"  
