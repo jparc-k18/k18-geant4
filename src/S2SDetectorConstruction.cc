@@ -1,11 +1,12 @@
 /*
   "S2SDetectorConstruction.cc"
-  
+
   This was originally coded by S.Kanatsuki.
   Modified by Toshi Gogami , 11Nov2014.
 */
 
 #include "S2SDetectorConstruction.hh"
+
 #include "MagnetConstant.hh"
 #include "S2SField.hh"
 #include "MaterialList.hh"
@@ -38,6 +39,7 @@
 #include "G4UniformMagField.hh"
 #include "G4Mag_UsualEqRhs.hh"
 #include "G4SimpleRunge.hh"
+#include <G4VisAttributes.hh>
 
 #include "G4GeometryManager.hh"
 #include "G4PhysicalVolumeStore.hh"
@@ -46,126 +48,96 @@
 #include "G4UserLimits.hh"
 #include "G4SystemOfUnits.hh"
 
-#include "G4VisAttributes.hh"
 #include "G4Colour.hh"
 #include "G4SDManager.hh"
 //#include "CalorimeterSD.hh"
 
-using namespace CLHEP;
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-S2SDetectorConstruction::S2SDetectorConstruction()
-  :solidWorld(0),logicWorld(0),physiWorld(0),mList_(0),m_check_overlaps(true)
-{}
-S2SDetectorConstruction::S2SDetectorConstruction(ConfMan* confman_)
-  :solidWorld(0),logicWorld(0),physiWorld(0),mList_(0),m_check_overlaps(true),
-   confman(confman_)
-{}
-
-
-S2SDetectorConstruction::~S2SDetectorConstruction()
-{// delete detectorMessenger;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-MaterialList* S2SDetectorConstruction::DefineMaterial()
+namespace
 {
-  if(mList_) delete mList_;
-  return new MaterialList();
+using namespace CLHEP;
+const auto& confMan = ConfMan::GetInstance();
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//_____________________________________________________________________________
+S2SDetectorConstruction::S2SDetectorConstruction()
+  : solidWorld(0),
+    logicWorld(0),
+    physiWorld(0),
+    m_material_list(new MaterialList),
+    m_check_overlaps(true)
+{
+}
+
+//_____________________________________________________________________________
+S2SDetectorConstruction::~S2SDetectorConstruction()
+{
+  delete m_material_list;
+}
+
+//_____________________________________________________________________________
 G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 {
-  // Clean old geometry, if any
-  //
   G4GeometryManager::GetInstance()->OpenGeometry();
   G4PhysicalVolumeStore::GetInstance()->Clean();
   G4LogicalVolumeStore::GetInstance()->Clean();
   G4SolidStore::GetInstance()->Clean();
 
-  //Define Materials
-  mList_ = DefineMaterial();
-
-  /////////     
-  // World
-  /////////
-  //solidWorld = new G4Box("World", 5.0*m, 5.0*m, 5.0*m);
-    solidWorld = new G4Box("World", 6.0*m, 6.0*m, 6.0*m);
-
-  //logicWorld = new G4LogicalVolume(solidWorld, mList_->Vacuum, "World"); // Vacuum world
-  logicWorld = new G4LogicalVolume(solidWorld, mList_->Air, "World"); // (original)
-
+  ///// World
+  // solidWorld = new G4Box("World", 5.0*m, 5.0*m, 5.0*m);
+  solidWorld = new G4Box("World", 6.0*m, 6.0*m, 6.0*m);
+  // logicWorld = new G4LogicalVolume(solidWorld, m_material_list->Vacuum, "World");
+  logicWorld = new G4LogicalVolume(solidWorld, m_material_list->Air, "World");
   physiWorld = new G4PVPlacement(0, G4ThreeVector(),
 				 logicWorld, "World", 0, false, 0, m_check_overlaps);
+  logicWorld->SetVisAttributes(G4VisAttributes::GetInvisible());
 
-  logicWorld->SetVisAttributes(G4VisAttributes::Invisible);
-
-  // ~~~~~~ Magnetic Field ~~~~~~~~~~~~~
   MakeField();
-  
-  // ~~~~~~ Target  ~~~~~~~~~~~~~~~
+
 #if 1
-  ConstructTarget(physiWorld); // T.Gogami, 13July2015
+  ConstructTarget(physiWorld);
 #endif
 
-  // ~~~~~~ S-2S magnets ~~~~~~~~~~~~~~~
 #if 1
   ConstructQ1(physiWorld);
   ConstructQ2(physiWorld);
   ConstructD1(physiWorld);
-#endif  
+#endif
 
-  // ~~~~~ S-2S position detectors ~~~~~
 #if 1
   MakePositionDetector(physiWorld);
 #endif
-  
-  // ~~~~~ S-2S Detectors ~~~~~~~~~~~~~~
+
 #if 1
   MakeTOFCounter(physiWorld);
   MakeAerogelCounter(physiWorld);
   MakeWaterCounter(physiWorld);
 #endif
-  
-  // ~~~~~~ Slits ~~~~~~~~~
+
 #if 1
   MakeSlits(physiWorld);
 #endif
 
-  // Always return the physical World
   return physiWorld;
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//_____________________________________________________________________________
 void S2SDetectorConstruction::MakeField()
 {
-
-  ConfMan *confMan = ConfMan::GetConfManager();
-  G4cout<<" Called ConfMan in MakeField."<<G4endl;
-  //S2SField *field = new S2SField(confMan->GetFieldMap());
-  //S2SField *field = new S2SField(confMan->GetFieldMap(),1.0); // No scaling factor
-  //S2SField *field = new S2SField(confMan->GetFieldMap(),0.95); // with factor 0.95
-  //S2SField *field = new S2SField(confMan->GetFieldMap(),0.93); // with factor 0.93
-  //S2SField *field = new S2SField(confMan->GetFieldMap(),0.90); // with factor 0.90
-  // S2SField *field = new S2SField(confMan->GetFieldMap(),
-  // 				 confMan->GetMagScale() );
-  S2SField *field = new S2SField(confMan->GetFieldMap(),
-   				 confMan->GetMagScaleQ1(),
-				 confMan->GetMagScaleQ2(),
-				 confMan->GetMagScale());
-  G4cout<<" Called S2SField in Makefield."<<G4endl;
-
-  G4FieldManager *fieldManager = G4TransportationManager::GetTransportationManager()->GetFieldManager();
+  S2SField *field = new S2SField(confMan.GetFieldMap(),
+   				 confMan.GetMagScaleQ1(),
+				 confMan.GetMagScaleQ2(),
+				 confMan.GetMagScale());
+  auto fieldManager =
+    G4TransportationManager::GetTransportationManager()->GetFieldManager();
   fieldManager->SetDetectorField(field);
   fieldManager->CreateChordFinder(field);
 
-//   G4Mag_UsualEqRhs* fEquation = new G4Mag_UsualEqRhs(field);
-//   G4MagIntegratorStepper *pStepper = new G4SimpleRunge(fEquation);
-//   G4ChordFinder *pChordFinder = new G4ChordFinder(field, 1.0E-3*mm, pStepper);
-//   fieldManager->SetChordFinder(pChordFinder);
+  // G4Mag_UsualEqRhs* fEquation = new G4Mag_UsualEqRhs(field);
+  // G4MagIntegratorStepper *pStepper = new G4SimpleRunge(fEquation);
+  // G4ChordFinder *pChordFinder = new G4ChordFinder(field, 1.0E-3*mm, pStepper);
+  // fieldManager->SetChordFinder(pChordFinder);
 
-  fieldManager->GetChordFinder()->SetDeltaChord( 1.0E-3*mm);
+  fieldManager->GetChordFinder()->SetDeltaChord(1.e-3*mm);
   //fieldManager->SetDeltaIntersection( 1.0E-6*mm );
   //fieldManager->SetDeltaOneStep( 1.0E-4*mm );
   //fieldManager->SetMaximumEpsilonStep( 1.0E-3 );
@@ -180,50 +152,50 @@ void S2SDetectorConstruction::ConstructTarget(G4VPhysicalVolume *pMother)
 
   G4double x, y, z;
   G4Material *TargetMater;
-  G4double tposz = confman->GetTargetPositionZ() * mm; // z-position of the target
-  G4double tthickness = confman->GetTThickness(); // Thickness in g/cm^{2}
-  
-  int TargetID   = confman->GetTargetID(); // Target ID
+  G4double tposz = confMan.GetTargetPositionZ() * mm; // z-position of the target
+  G4double tthickness = confMan.GetTThickness(); // Thickness in g/cm^{2}
+
+  int TargetID   = confMan.GetTargetID(); // Target ID
   if(TargetID == 12){
-    TargetMater = mList_->C;
+    TargetMater = m_material_list->C;
     tthickness = tthickness / 1.8 *cm; // Taken from "TaterialList.cc"
   }
   else if(TargetID == 7){
-    TargetMater = mList_->Li;
+    TargetMater = m_material_list->Li;
     tthickness = tthickness / 0.534 *cm; // Taken from "TaterialList.cc"
   }
   else if(TargetID == 10){
-    TargetMater = mList_->B10;
+    TargetMater = m_material_list->B10;
     tthickness = tthickness / 1.42 *cm; // Taken from "TaterialList.cc"
   }
   else if(TargetID == 28){
-    TargetMater = mList_->Si;
+    TargetMater = m_material_list->Si;
     tthickness = tthickness / 2.33 *cm; // Taken from "TaterialList.cc"
   }
   else if(TargetID == 100){
-    TargetMater = mList_->Scin;
+    TargetMater = m_material_list->Scin;
     tthickness = tthickness / 1.032 *cm; // Taken from "MaterialList.cc"
   }
   else {
-    G4cout << " Sorry, TargetID: " << TargetID 
+    G4cout << " Sorry, TargetID: " << TargetID
       //<< " is not defined. So 12C will be used. " << G4endl;
       << " is not defined. So no target (vacuum) will be used. " << G4endl;
-    //TargetMater = mList_->C;
-    TargetMater = mList_->Vacuum;
+    //TargetMater = m_material_list->C;
+    TargetMater = m_material_list->Vacuum;
     tthickness = tthickness / 1.8 *cm; // Taken from "TaterialList.cc"
   }
-  
+
   G4Box *TargetBox = new G4Box("TargetBox",
-			       //240.0*mm/2.0, // Beam direction 
-			       tthickness / 2.0, // Beam direction 
-			       50.0*mm / 2.0,    // Horizontal direction 
+			       //240.0*mm/2.0, // Beam direction
+			       tthickness / 2.0, // Beam direction
+			       50.0*mm / 2.0,    // Horizontal direction
 			       50.0*mm / 2.0);   // Vertical direction
   G4LogicalVolume *logTarget = new G4LogicalVolume(TargetBox, TargetMater, "logTarget");
 
   G4RotationMatrix rotTarget; // No rotation for the target.
   //rotTarget.rotateZ(90*deg);
   //rotTarget.rotateY(90*deg);
-  
+
   x = -(rhoD*tan(bendAngleD/2.*Deg2Rad) // From Dipole center to dipole entrance
 	+ driftL2 // Diple entrance to Q2 exit
 	+ Q2z     // Q2
@@ -234,7 +206,7 @@ void S2SDetectorConstruction::ConstructTarget(G4VPhysicalVolume *pMother)
   z = 0.0 * m;
   G4ThreeVector gloPosTarget(x, y, z);
 
-  //  G4VPhysicalVolume* physQ1Pole = 
+  //  G4VPhysicalVolume* physQ1Pole =
   new G4PVPlacement( G4Transform3D(rotTarget,gloPosTarget),
 		     "physTarget",
 		     logTarget,
@@ -242,26 +214,26 @@ void S2SDetectorConstruction::ConstructTarget(G4VPhysicalVolume *pMother)
 		     false,
 		     0,
 		     m_check_overlaps );
-  
-  logTarget->SetVisAttributes(/*G4VisAttributes::Invisible);*/G4VisAttributes(true,G4Colour(1.0, 0.3, 0.8)));
+
+  logTarget->SetVisAttributes(/*G4VisAttributes::GetInvisible());*/G4VisAttributes(true,G4Colour(1.0, 0.3, 0.8)));
 
 }
 
 
 
-//////////
+//_____________________________________________________________________________//_____________________________________________________________________________
 /// Q1 ///
-//////////
+//_____________________________________________________________________________//_____________________________________________________________________________
 
 void S2SDetectorConstruction::ConstructQ1(G4VPhysicalVolume *pMother)
 {
 
   G4double x, y, z;
-  G4Material *PoleMater = mList_->Fe;
-  //G4Material *Q1GapMater = mList_->Vacuum;
-  //G4Material *Q1GapMater = mList_->Air;
-  G4Material *Q1GapMater = mList_->HeGas;
-  
+  G4Material *PoleMater = m_material_list->Fe;
+  //G4Material *Q1GapMater = m_material_list->Vacuum;
+  //G4Material *Q1GapMater = m_material_list->Air;
+  G4Material *Q1GapMater = m_material_list->HeGas;
+
   G4double tmpB1 = 193.75*mm;
   G4double tmpPoleR = 180.84*mm;
   G4double Q1a0 = 155*mm;
@@ -272,16 +244,16 @@ void S2SDetectorConstruction::ConstructQ1(G4VPhysicalVolume *pMother)
 
   G4Box *solQ1Box = new G4Box("solidQ1Pole", 2400*mm/2, 2400*mm/2, 880*mm/2);
   G4Box *tmpQ1Box = new G4Box("tmp",2000*mm/2, 2000*mm/2, 2000*mm/2);
-  G4SubtractionSolid *solQ1Pole1 
+  G4SubtractionSolid *solQ1Pole1
     = new G4SubtractionSolid("tmp", solQ1Box, tmpQ1Box,
 			     G4Transform3D(rotQ1Box, G4ThreeVector(Q1Box3V,Q1Box3V,0)));
-  G4SubtractionSolid *solQ1Pole2 
+  G4SubtractionSolid *solQ1Pole2
     = new G4SubtractionSolid("tmp", solQ1Pole1, tmpQ1Box,
 			     G4Transform3D(rotQ1Box, G4ThreeVector(-Q1Box3V,Q1Box3V,0)));
-  G4SubtractionSolid *solQ1Pole3 
+  G4SubtractionSolid *solQ1Pole3
     = new G4SubtractionSolid("tmp", solQ1Pole2, tmpQ1Box,
 			     G4Transform3D(rotQ1Box, G4ThreeVector(Q1Box3V,-Q1Box3V,0)));
-  G4SubtractionSolid *solQ1Pole4 
+  G4SubtractionSolid *solQ1Pole4
     = new G4SubtractionSolid("tmp", solQ1Pole3, tmpQ1Box,
 			     G4Transform3D(rotQ1Box, G4ThreeVector(-Q1Box3V,-Q1Box3V,0)));
 
@@ -291,16 +263,16 @@ void S2SDetectorConstruction::ConstructQ1(G4VPhysicalVolume *pMother)
 				 0*degree, 360*degree );
 
   G4double tmpPoleCent = (tmpPoleR+Q1a0)/sqrt(2);
-  G4SubtractionSolid *tmpSolGap1 
+  G4SubtractionSolid *tmpSolGap1
     = new G4SubtractionSolid("tmp", tmpBox1, tmpSolPole,
 			     0, G4ThreeVector(+tmpPoleCent, +tmpPoleCent, 0) );
-  G4SubtractionSolid *tmpSolGap2 
+  G4SubtractionSolid *tmpSolGap2
     = new G4SubtractionSolid("tmp", tmpSolGap1, tmpSolPole,
 			     0, G4ThreeVector(-tmpPoleCent, +tmpPoleCent, 0) );
-  G4SubtractionSolid *tmpSolGap3 
+  G4SubtractionSolid *tmpSolGap3
     = new G4SubtractionSolid("tmp", tmpSolGap2, tmpSolPole,
 			     0, G4ThreeVector(-tmpPoleCent, -tmpPoleCent, 0) );
-  G4SubtractionSolid *tmpSolGap4 
+  G4SubtractionSolid *tmpSolGap4
     = new G4SubtractionSolid("tmp", tmpSolGap3, tmpSolPole,
 			     0, G4ThreeVector(+tmpPoleCent, -tmpPoleCent, 0) );
 
@@ -308,60 +280,60 @@ void S2SDetectorConstruction::ConstructQ1(G4VPhysicalVolume *pMother)
   G4RotationMatrix tmpGapRot1;
   tmpGapRot1.rotateX(90.*deg);
 
-  G4UnionSolid *tmpSolGap5 
-    = new G4UnionSolid("tmp", tmpSolGap4, tmpSolTrd, 
+  G4UnionSolid *tmpSolGap5
+    = new G4UnionSolid("tmp", tmpSolGap4, tmpSolTrd,
 		       G4Transform3D(tmpGapRot1,G4ThreeVector(0,(257+193.75)/2,0)));
   tmpGapRot1.rotateZ(90*deg);
-  G4UnionSolid *tmpSolGap6 
-    = new G4UnionSolid("tmp", tmpSolGap5, tmpSolTrd, 
+  G4UnionSolid *tmpSolGap6
+    = new G4UnionSolid("tmp", tmpSolGap5, tmpSolTrd,
 		       G4Transform3D(tmpGapRot1,G4ThreeVector(-(257+193.75)/2,0,0)));
   tmpGapRot1.rotateZ(90*deg);
-  G4UnionSolid *tmpSolGap7 
-    = new G4UnionSolid("tmp", tmpSolGap6, tmpSolTrd, 
+  G4UnionSolid *tmpSolGap7
+    = new G4UnionSolid("tmp", tmpSolGap6, tmpSolTrd,
 		       G4Transform3D(tmpGapRot1,G4ThreeVector(0,-(257+193.75)/2,0)));
   tmpGapRot1.rotateZ(90*deg);
-  G4UnionSolid *tmpSolGap8 
-    = new G4UnionSolid("tmp", tmpSolGap7, tmpSolTrd, 
+  G4UnionSolid *tmpSolGap8
+    = new G4UnionSolid("tmp", tmpSolGap7, tmpSolTrd,
 		       G4Transform3D(tmpGapRot1,G4ThreeVector((257+193.75)/2,0,0)));
 
   G4Box *tmpBox2 = new G4Box("tmp", 37., 11./2, 882./2);
   G4RotationMatrix tmpGapRot2;
 
-  G4UnionSolid *tmpSolGap9 
-    = new G4UnionSolid("tmp", tmpSolGap8, tmpBox2, 
+  G4UnionSolid *tmpSolGap9
+    = new G4UnionSolid("tmp", tmpSolGap8, tmpBox2,
 		       G4Transform3D(tmpGapRot2,G4ThreeVector(0,5.5+257,0)));
   tmpGapRot2.rotateZ(90.*deg);
-  G4UnionSolid *tmpSolGap10 
-    = new G4UnionSolid("tmp", tmpSolGap9, tmpBox2, 
+  G4UnionSolid *tmpSolGap10
+    = new G4UnionSolid("tmp", tmpSolGap9, tmpBox2,
 		       G4Transform3D(tmpGapRot2,G4ThreeVector(-5.5-257,0,0)));
   tmpGapRot2.rotateZ(90.*deg);
-  G4UnionSolid *tmpSolGap11 
-    = new G4UnionSolid("tmp", tmpSolGap10, tmpBox2, 
+  G4UnionSolid *tmpSolGap11
+    = new G4UnionSolid("tmp", tmpSolGap10, tmpBox2,
 		       G4Transform3D(tmpGapRot2,G4ThreeVector(0,-5.5-257,0)));
   tmpGapRot2.rotateZ(90.*deg);
-  G4UnionSolid *tmpSolGap12 
-    = new G4UnionSolid("tmp", tmpSolGap11, tmpBox2, 
+  G4UnionSolid *tmpSolGap12
+    = new G4UnionSolid("tmp", tmpSolGap11, tmpBox2,
 		       G4Transform3D(tmpGapRot2,G4ThreeVector(5.5+257,0,0)));
 
   //  G4SubtractionSolid *solQ1Pole5 = new G4SubtractionSolid("solQ1Pole", solQ1Pole4, tmpSolPolePart12);
 
-  /////////////////////////////////////////////////////////
-  ////////////
+  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//
+  //_____________________________________________________________________________//_____________________________________________________________________________//
 
   //  G4Trd *tmpSolTrd = new G4Trd("tmp", 37, 62, 882/2., 882/2., (257-193.75)/2);
   //  G4RotationMatrix tmpGapRot1;
   tmpGapRot1.rotateX(90.*deg);
 
-  G4SubtractionSolid *tmpSolPolePart5 = new G4SubtractionSolid("tmp", solQ1Pole4, tmpSolTrd, 
+  G4SubtractionSolid *tmpSolPolePart5 = new G4SubtractionSolid("tmp", solQ1Pole4, tmpSolTrd,
 					      G4Transform3D(tmpGapRot1,G4ThreeVector(0,(257+193.75)/2,0)));
   tmpGapRot1.rotateZ(90*deg);
-  G4SubtractionSolid *tmpSolPolePart6 = new G4SubtractionSolid("tmp", tmpSolPolePart5, tmpSolTrd, 
+  G4SubtractionSolid *tmpSolPolePart6 = new G4SubtractionSolid("tmp", tmpSolPolePart5, tmpSolTrd,
 					      G4Transform3D(tmpGapRot1,G4ThreeVector(-(257+193.75)/2,0,0)));
   tmpGapRot1.rotateZ(90*deg);
-  G4SubtractionSolid *tmpSolPolePart7 = new G4SubtractionSolid("tmp", tmpSolPolePart6, tmpSolTrd, 
+  G4SubtractionSolid *tmpSolPolePart7 = new G4SubtractionSolid("tmp", tmpSolPolePart6, tmpSolTrd,
 					      G4Transform3D(tmpGapRot1,G4ThreeVector(0,-(257+193.75)/2,0)));
   tmpGapRot1.rotateZ(90*deg);
-  G4SubtractionSolid *tmpSolPolePart8 = new G4SubtractionSolid("tmp", tmpSolPolePart7, tmpSolTrd, 
+  G4SubtractionSolid *tmpSolPolePart8 = new G4SubtractionSolid("tmp", tmpSolPolePart7, tmpSolTrd,
 					      G4Transform3D(tmpGapRot1,G4ThreeVector((257+193.75)/2,0,0)));
 
 
@@ -369,22 +341,22 @@ void S2SDetectorConstruction::ConstructQ1(G4VPhysicalVolume *pMother)
   //  G4RotationMatrix tmpGapRot2;
   tmpGapRot2.rotateZ(90.*deg);
 
-  G4SubtractionSolid *tmpSolPolePart9 = new G4SubtractionSolid("tmp", tmpSolPolePart8, tmpBox2, 
+  G4SubtractionSolid *tmpSolPolePart9 = new G4SubtractionSolid("tmp", tmpSolPolePart8, tmpBox2,
 					      G4Transform3D(tmpGapRot2,G4ThreeVector(0,5.5+257,0)));
   tmpGapRot2.rotateZ(90.*deg);
-  G4SubtractionSolid *tmpSolPolePart10 = new G4SubtractionSolid("tmp", tmpSolPolePart9, tmpBox2, 
+  G4SubtractionSolid *tmpSolPolePart10 = new G4SubtractionSolid("tmp", tmpSolPolePart9, tmpBox2,
 					       G4Transform3D(tmpGapRot2,G4ThreeVector(-5.5-257,0,0)));
   tmpGapRot2.rotateZ(90.*deg);
-  G4SubtractionSolid *tmpSolPolePart11 = new G4SubtractionSolid("tmp", tmpSolPolePart10, tmpBox2, 
+  G4SubtractionSolid *tmpSolPolePart11 = new G4SubtractionSolid("tmp", tmpSolPolePart10, tmpBox2,
 					      G4Transform3D(tmpGapRot2,G4ThreeVector(0,-5.5-257,0)));
   tmpGapRot2.rotateZ(90.*deg);
-  G4SubtractionSolid *tmpSolPolePart12 = new G4SubtractionSolid("tmp", tmpSolPolePart11, tmpBox2, 
+  G4SubtractionSolid *tmpSolPolePart12 = new G4SubtractionSolid("tmp", tmpSolPolePart11, tmpBox2,
 					       G4Transform3D(tmpGapRot2,G4ThreeVector(5.5+257,0,0)));
 
   G4SubtractionSolid *solQ1Pole5 = new G4SubtractionSolid("solQ1Pole", solQ1Pole4, tmpBox1);
   //  G4SubtractionSolid *solQ1Pole5 = new G4SubtractionSolid("solQ1Pole", tmpSolPolePart12, tmpSolGap4);
-  //////////////
-  /////////////////////////////////////////////////////////
+  //_____________________________________________________________________________//_____________________________________________________________________________////
+  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//
 
   G4LogicalVolume *logQ1Pole = new G4LogicalVolume(solQ1Pole5, PoleMater, "logQ1Pole");
   G4LogicalVolume *logQ1Gap = new G4LogicalVolume(tmpSolGap12, Q1GapMater, "logQ1Gap");
@@ -398,30 +370,30 @@ void S2SDetectorConstruction::ConstructQ1(G4VPhysicalVolume *pMother)
   z = 0.*m;
   G4ThreeVector gloPosQ1(x, y, z);
 
-  //  G4VPhysicalVolume* physQ1Pole = 
+  //  G4VPhysicalVolume* physQ1Pole =
   new G4PVPlacement( G4Transform3D(rotQ1Pole,gloPosQ1),
 		     "physQ1Pole", logQ1Pole, pMother, false, 0, m_check_overlaps );
-  //  G4VPhysicalVolume* physQ1Gap = 
+  //  G4VPhysicalVolume* physQ1Gap =
   new G4PVPlacement( G4Transform3D(rotQ1Pole,gloPosQ1),
 		     "physQ1Gap", logQ1Gap, pMother, false, 0, m_check_overlaps );
-  
-  logQ1Pole->SetVisAttributes(/*G4VisAttributes::Invisible);*/G4VisAttributes(true,G4Colour(0.0, 1.0, 0.0)));
-  logQ1Gap->SetVisAttributes(G4VisAttributes::Invisible);//(true,G4Colour(1.0, 1.0, 0.0)));
+
+  logQ1Pole->SetVisAttributes(/*G4VisAttributes::GetInvisible());*/G4VisAttributes(true,G4Colour(0.0, 1.0, 0.0)));
+  logQ1Gap->SetVisAttributes(G4VisAttributes::GetInvisible());//(true,G4Colour(1.0, 1.0, 0.0)));
 
 }
 
-//////////
+//_____________________________________________________________________________//_____________________________________________________________________________
 /// Q2 ///
-//////////
+//_____________________________________________________________________________//_____________________________________________________________________________
 
 void S2SDetectorConstruction::ConstructQ2(G4VPhysicalVolume *pMother)
 {
 
   G4double x, y, z;
-  G4Material *PoleMater = mList_->Fe;
-  //G4Material *Q2GapMater = mList_->Vacuum;//HeGas;
-  //G4Material *Q2GapMater = mList_->Air;//HeGas;
-  G4Material *Q2GapMater = mList_->HeGas;
+  G4Material *PoleMater = m_material_list->Fe;
+  //G4Material *Q2GapMater = m_material_list->Vacuum;//HeGas;
+  //G4Material *Q2GapMater = m_material_list->Air;//HeGas;
+  G4Material *Q2GapMater = m_material_list->HeGas;
 
   G4double tmpB2=243.61*mm;
   G4double tmpPoleR2 = 219.28*mm;
@@ -453,10 +425,10 @@ void S2SDetectorConstruction::ConstructQ2(G4VPhysicalVolume *pMother)
   G4RotationMatrix tmpGapRot1Y;
   tmpGapRot1Y.rotateX(90.*deg);
 
-  G4UnionSolid *tmpSolGap5 = new G4UnionSolid("tmp", tmpSolGap4, tmpSolTrdY, 
+  G4UnionSolid *tmpSolGap5 = new G4UnionSolid("tmp", tmpSolGap4, tmpSolTrdY,
 					      G4Transform3D(tmpGapRot1Y,G4ThreeVector(0,(249.85+243.61)/2,0)));
   tmpGapRot1Y.rotateZ(180*deg);
-  G4UnionSolid *tmpSolGap6 = new G4UnionSolid("tmp", tmpSolGap5, tmpSolTrdY, 
+  G4UnionSolid *tmpSolGap6 = new G4UnionSolid("tmp", tmpSolGap5, tmpSolTrdY,
 					      G4Transform3D(tmpGapRot1Y,G4ThreeVector(0,-(249.85+243.61)/2,0)));
 
   //G4Trd *tmpSolTrdX = new G4Trd("tmp", 42.6316, 66.5, 542/2., 542/2., (380-243.61)/2);
@@ -465,10 +437,10 @@ void S2SDetectorConstruction::ConstructQ2(G4VPhysicalVolume *pMother)
   tmpGapRot1X.rotateX(90.*deg);
 
   tmpGapRot1X.rotateZ(-90.*deg);
-  G4UnionSolid *tmpSolGap7 = new G4UnionSolid("tmp", tmpSolGap6, tmpSolTrdX, 
+  G4UnionSolid *tmpSolGap7 = new G4UnionSolid("tmp", tmpSolGap6, tmpSolTrdX,
 					      G4Transform3D(tmpGapRot1X,G4ThreeVector((380+243.61)/2,0,0)));
   tmpGapRot1X.rotateZ(180*deg);
-  G4UnionSolid *tmpSolGap8 = new G4UnionSolid("tmp", tmpSolGap7, tmpSolTrdX, 
+  G4UnionSolid *tmpSolGap8 = new G4UnionSolid("tmp", tmpSolGap7, tmpSolTrdX,
 					      G4Transform3D(tmpGapRot1X,G4ThreeVector(-(380+243.61)/2,0,0)));
 
   //G4Trd *tmpSolTrdX2 = new G4Trd("tmp", 33, 42.6316, 542/2., 542/2., (465.85-380)/2);
@@ -477,10 +449,10 @@ void S2SDetectorConstruction::ConstructQ2(G4VPhysicalVolume *pMother)
   tmpGapRot1X2.rotateX(90.*deg);
 
   tmpGapRot1X2.rotateZ(-90.*deg);
-  G4UnionSolid *tmpSolGap9 = new G4UnionSolid("tmp", tmpSolGap8, tmpSolTrdX2, 
+  G4UnionSolid *tmpSolGap9 = new G4UnionSolid("tmp", tmpSolGap8, tmpSolTrdX2,
 					      G4Transform3D(tmpGapRot1X2,G4ThreeVector((465.85+380)/2,0,0)));
   tmpGapRot1X2.rotateZ(180*deg);
-  G4UnionSolid *tmpSolGap10 = new G4UnionSolid("tmp", tmpSolGap9, tmpSolTrdX2, 
+  G4UnionSolid *tmpSolGap10 = new G4UnionSolid("tmp", tmpSolGap9, tmpSolTrdX2,
 					      G4Transform3D(tmpGapRot1X2,G4ThreeVector(-(465.85+380)/2,0,0)));
 
   ///Gap Box///
@@ -488,19 +460,19 @@ void S2SDetectorConstruction::ConstructQ2(G4VPhysicalVolume *pMother)
   G4Box *tmpBox2Y = new G4Box("tmp", 53., (303-249.85)/2, 502./2.);
   G4RotationMatrix tmpGapRot2Y;
 
-  G4UnionSolid *tmpSolGap11 = new G4UnionSolid("tmp", tmpSolGap10, tmpBox2Y, 
+  G4UnionSolid *tmpSolGap11 = new G4UnionSolid("tmp", tmpSolGap10, tmpBox2Y,
 					      G4Transform3D(tmpGapRot2Y,G4ThreeVector(0,(303+249.85)/2,0)));
   tmpGapRot2Y.rotateZ(180.*deg);
-  G4UnionSolid *tmpSolGap12 = new G4UnionSolid("tmp", tmpSolGap11, tmpBox2Y, 
+  G4UnionSolid *tmpSolGap12 = new G4UnionSolid("tmp", tmpSolGap11, tmpBox2Y,
 					       G4Transform3D(tmpGapRot2Y,G4ThreeVector(0,-(303+249.85)/2,0)));
 
   //G4Box *tmpBox2X = new G4Box("tmp", (593-465.85)/2, 33., 542./2);
   G4Box *tmpBox2X = new G4Box("tmp", (593-465.85)/2, 33., 502./2.0);
   G4RotationMatrix tmpGapRot2X;
 
-  G4UnionSolid *tmpSolGap13 = new G4UnionSolid("tmp", tmpSolGap12, tmpBox2X, 
+  G4UnionSolid *tmpSolGap13 = new G4UnionSolid("tmp", tmpSolGap12, tmpBox2X,
 					       G4Transform3D(tmpGapRot2X,G4ThreeVector((593+465.85)/2,0,0)));
-  G4UnionSolid *tmpSolGap14 = new G4UnionSolid("tmp", tmpSolGap13, tmpBox2X, 
+  G4UnionSolid *tmpSolGap14 = new G4UnionSolid("tmp", tmpSolGap13, tmpBox2X,
 					       G4Transform3D(tmpGapRot2X,G4ThreeVector(-(593+465.85)/2,0,0)));
 
   //  G4SubtractionSolid *solQ2Pole5 = new G4SubtractionSolid("solQ2Pole", solQ2Box, tmpSolGap14);
@@ -517,16 +489,16 @@ void S2SDetectorConstruction::ConstructQ2(G4VPhysicalVolume *pMother)
   z = 0.*m;
   G4ThreeVector gloPosQ2(x, y, z);
 
-  //  G4VPhysicalVolume* physQ2Pole = 
+  //  G4VPhysicalVolume* physQ2Pole =
     new G4PVPlacement( G4Transform3D(rotQ2Pole,gloPosQ2),
 		       "physQ2Pole", logQ2Pole, pMother, false, 0, m_check_overlaps );
-  //  G4VPhysicalVolume* physQ2Gap = 
+  //  G4VPhysicalVolume* physQ2Gap =
     new G4PVPlacement( G4Transform3D(rotQ2Pole,gloPosQ2),
  		       "physQ2Gap", logQ2Gap, pMother, false, 0, m_check_overlaps );
-    
-    logQ2Pole->SetVisAttributes(/*G4VisAttributes::Invisible);/*/G4VisAttributes(true,G4Colour(0.0, 1.0, 0.0)));
-    //logQ2Pole->SetVisAttributes(G4VisAttributes::Invisible);
-    logQ2Gap->SetVisAttributes(G4VisAttributes::Invisible);//(true,G4Colour(1.0, 1.0, 0.0)));
+
+    logQ2Pole->SetVisAttributes(/*G4VisAttributes::GetInvisible());/*/G4VisAttributes(true,G4Colour(0.0, 1.0, 0.0)));
+    //logQ2Pole->SetVisAttributes(G4VisAttributes::GetInvisible());
+    logQ2Gap->SetVisAttributes(G4VisAttributes::GetInvisible());//(true,G4Colour(1.0, 1.0, 0.0)));
     //logQ2Gap->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 1.0, 0.0)));
 
 }
@@ -534,33 +506,33 @@ void S2SDetectorConstruction::ConstructQ2(G4VPhysicalVolume *pMother)
 
 void S2SDetectorConstruction::ConstructD1(G4VPhysicalVolume *pMother)
 {
-  
+
   G4double x, y, z;
-  G4Material *PoleMater = mList_->Fe;
-  //G4Material *D1GapMater = mList_->Vacuum;//HeGas;
-  G4Material *D1GapMater = mList_->HeGas;
-  
+  G4Material *PoleMater = m_material_list->Fe;
+  //G4Material *D1GapMater = m_material_list->Vacuum;//HeGas;
+  G4Material *D1GapMater = m_material_list->HeGas;
+
   // D magnet surface
-  G4Tubs *solD1Tub = new G4Tubs( "solD1Tub", 
+  G4Tubs *solD1Tub = new G4Tubs( "solD1Tub",
 				 0,  Dfr2, DfHalfGap,
 				 0.*degree, bendAngleDf*degree );
   // D magnet
-  G4Tubs *solD1Gap = new G4Tubs( "solD1Gap", 
+  G4Tubs *solD1Gap = new G4Tubs( "solD1Gap",
 				 Dr1,  Dr2,  DHalfGap,
 				 0.*degree, bendAngleD*degree );
-  
+
   G4Box *tmpD1 = new G4Box("tmp", 1000, 1000, 1000);
   G4RotationMatrix tmpD1rot;
   tmpD1rot.rotateZ(35*deg);
   G4double tmpD1r = 1380-1000;
   G4ThreeVector tmpD13Y(tmpD1r*cos(35*deg),tmpD1r*sin(35*deg),0);
-  
+
   // D magnet yoke
-  G4SubtractionSolid *tmpsolD1Pole 
+  G4SubtractionSolid *tmpsolD1Pole
     = new G4SubtractionSolid( "tmp",
 			      solD1Tub,
 			      solD1Gap );
-  G4SubtractionSolid *solD1Pole 
+  G4SubtractionSolid *solD1Pole
     = new G4SubtractionSolid( "solidDy",
 			      tmpsolD1Pole,
 			      tmpD1,
@@ -571,28 +543,28 @@ void S2SDetectorConstruction::ConstructD1(G4VPhysicalVolume *pMother)
   G4LogicalVolume *logD1Pole = new G4LogicalVolume(solD1Pole,
 						   PoleMater,
 						   "logD1Pole");
-  
+
   G4RotationMatrix rotD1;
   rotD1.rotateZ(-90.*deg);
-  
+
   x = -rhoD/cos(bendAngleD/2.*degree) * sin((bendAngleD/2.)*degree);
   y = rhoD/cos(bendAngleD/2.*degree) * cos((bendAngleD/2.)*degree);
   z = 0.*m;
   G4ThreeVector gloPosD1(x,y,z);
 
-  //G4VPhysicalVolume* physD1Pole = 
+  //G4VPhysicalVolume* physD1Pole =
   new G4PVPlacement( G4Transform3D(rotD1, gloPosD1),
 		     "physD1Pole", logD1Pole, pMother, false, 0, m_check_overlaps );
-  //G4VPhysicalVolume* physD1Gap = 
+  //G4VPhysicalVolume* physD1Gap =
   new G4PVPlacement( G4Transform3D(rotD1, gloPosD1),
 		     "physD1Gap", logD1Gap, pMother/*physD1Pole*/, false, 0, m_check_overlaps );
-  
+
   // ~~~~~ D magnet endguard ~~~~~~~
   G4Box *solEnd1 = new G4Box("solEnd1",1880*mm/2.,1600*mm/2.,76*mm/2.);
   G4Box *solEnd2 = new G4Box("solEnd2",810*mm/2.,330*mm/2.,80*mm/2.);
   G4SubtractionSolid *solEnd = new G4SubtractionSolid("solEnd", solEnd1, solEnd2);
 
-  G4LogicalVolume *logEnd = new G4LogicalVolume(solEnd, mList_->Fe, "logEnd");
+  G4LogicalVolume *logEnd = new G4LogicalVolume(solEnd, m_material_list->Fe, "logEnd");
 
   x = rhoD*tan(bendAngleD/2.*Deg2Rad) + 240*mm + 76*mm/2.;
   y = 0.*m;
@@ -604,7 +576,7 @@ void S2SDetectorConstruction::ConstructD1(G4VPhysicalVolume *pMother)
   rotEnd.rotateX(90.*deg);
   rotEnd.rotateZ(-20.*deg);
 
-  //  G4VPhysicalVolume *physEnd = 
+  //  G4VPhysicalVolume *physEnd =
   new G4PVPlacement(G4Transform3D(rotEnd, gloPosEnd),
 		    "physEnd", logEnd, pMother, false, 0, m_check_overlaps);
   logD1Pole->SetVisAttributes(G4VisAttributes(true,G4Colour(0.0, 0.5, 1.0)));
@@ -612,7 +584,7 @@ void S2SDetectorConstruction::ConstructD1(G4VPhysicalVolume *pMother)
   logEnd->SetVisAttributes(G4VisAttributes(true,G4Colour(0.0, 0.0, 1.0)));
   G4UserLimits* D1Limit = new G4UserLimits(3.0 * mm);
   logD1Gap->SetUserLimits(D1Limit);
-  
+
 }
 
 
@@ -621,31 +593,31 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();
   DCSD *dcSD = new DCSD("BcSD");
   SDMan->AddNewDetector(dcSD);
-  
+
   //  bool flagInvisible = false;
   char name[100];
 
   const DCGeomMan & geomMan=DCGeomMan::GetInstance();
-  
+
   // ~~~~~~~ Material ~~~~~~~~~
   G4bool matflag = true; // Material flag for Chambers
   //G4bool matflag = false; // Material flag for Chambers
   G4bool heflag = true; // He bag flag
   //G4bool heflag = false; // He bag flag
-  
-  
-  G4Material *DCuAreaMater = mList_->Ar80IsoButane20Gas;
-  G4Material *DCAreaMater = mList_->Ar50Ethane50Gas;
-  G4Material *DCLayerMater = mList_->Vacuum;//Ar80IsoButane20Gas;
-  G4Material *DCuboxMater  = mList_->Mylar;
-  G4Material *DCboxMater  = mList_->Mylar;
+
+
+  G4Material *DCuAreaMater = m_material_list->Ar80IsoButane20Gas;
+  G4Material *DCAreaMater = m_material_list->Ar50Ethane50Gas;
+  G4Material *DCLayerMater = m_material_list->Vacuum;//Ar80IsoButane20Gas;
+  G4Material *DCuboxMater  = m_material_list->Mylar;
+  G4Material *DCboxMater  = m_material_list->Mylar;
   if(matflag==false){
-    DCuAreaMater = mList_->Vacuum;//Ar80IsoButane20Gas;
-    DCAreaMater = mList_->Vacuum;//Ar50Ethane50Gas;
-    DCuboxMater  = mList_->Vacuum;//Mylar;
-    DCboxMater  = mList_->Vacuum;//Mylar;
+    DCuAreaMater = m_material_list->Vacuum;//Ar80IsoButane20Gas;
+    DCAreaMater = m_material_list->Vacuum;//Ar50Ethane50Gas;
+    DCuboxMater  = m_material_list->Vacuum;//Mylar;
+    DCboxMater  = m_material_list->Vacuum;//Mylar;
   }
-  
+
 
   G4double DCuAreaX = 1000.0;//mm
   G4double DCuAreaY = 1000.0;//mm
@@ -654,7 +626,7 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
   G4double DCuBoxY = 1100.0;//mm
   G4double DCuBoxZ = 101.2;//mm
 
-  ///////////////////// BC1(x,x,v,v,u,u)
+  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________/ BC1(x,x,v,v,u,u)
   G4Box *solidBc1Box =
     new G4Box( "BC1Box", DCuBoxZ/2.0*mm, DCuBoxX/2.0*mm, DCuBoxY/2.0*mm );
   G4Box *solidBc1Area =
@@ -695,7 +667,7 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 						       false,
 						       0,
 						       m_check_overlaps );
-  G4VPhysicalVolume *physBc1Frame = new G4PVPlacement( 0, 
+  G4VPhysicalVolume *physBc1Frame = new G4PVPlacement( 0,
 						       //"BC1Box", logBc1Box, pMother, false, 0 );
 						       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
 						       "BC1Frame",
@@ -713,7 +685,7 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 						      false,
 						      0,
 						      m_check_overlaps );
-  
+
 
   // G4String Bc1Name[6] = {"BC1-v-1", "BC1-v-2", "BC1-u-1", "BC1-u-2", "BC1-x-1", "BC1-x-2"};
   G4String Bc1Name[6] = {"BC1-x-1", "BC1-v-1", "BC1-u-1", "BC1-x-2", "BC1-v-2", "BC1-u-2"};
@@ -730,8 +702,8 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
     G4ThreeVector posBc1L1 = geomMan.GetGlobalPosition( lnum_bc1 );
     G4double posBc1L1D = (posBc1L1-posBc1G).mag();
 
-    if (i<3) posBc1L1D *= -1.; 
-    physBc1Layer[i] = new G4PVPlacement( 0, 
+    if (i<3) posBc1L1D *= -1.;
+    physBc1Layer[i] = new G4PVPlacement( 0,
 					 G4ThreeVector( posBc1L1D*mm, 0.0*mm, 0.0*mm ),
 					 Bc1Name[i]+"-PV",
 					 logBc1Layer[i],
@@ -744,10 +716,10 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
   //logBc1Box->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
   logBc1Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
   logBc1Area->SetVisAttributes(G4VisAttributes(true,G4Colour(0.3, 0.8, 0.5)));
-  //logBc1Layer->SetVisAttributes(G4VisAttributes::Invisible);
+  //logBc1Layer->SetVisAttributes(G4VisAttributes::GetInvisible());
   for(int i=0; i<6; i++) logBc1Layer[i]->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 1.0, 1.0)));
-  
-  ///////////////////// BC2(x,x,v,v,u,u)
+
+  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________/ BC2(x,x,v,v,u,u)
   G4Box *solidBc2Box =
     new G4Box( "BC2Box", DCuBoxZ/2.0*mm, DCuBoxX/2.0*mm, DCuBoxY/2.0*mm );
   G4Box *solidBc2Area =
@@ -786,13 +758,13 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 						       logBc2Box,
 						       pMother,
 						       false, 0, m_check_overlaps );
-  G4VPhysicalVolume *physBc2Frame = new G4PVPlacement( 0,
-						       //"BC2Box",logBc2Box,
-						       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
-						       "BC2Frame",
-						       logBc2Frame,
-						       physBc2Box,
-						       false, 0, m_check_overlaps );
+  // G4VPhysicalVolume *physBc2Frame = new G4PVPlacement( 0,
+  //       					       //"BC2Box",logBc2Box,
+  //       					       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
+  //       					       "BC2Frame",
+  //       					       logBc2Frame,
+  //       					       physBc2Box,
+  //       					       false, 0, m_check_overlaps );
   G4VPhysicalVolume *physBc2Area  = new G4PVPlacement( 0,
 						       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
 						       "BC2Area",
@@ -814,7 +786,7 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
     G4ThreeVector posBc2L1 = geomMan.GetGlobalPosition( lnum_bc2 );
     G4double posBc2L1D = (posBc2L1-posBc2G).mag();
 
-    if (i<2) posBc2L1D *= -1.; 
+    if (i<2) posBc2L1D *= -1.;
     physBc2Layer[i] = new G4PVPlacement( 0,
 					 G4ThreeVector( posBc2L1D*mm, 0.0*mm, 0.0*mm ),
 					 Bc2Name[i]+"-PV",
@@ -822,14 +794,14 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 					 physBc2Area,
 					 false, 107+i, m_check_overlaps );
   }
-  
+
   //logBc2Box->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
   logBc2Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
   logBc2Area->SetVisAttributes(G4VisAttributes(true,G4Colour(0.3, 0.8, 0.5)));
-  //logBc2Layer->SetVisAttributes(G4VisAttributes::Invisible);
+  //logBc2Layer->SetVisAttributes(G4VisAttributes::GetInvisible());
   for(int i=0; i<4; i++) logBc2Layer[i]->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 1.0, 1.0)));
 
-  
+
   G4double DCAreaX = 2000;//mm
   G4double DCAreaY = 1000;//mm
   G4double DCAreaZ = 100;//mm
@@ -837,7 +809,7 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
   G4double DCBoxY = 1100;//mm
   G4double DCBoxZ = 100.2;//mm
 
-  ///////////////////// BC3(x,x,y,y)
+  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________/ BC3(x,x,y,y)
   G4Box *solidBc3Box =
     new G4Box( "BC3Box", DCBoxZ/2.0*mm, DCBoxX/2.0*mm, DCBoxY/2.0*mm );
   G4Box *solidBc3Area =
@@ -880,20 +852,20 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 						     false,
 						     0,
 						     m_check_overlaps );
-  // G4VPhysicalVolume *physBc3Frame = new G4PVPlacement( G4Transform3D(RMBc3, posBc3G), 
-  G4VPhysicalVolume *physBc3Frame = new G4PVPlacement( 0,
-						       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
-						       //"BC3Box", logBc3Box,
-						       "BC3Frame",
-						       logBc3Frame,
-						       physBc3Box,
-						       false,
-						       0,
-						       m_check_overlaps );
+  // G4VPhysicalVolume *physBc3Frame = new G4PVPlacement( G4Transform3D(RMBc3, posBc3G),
+  // G4VPhysicalVolume *physBc3Frame = new G4PVPlacement( 0,
+  //       					       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
+  //       					       //"BC3Box", logBc3Box,
+  //       					       "BC3Frame",
+  //       					       logBc3Frame,
+  //       					       physBc3Box,
+  //       					       false,
+  //       					       0,
+  //       					       m_check_overlaps );
   G4VPhysicalVolume *physBc3Area = new G4PVPlacement( 0,
 						      G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
 						      "BC3Area",
-						      logBc3Area, 
+						      logBc3Area,
 						      // physBc3Frame,// physBc3Box,
 						      physBc3Box,
 						      false,
@@ -915,13 +887,13 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
     //     posBc3L1 += G4ThreeVector(rhoD*tan(bendAngleD/2.*Deg2Rad), 0, 0);
     //     posBc3L1.rotateZ(bendAngleD*degree);
     G4double posBc3L1D = (posBc3L1-posBc3G).mag();
-    
+
     //G4double posBc3L1D = 10. + (i-3)*20.;
-    
+
     if (i<2)
-      posBc3L1D *= -1.; 
-    
-    //    sprintf(name, "BC3Layer%d", i+1);
+      posBc3L1D *= -1.;
+
+    //    std::snprintf(name, sizeof(name), "BC3Layer%d", i+1);
     //    if(i==3){
     physBc3Layer[i] = new G4PVPlacement( 0,
   					 G4ThreeVector( posBc3L1D*mm, 0.0*mm, 0.0*mm ),
@@ -933,16 +905,16 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 					 m_check_overlaps );
     //    }
   }
-  
+
   // logBc3Box->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
-  logBc3Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));  
+  logBc3Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
   logBc3Area->SetVisAttributes(G4VisAttributes(true,G4Colour(0.3, 0.8, 0.5)));
   // logBc3Area->SetVisAttributes(G4VisAttributes(true,G4Colour(1., 0., 0.)));
   for( int i = 1; i < 4; i++ ) logBc3Layer[i]->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 1.0, 1.0)));
-  //logBc3Layer->SetVisAttributes(G4VisAttributes::Invisible);
+  //logBc3Layer->SetVisAttributes(G4VisAttributes::GetInvisible());
 
-      
-  ///////////////////// BC4(x,x,x,x,x,x)
+
+  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________/ BC4(x,x,x,x,x,x)
   G4Box *solidBc4Box =
     new G4Box( "BC4Box", DCBoxZ/2.0*mm, DCBoxX/2.0*mm, DCBoxY/2.0*mm );
   G4Box *solidBc4Area =
@@ -991,16 +963,16 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 						     false,
 						     0,
 						     m_check_overlaps );
-//  G4VPhysicalVolume *physBc4Box = new G4PVPlacement( G4Transform3D(RMBc4, posBc4G), 
+//  G4VPhysicalVolume *physBc4Box = new G4PVPlacement( G4Transform3D(RMBc4, posBc4G),
 //		       "BC4Box", logBc4Box, pMother, false, 0 );
-  G4VPhysicalVolume *physBc4Frame = new G4PVPlacement( 0,
-						       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
-						       "BC4Frame",
-						       logBc4Frame,
-						       physBc4Box,
-						       false,
-						       0,
-						       m_check_overlaps );
+  // G4VPhysicalVolume *physBc4Frame = new G4PVPlacement( 0,
+  //       					       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
+  //       					       "BC4Frame",
+  //       					       logBc4Frame,
+  //       					       physBc4Box,
+  //       					       false,
+  //       					       0,
+  //       					       m_check_overlaps );
   G4VPhysicalVolume *physBc4Area = new G4PVPlacement( 0,
 						      G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
 						      "BC4Area",
@@ -1028,7 +1000,7 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
     G4double posBc4L1D = (posBc4L1-posBc4G).mag();
 
     if (i<2)
-      posBc4L1D *= -1.; 
+      posBc4L1D *= -1.;
 
     //    if(i==99){
     physBc4Layer[i] = new G4PVPlacement( 0,
@@ -1046,12 +1018,12 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
   logBc4Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
   logBc4Area->SetVisAttributes(G4VisAttributes(true,G4Colour(0.3, 0.8, 0.5)));
   //  logBc4Layer->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
-  //logBc4Layer->SetVisAttributes(G4VisAttributes::Invisible);
+  //logBc4Layer->SetVisAttributes(G4VisAttributes::GetInvisible());
   for(int i=1; i<4; i++) logBc4Layer[i]->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 1.0, 1.0)));
 
- 
-  
-  ///////////////////// Bc5(y,y,y,y,y,y)
+
+
+  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________/ Bc5(y,y,y,y,y,y)
   G4Box *solidBc5Box =
     new G4Box( "BC5Box", DCBoxZ/2.0*mm, DCBoxX/2.0*mm, DCBoxY/2.0*mm );
   G4Box *solidBc5Area =
@@ -1101,7 +1073,7 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 						     0,
 						     m_check_overlaps );
   //G4VPhysicalVolume *physBc5Box = new G4PVPlacement( G4Transform3D(RMBc5, posBc5G), "BC5Box",logBc5Box,
-  G4VPhysicalVolume *physBc5Frame = new G4PVPlacement( 0, 
+  G4VPhysicalVolume *physBc5Frame = new G4PVPlacement( 0,
 						       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
 						       "BC5Frame",
 						       logBc5Frame,
@@ -1135,7 +1107,7 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
     G4double posBc5L1D = (posBc5L1-posBc5G).mag();
 
     if (i<2)
-      posBc5L1D *= -1.; 
+      posBc5L1D *= -1.;
 
     //    if(i==5){
     physBc5Layer[i] = new G4PVPlacement( 0,
@@ -1153,12 +1125,12 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
   logBc5Frame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
   logBc5Area->SetVisAttributes(G4VisAttributes(true,G4Colour(0.3, 0.8, 0.5)));
   //  logBc5Layer->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 0.0)));
-  //logBc5Layer->SetVisAttributes(G4VisAttributes::Invisible);
+  //logBc5Layer->SetVisAttributes(G4VisAttributes::GetInvisible());
   for(int i=0; i<4; i++) logBc5Layer[i]->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 1.0, 1.0)));
-  
 
-  ///////////////////////////////////////////////////
-  //////////////Other Tracking Detector
+
+  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________/
+  //_____________________________________________________________________________//_____________________________________________________________________________////Other Tracking Detector
 
   //HeBag between
   //target and BC1 0
@@ -1170,47 +1142,47 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
   //BC3 and BC4    6
   G4Box *solidHeBag[7];
   G4LogicalVolume *logHeBag[7];
-  G4VPhysicalVolume *physHeBag[7];
-  
+  // G4VPhysicalVolume *physHeBag[7];
+
   G4Material *HeBagMater[7];
-  
-  
+
+
   /*
-  HeBagMater[7]={mList_->Vacuum,//HeGas,//0
-			     mList_->Vacuum,//HeGas,//1
-			     mList_->Vacuum,//HeGas,//2
-			     mList_->Vacuum,//HeGas,//3
-			     mList_->Vacuum,//HeGas,//4
-			     mList_->Vacuum,//HeGas,//5
-			     mList_->Vacuum};//HeGas};//6
-			     HeBagMater[7]={mList_->HeGas,//0
-			     mList_->HeGas,//1
-			     mList_->HeGas,//2
-			     mList_->HeGas,//3
-		 mList_->HeGas,//4
-		 mList_->HeGas,//5
-		 mList_->HeGas};//6
+  HeBagMater[7]={m_material_list->Vacuum,//HeGas,//0
+			     m_material_list->Vacuum,//HeGas,//1
+			     m_material_list->Vacuum,//HeGas,//2
+			     m_material_list->Vacuum,//HeGas,//3
+			     m_material_list->Vacuum,//HeGas,//4
+			     m_material_list->Vacuum,//HeGas,//5
+			     m_material_list->Vacuum};//HeGas};//6
+			     HeBagMater[7]={m_material_list->HeGas,//0
+			     m_material_list->HeGas,//1
+			     m_material_list->HeGas,//2
+			     m_material_list->HeGas,//3
+		 m_material_list->HeGas,//4
+		 m_material_list->HeGas,//5
+		 m_material_list->HeGas};//6
   */
-  
+
   if(heflag==true){
-    HeBagMater[0] = mList_->HeGas;
-    HeBagMater[1] = mList_->HeGas;
-    HeBagMater[2] = mList_->HeGas;
-    HeBagMater[3] = mList_->HeGas;
-    HeBagMater[4] = mList_->HeGas;
-    HeBagMater[5] = mList_->HeGas;
-    HeBagMater[6] = mList_->HeGas;
+    HeBagMater[0] = m_material_list->HeGas;
+    HeBagMater[1] = m_material_list->HeGas;
+    HeBagMater[2] = m_material_list->HeGas;
+    HeBagMater[3] = m_material_list->HeGas;
+    HeBagMater[4] = m_material_list->HeGas;
+    HeBagMater[5] = m_material_list->HeGas;
+    HeBagMater[6] = m_material_list->HeGas;
   }
   else{
-    HeBagMater[0] = mList_->Vacuum;
-    HeBagMater[1] = mList_->Vacuum;
-    HeBagMater[2] = mList_->Vacuum;
-    HeBagMater[3] = mList_->Vacuum;
-    HeBagMater[4] = mList_->Vacuum;
-    HeBagMater[5] = mList_->Vacuum;
-    HeBagMater[6] = mList_->Vacuum;
+    HeBagMater[0] = m_material_list->Vacuum;
+    HeBagMater[1] = m_material_list->Vacuum;
+    HeBagMater[2] = m_material_list->Vacuum;
+    HeBagMater[3] = m_material_list->Vacuum;
+    HeBagMater[4] = m_material_list->Vacuum;
+    HeBagMater[5] = m_material_list->Vacuum;
+    HeBagMater[6] = m_material_list->Vacuum;
   }
-  
+
   G4double tgt=(rhoD*tan(bendAngleD/2.*Deg2Rad) + driftL2 + Q2z + driftL1 + Q1z + driftL0);
   G4double bc1=posBc1G.mag();
   G4double bc2=posBc2G.mag();
@@ -1242,7 +1214,7 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
   G4RotationMatrix RMHeBag[7];
   RMHeBag[5].rotateZ(bendAngleD*degree);
   RMHeBag[6].rotateZ(bendAngleD*degree);
-  
+
   char hename[7][100]={"HeBag0","HeBag1","HeBag2","HeBag3","HeBag4","HeBag5","HeBag6"};
 
   for(int i=0;i<7;i++){
@@ -1256,13 +1228,13 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 	// G4cout<<i<<" "<<thick[i]<<G4endl;
       }
       logHeBag[i] = new G4LogicalVolume( solidHeBag[i], HeBagMater[i], hename[i], 0, 0, 0);
-      
+
       // #############################################################################################
       //   Comment out, anayway (Toshi, 28Nov2014)
       // #############################################################################################
-      // physHeBag[i] = new G4PVPlacement( G4Transform3D(RMHeBag[i], HeBagG[i]), 
+      // physHeBag[i] = new G4PVPlacement( G4Transform3D(RMHeBag[i], HeBagG[i]),
       // 					hename[i], logHeBag[i], pMother, false, 0 );
-      //logHeBag[i]->SetVisAttributes(G4VisAttributes::Invisible);
+      //logHeBag[i]->SetVisAttributes(G4VisAttributes::GetInvisible());
       //logHeBag[i]->SetVisAttributes(G4VisAttributes(true,G4Colour(0.1, 0.1, 0.1)));
       // #############################################################################################
     }
@@ -1270,11 +1242,11 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 
 }//Make PositionDetectors
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//_____________________________________________________________________________
 void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
 {
 
-  G4Material *SlitMater = mList_->Vacuum;//Scin;
+  G4Material *SlitMater = m_material_list->Vacuum;//Scin;
 
   //G4Box *solidSlit = new G4Box("solidSlit",4.0/2.*m, 4.0/2.*m, 0.000001/2.*mm); //Original
   //G4Box *solidSlit = new G4Box("solidSlit",1.5/2.*m, 1.5/2.*m, 0.000001/2.*mm); // Toshi , 25Nov2014
@@ -1304,7 +1276,7 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
   gloPosSlit[4]=G4ThreeVector(-rhoD*tan(bendAngleD/2.*Deg2Rad)-5, 0, 0);//D entrance
   gloPosSlit[5]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+5, 0, 0);//D exit
   gloPosSlit[6]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+240+76, 0, 0);//End guard
-  
+
   // Order -->
   // vd8 | TOF | vd9 | AC | vd10 | WC | vd11 (vd[10])
   gloPosSlit[7]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1200, 0, 0);        // Toshi , 27Nov2014
@@ -1318,12 +1290,12 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
   gloPosSlit[8].rotateZ(bendAngleD*Deg2Rad);
   gloPosSlit[9].rotateZ(bendAngleD*Deg2Rad);
   gloPosSlit[10].rotateZ(bendAngleD*Deg2Rad);
-  
+
   G4RotationMatrix rotSlit5;
   rotSlit5.rotateZ(90.*degree);
   rotSlit5.rotateY(90.*degree);
   rotSlit5.rotateZ((bendAngleD)*Deg2Rad);
-  
+
   /*
     G4RotationMatrix rotSlit6;
     rotSlit6.rotateZ(90.*degree);
@@ -1338,35 +1310,35 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
     rotSlit8.rotateY(90.*degree);
     rotSlit8.rotateZ((bendAngleD)*Deg2Rad);
   */
-  
+
   char name[11][100]={"slitNo.1","slitNo.2","slitNo.3","slitNo.4",
 		      "slitNo.5","slitNo.6","slitNo.7","slitNo.8",
 		      "slitNo.9","slitNo.10","slitNo.11"};
-  
-//   physSlit[0] = 
+
+//   physSlit[0] =
 //     new G4PVPlacement( G4Transform3D(rotQ, gloPosSlit[0]),
 // 		       "physSlit[0]", logicSlit, pMother, false, 0 );
   for(int i=0;i<5;i++){
-    physSlit[i] = 
+    physSlit[i] =
       new G4PVPlacement( G4Transform3D(rotQ, gloPosSlit[i]),
 			 name[i], logicSlit, pMother, false, i, m_check_overlaps );
   }
 
   for(int i=5;i<11;i++){
-    physSlit[i] = 
+    physSlit[i] =
       new G4PVPlacement( G4Transform3D(rotSlit5, gloPosSlit[i]),
 			 name[i], logicSlit, pMother, false, i, m_check_overlaps );
   }
-  //   physSlit[6] = 
+  //   physSlit[6] =
 //     new G4PVPlacement( G4Transform3D(rotSlit6, gloPosSlit[6]),
 // 		       "physSlit[6]", logicSlit, pMother, false, 6 );
-//   physSlit[7] = 
+//   physSlit[7] =
 //     new G4PVPlacement( G4Transform3D(rotSlit7, gloPosSlit[7]),
 // 		       "physSlit[7]", logicSlit, pMother, false, 7 );
-  
-  //logicSlit->SetVisAttributes(G4VisAttributes(true,G4Colour(0.8,1.0,1.0)));//::Invisible);
-  //logicSlit->SetVisAttributes(G4VisAttributes::Invisible);
-  
+
+  //logicSlit->SetVisAttributes(G4VisAttributes(true,G4Colour(0.8,1.0,1.0)));//::GetInvisible());
+  //logicSlit->SetVisAttributes(G4VisAttributes::GetInvisible());
+
 
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();
   SlSD *slSD = new SlSD("SlSD");
@@ -1375,14 +1347,13 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
   logicSlit->SetSensitiveDetector(slSD);
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//_____________________________________________________________________________
 
 
 void S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
 {
-
   const DCGeomMan & geomMan=DCGeomMan::GetInstance();
-  
+
   /*
     const int SegNumTOF = 25;
     double TOFX = 70.*mm;
@@ -1394,15 +1365,15 @@ void S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
   double TOFX = 70.*mm;
   double TOFY = 20.*mm;
   double TOFZ = 600.*mm;
-  
+
   // ~~~~~ Material ~~~~~~~~
-  G4Material *TOFMatter    = mList_->Scin; // Plastic scintillator (original). 
-  //G4Material *TOFMatter    = mList_->Vacuum; // Vacuum for test.
+  G4Material *TOFMatter    = m_material_list->Scin; // Plastic scintillator (original).
+  //G4Material *TOFMatter    = m_material_list->Vacuum; // Vacuum for test.
 
   G4ThreeVector localPosTOF[SegNumTOF];
   G4ThreeVector globalPosTOF[SegNumTOF];
 
-  
+
   //G4int aaa = 0;
   //G4double overlap = 4.0;   // [mm] (default)
   //G4double distance = 10.0; // [mm] (default)
@@ -1414,11 +1385,11 @@ void S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
   //G4double overlap = -4.0;          // [mm] (gap 4mm)
   //G4double distance = -1.0*TOFY/mm; // [mm] (No zig-zag)
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  G4double overlap = confman->GetTOFOverlap();
-  G4double distance= confman->GetTOFDistance(); 
-  
+  G4double overlap = confMan.GetTOFOverlap();
+  G4double distance= confMan.GetTOFDistance();
+
   distance = distance + TOFY/mm;
-  
+
   //localPosTOF[12] = G4ThreeVector(0, 0, 0);
   //globalPosTOF[12] = geomMan.Local2GlobalPos(61, localPosTOF[12]);
   //localPosTOF[8]  = G4ThreeVector(0, 0, -1.0*distance/2.0*mm);
@@ -1429,11 +1400,11 @@ void S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
   //localPosTOF[8]  = G4ThreeVector(0, 0, -2.0*cm);
   //globalPosTOF[9] = geomMan.Local2GlobalPos(61, localPosTOF[8]);
   globalPosTOF[9] = geomMan.Local2GlobalPos(61, localPosTOF[9]);
-  
+
   //  G4double TOFpos = 3800.;
   //   localPosTOF[8] = G4ThreeVector(0, 0, 0);
   //   globalPosTOF[8] = G4ThreeVector(TOFpos, 0, 0);
-  
+
   // ---- segment i=8-0 -----
   for (int i=SegNumTOF/2-1; i>=0; i--) {
     double localx = localPosTOF[i+1].x() - TOFX;
@@ -1478,7 +1449,7 @@ void S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
   }
 
   G4double RotateAngleTOF = 70;//geomMan.GetRotAngle2( lnum_bh1 );
-  G4RotationMatrix RMTOF; 
+  G4RotationMatrix RMTOF;
   RMTOF.rotateZ( (RotateAngleTOF)*degree );
 
   G4Box *solidTOF = new G4Box( "solidTOF", TOFY/2.*mm,  TOFX/2.*mm,  TOFZ/2.*mm );
@@ -1487,32 +1458,33 @@ void S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
   char buf[100];
 
   for(int i=0; i<SegNumTOF; i++) {
-    
-    sprintf(buf, "TOF_%d", i); 
+
+    std::snprintf(buf, sizeof(buf), "TOF_%d", i);
     //    globalPosTOF[i].rotateZ(70*degree);
     physTOF[i] =
       new G4PVPlacement( G4Transform3D(RMTOF, globalPosTOF[i]),
 			 buf, logTOF, pMother, false, i, m_check_overlaps );
   }
-  
+
   logTOF->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 1.0)));
   G4UserLimits* TOFLimit = new G4UserLimits(1.0 * mm);
   logTOF->SetUserLimits(TOFLimit);
 
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();
-  TOFSD *tofSD = new TOFSD("TOFSD");
+  TOFSD *tofSD = new TOFSD("TOF");
   SDMan->AddNewDetector(tofSD);
   logTOF->SetSensitiveDetector(tofSD);
 
-}//MakeTOFCounter
+}
 
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void S2SDetectorConstruction::MakeAerogelCounter(G4VPhysicalVolume* pMother){
-
-  //G4Material *ACMatter = mList_->Vacuum;//Aerogel;
-  G4Material *ACMatter    = mList_->Aerogel;
-  G4Material* ACFrameMat  = mList_->Vacuum;
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::MakeAerogelCounter(G4VPhysicalVolume* pMother)
+{
+  //G4Material *ACMatter = m_material_list->Vacuum;//Aerogel;
+  G4Material *ACMatter    = m_material_list->Aerogel;
+  G4Material* ACFrameMat  = m_material_list->Vacuum;
 
   // ~~~~ beam-direction, dispersion-direction, gravity-direction ~~~~~
   G4Box *solidACBox =
@@ -1526,12 +1498,12 @@ void S2SDetectorConstruction::MakeAerogelCounter(G4VPhysicalVolume* pMother){
   G4SubtractionSolid *solidACFrame =
     new G4SubtractionSolid( "ACFrame", solidACBox, solidACArea );
 
-  G4LogicalVolume *logACBox =
-    new G4LogicalVolume( solidACBox,   mList_->Vacuum/*Air*/,  "ACBox",   0, 0, 0 );
+  // G4LogicalVolume *logACBox =
+  //   new G4LogicalVolume( solidACBox,   m_material_list->Vacuum/*Air*/,  "ACBox",   0, 0, 0 );
   G4LogicalVolume *logACFrame =
     new G4LogicalVolume( solidACFrame, ACFrameMat,  "ACFrame", 0, 0, 0 );
   G4LogicalVolume *logACArea =
-    new G4LogicalVolume( solidACArea,  mList_->Air,  "ACArea",  0, 0, 0 );
+    new G4LogicalVolume( solidACArea,  m_material_list->Air,  "ACArea",  0, 0, 0 );
   G4LogicalVolume *logACRad =
     new G4LogicalVolume( solidACRad,   ACMatter,  "ACRad", 0, 0, 0 );
   G4LogicalVolume *logACLayer =
@@ -1557,35 +1529,37 @@ void S2SDetectorConstruction::MakeAerogelCounter(G4VPhysicalVolume* pMother){
   RMAC.rotateZ(bendAngleD*degree);
 
   //G4VPhysicalVolume *physACBox =
-  G4VPhysicalVolume *physACFrame =
-    new G4PVPlacement( G4Transform3D(RMAC,posAC), 
-		       "ACFrame", 
-		       logACFrame,//logACBox,
-		       pMother,
-		       false,
-		       0,
-		       m_check_overlaps );
+  // G4VPhysicalVolume *physACFrame =
+  //   new G4PVPlacement( G4Transform3D(RMAC,posAC),
+  //       	       "ACFrame",
+  //       	       logACFrame,//logACBox,
+  //       	       pMother,
+  //       	       false,
+  //       	       0,
+  //       	       m_check_overlaps );
+
 //   G4VPhysicalVolume *physACFrame =
 //     new G4PVPlacement( 0, G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
 //                        "ACFrame", logACFrame, physACBox, false, 0 );
-  G4VPhysicalVolume *physACArea =
-    new G4PVPlacement( 0,
-		       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
-                       "ACArea",
-		       logACArea,
-		       physACFrame,//physACBox,
-		       false,
-		       0,
-		       m_check_overlaps );
-  G4VPhysicalVolume *physACRad =
-    new G4PVPlacement( 0,
-		       G4ThreeVector( -200.0*mm, 0.0*mm, 0.0*mm ),
-                       "ACRad",
-		       logACRad,
-		       physACArea, //physACFrame,
-		       false,
-		       0,
-		       m_check_overlaps );
+  // G4VPhysicalVolume *physACArea =
+  //   new G4PVPlacement( 0,
+  //       	       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
+  //                      "ACArea",
+  //       	       logACArea,
+  //       	       physACFrame,//physACBox,
+  //       	       false,
+  //       	       0,
+  //       	       m_check_overlaps );
+  // G4VPhysicalVolume *physACRad =
+  //   new G4PVPlacement( 0,
+  //       	       G4ThreeVector( -200.0*mm, 0.0*mm, 0.0*mm ),
+  //                      "ACRad",
+  //       	       logACRad,
+  //       	       physACArea, //physACFrame,
+  //       	       false,
+  //       	       0,
+  //       	       m_check_overlaps );
+
   //  G4VPhysicalVolume *physACLayer =
   //new G4PVPlacement( 0, G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
   //                     "ACLayer", logACLayer, physACRad, false, 0 );
@@ -1596,23 +1570,23 @@ void S2SDetectorConstruction::MakeAerogelCounter(G4VPhysicalVolume* pMother){
   //  G4VPhysicalVolume *physACLayer[6];
   /*
   for (int i=0; i<6; i++) {
-    
+
     lnum_ac = geomMan.GetDetectorId(ACName[i]);
     G4ThreeVector posACL1 = geomMan.GetGlobalPosition( lnum_ac );
     G4double posACL1D = (posACL1-posACG).mag();
-    
+
     //    G4double posACL1D = 0.5 + (i-3)*1.0;
-    
+
     if (i>=3)
-      posACL1D *= -1.; 
-    
-    sprintf(name, "ACLayer%d", i+1);
+      posACL1D *= -1.;
+
+    std::snprintf(name, sizeof(buf), "ACLayer%d", i+1);
     physACLayer[i] =
       new G4PVPlacement( 0, G4ThreeVector( 0.0*mm, posACL1D*mm, 0.0*mm ),
 			 name, logACLayer, physACArea, false,  113+i );
   }
   */
-  
+
   G4VisAttributes* BoxAtt = new G4VisAttributes(G4Colour(1.0, 0.0, 1.0));
   BoxAtt -> SetForceWireframe(true);
   //logACBox ->SetVisAttributes(BoxAtt);
@@ -1624,16 +1598,16 @@ void S2SDetectorConstruction::MakeAerogelCounter(G4VPhysicalVolume* pMother){
   logACArea ->SetVisAttributes(AreaAtt);
   //logACArea->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 1.0)));
   logACRad->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 1.0)));
-  logACLayer->SetVisAttributes(G4VisAttributes::Invisible);
-  
-  
+  logACLayer->SetVisAttributes(G4VisAttributes::GetInvisible());
+
+
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();
   ACSD *acSD = new ACSD("AC");
   SDMan->AddNewDetector(acSD);
   //logACLayer->SetSensitiveDetector(acSD);
   logACRad->SetSensitiveDetector(acSD);
-  
-}//MakeAerogelCounter
+
+}
 
 
 //MakeWaterCherenkovCounter
@@ -1652,7 +1626,7 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
   // ~~~~~ Ver. 2014/11/25 ~~~~~~
   const int SegNumWC1 = 6; // upstream
   const int SegNumWC2 = 6; // downstream
-  int nseg = SegNumWC1 + SegNumWC2;
+  const int nseg = SegNumWC1 + SegNumWC2;
   const int SegNumWC  = nseg;
   double WCframeX = 180.0*mm;
   double WCframeY = 230.0*mm;
@@ -1667,12 +1641,12 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
   double zdiff   = WCframeX/2.0;
 
   // ------ Material -------------
-  G4Material* WCMatter  = mList_->Vacuum;
-  G4Material* RadMatter = mList_->Water; // (original)
-  //G4Material* RadFrame  = mList_->Polyethylene;
-  G4Material* RadFrame  = mList_->Acrylic; // (original)
-  //G4Material* RadMatter = mList_->Vacuum;//Water;
-  //G4Material* RadFrame  = mList_->Vacuum;//Acrylic;
+  // G4Material* WCMatter  = m_material_list->Vacuum;
+  G4Material* RadMatter = m_material_list->Water; // (original)
+  //G4Material* RadFrame  = m_material_list->Polyethylene;
+  G4Material* RadFrame  = m_material_list->Acrylic; // (original)
+  //G4Material* RadMatter = m_material_list->Vacuum;//Water;
+  //G4Material* RadFrame  = m_material_list->Vacuum;//Acrylic;
 
   G4ThreeVector localPosWC[SegNumWC];
   G4ThreeVector globalPosWC[SegNumWC];
@@ -1684,7 +1658,7 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
   G4double WCpos = 4.7*m;
   //G4double WCtpos = -WCframeY/2.0;// (before 16Dec2014)
   G4double WCtpos = 0.0;// (after 16Dec2014)
-  // ~~~~ WC1 ~~~~~ 
+  // ~~~~ WC1 ~~~~~
   G4int WCstart1 = 2;
   localPosWC[WCstart1] = G4ThreeVector(WCtpos-WCframeY/2.0, 0, 0);
   globalPosWC[WCstart1] = G4ThreeVector(WCpos-zdiff, WCtpos-WCframeY/2.0, 0);
@@ -1707,7 +1681,7 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
     localPosWC[i]  = G4ThreeVector(localx, 0, localz);
     globalPosWC[i] = G4ThreeVector(WCpos+localz, localx, 0);
   }
-  // ~~~~ WC2 ~~~~~ 
+  // ~~~~ WC2 ~~~~~
   G4int WCstart2 = 8;
   //localPosWC[WCstart2] = G4ThreeVector(WCtpos-WCframeY/2.0, 0, 0);
   localPosWC[WCstart2] = G4ThreeVector(WCtpos, 0, 0);
@@ -1728,7 +1702,7 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
     localPosWC[i]  = G4ThreeVector(localx, 0, localz);
     globalPosWC[i] = G4ThreeVector(WCpos+localz, localx, 0);
   }
-  
+
   /*
     G4int WCstart = 7;
     localPosWC[WCstart] = G4ThreeVector(WCtpos, 0, 0);
@@ -1739,12 +1713,12 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
     double localz;
     if(i%2 == 0)  localz = -zdiff;
     else  localz = zdiff;
-    
+
     localPosWC[i] = G4ThreeVector(localx, 0, localz);
     //    globalPosWC[i] = geomMan.Local2GlobalPos(lnum_bh1, localPosWC[i]);
     globalPosWC[i] = G4ThreeVector(WCpos+localz, localx, 0);
     }
-    
+
     for (int i=WCstart+1; i<=SegNumWC; i++) {
     double localx = localPosWC[i-1].x() + WCframeY/2;
     double localz;
@@ -1752,7 +1726,7 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
     localz = -zdiff;
     else
     localz = zdiff;
-    
+
     localPosWC[i] = G4ThreeVector(localx, 0, localz);
     //    globalPosWC[i] = geomMan.Local2GlobalPos(lnum_bh1, localPosWC[i]);
     globalPosWC[i] = G4ThreeVector(WCpos+localz, localx, 0);
@@ -1761,7 +1735,7 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
   char buf[100];
 
   G4double RotateAngleWC = 70;//geomMan.GetRotAngle2( lnum_bh1 );
-  G4RotationMatrix RMWC; 
+  G4RotationMatrix RMWC;
   RMWC.rotateZ( RotateAngleWC*degree );
 
   //G4Box *solidWCBox = new G4Box( "solidWCBox", WCframeX/2.*mm,  WCframeY/2.*mm,  WCframeZ/2.*mm );
@@ -1771,24 +1745,24 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
   G4Box *solidWCBox = new G4Box( "solidWCBox", WCframeX/2.,  WCframeY/2.,  WCframeZ/2. );
   G4Box *solidWCArea = new G4Box( "solidWCArea", WCradX/2.,  WCradY/2.,  WCradZ/2. );
   G4SubtractionSolid *solidWCFrame = new G4SubtractionSolid( "solidWCFrame", solidWCBox,  solidWCArea );
-  G4Box *solidWCLayer = new G4Box( "solidWCLayer", 0.01/2.,  WCradY/2.,  WCradZ/2.);
+  // G4Box *solidWCLayer = new G4Box( "solidWCLayer", 0.01/2.,  WCradY/2.,  WCradZ/2.);
 
   //G4LogicalVolume *logWCBox = new G4LogicalVolume( solidWCBox, WCMater, "logicWCBox", 0, 0, 0 );
   G4LogicalVolume *logWCArea = new G4LogicalVolume( solidWCArea, RadMatter, "logicWCArea", 0, 0, 0 );
   G4LogicalVolume *logWCFrame = new G4LogicalVolume( solidWCFrame, RadFrame, "logicWCFrame", 0, 0, 0 );
-  G4LogicalVolume *logWCLayer = new G4LogicalVolume( solidWCLayer, WCMatter, "logicWCLayer", 0, 0, 0 );
+  // G4LogicalVolume *logWCLayer = new G4LogicalVolume( solidWCLayer, WCMatter, "logicWCLayer", 0, 0, 0 );
 
   //G4VPhysicalVolume *physWCBox[SegNumWC];
   G4VPhysicalVolume *physWCArea[SegNumWC];
   G4VPhysicalVolume *physWCFrame[SegNumWC];
-  G4VPhysicalVolume *physWCLayer[SegNumWC];
+  // G4VPhysicalVolume *physWCLayer[SegNumWC];
 
   for (int i=0; i<SegNumWC; i++) {
-  
+
     globalPosWC[i].rotateZ(70*degree);
-    sprintf(buf, "WCBox_%d", i); 
+    std::snprintf(buf, sizeof(buf), "WCBox_%d", i);
     //physWCBox[i] =
-    physWCFrame[i] = new G4PVPlacement( G4Transform3D(RMWC,globalPosWC[i]), 
+    physWCFrame[i] = new G4PVPlacement( G4Transform3D(RMWC,globalPosWC[i]),
 					//buf, logWCBox, pMother, false, 0 );
 					buf,
 					logWCFrame,
@@ -1796,57 +1770,57 @@ void S2SDetectorConstruction::MakeWaterCounter(G4VPhysicalVolume* pMother){
 					false,
 					i,
 					m_check_overlaps );
-    //     sprintf(buf, "WCFrame_%d", i); 
+    //     std::snprintf(buf, "WCFrame_%d", i);
     //     physWCFrame[i] =
     //       new G4PVPlacement( 0, G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
     // 			 buf, logWCFrame, physWCBox[i], false, 0 );
-    
-    sprintf(buf, "WCArea_%d", i); 
-    physWCArea[i] = new G4PVPlacement( G4Transform3D(RMWC,globalPosWC[i]),//0, 
+
+    std::snprintf(buf, sizeof(buf), "WCArea_%d", i);
+    physWCArea[i] = new G4PVPlacement( G4Transform3D(RMWC,globalPosWC[i]),//0,
 				       //G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
-				       buf, 
+				       buf,
 				       logWCArea,
 				       pMother,//physWCFrame[i],
 				       false,
 				       i,
 				       m_check_overlaps );
     /*
-      sprintf(buf, "WCLayer_%d", i); 
+      std::snprintf(buf, sizeof(buf), "WCLayer_%d", i);
       physWCLayer[i] = new G4PVPlacement( 0,
       //G4ThreeVector( -10.0*mm, 0.0*mm, 0.0*mm ),
       G4ThreeVector( 0.0*mm, 0.0*mm, 0.0*mm ),
-      buf, 
+      buf,
       logWCLayer,
       physWCArea[i],
       false,
       i );
     */
-    
+
     G4VisAttributes* FrameAtt = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0));
     FrameAtt -> SetForceWireframe(true);
-    //logWCBox->SetVisAttributes(G4VisAttributes::Invisible);
+    //logWCBox->SetVisAttributes(G4VisAttributes::GetInvisible());
     //logWCFrame->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 1.0, 1.0)));
     //logWCFrame->SetVisAttributes(G4VisAttributes::SetForceWireframe(true));
     logWCFrame->SetVisAttributes(FrameAtt);
-    //logWCFrame->SetVisAttributes(G4VisAttributes::Invisible);
+    //logWCFrame->SetVisAttributes(G4VisAttributes::GetInvisible());
     //logWCArea->SetVisAttributes(G4VisAttributes(true,G4Colour(0.0, 1.0, 1.0)));
     logWCArea->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.5, 0.3)));
-    //logWCArea->SetVisAttributes(G4VisAttributes::Invisible);
-    //logWCLayer->SetVisAttributes(G4VisAttributes::Invisible);
+    //logWCArea->SetVisAttributes(G4VisAttributes::GetInvisible());
+    //logWCLayer->SetVisAttributes(G4VisAttributes::GetInvisible());
     //G4VisAttributes::SetForceWireframe (G4bool force)
   }
-  
+
 
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();
   WCSD *wcSD = new WCSD("WCSD");
   SDMan->AddNewDetector(wcSD);
   //logWCLayer->SetSensitiveDetector(wcSD);
   logWCArea->SetSensitiveDetector(wcSD);
-  
+
 }//MakeWaterCounter
 
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+//_____________________________________________________________________________
 G4bool S2SDetectorConstruction::
 IsVolumeStopper( G4VPhysicalVolume *physVol ) const
 {

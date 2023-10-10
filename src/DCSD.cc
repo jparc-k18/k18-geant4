@@ -26,8 +26,8 @@ DCSD::DCSD( G4String name )
 {
   collectionName.insert( name/*G4String( "DCCollection" )*/ );
 
-  ConfMan *confMan = ConfMan::GetConfManager();
-  EMFlag = confMan->GetEMFlag();
+  const auto& confMan = ConfMan::GetInstance();
+  EMFlag = confMan.GetEMFlag();
 }
 
 DCSD::~DCSD()
@@ -53,7 +53,7 @@ G4bool DCSD::ProcessHits( G4Step *aStep,
    G4double edep = aStep->GetTotalEnergyDeposit();
 
   //if( edep<=DEThreshold && EMFlag == 1) return true;
-  
+
   G4Track *aTrack = aStep->GetTrack();
   G4String decayName= aTrack->GetDefinition()->GetParticleName();
   // if(decayName=="kaon+"){
@@ -62,7 +62,7 @@ G4bool DCSD::ProcessHits( G4Step *aStep,
     G4int hitLayer = theTouchable->GetReplicaNumber();
     //  G4int trackNo = aTrack->GetTrackID();
     //All Perticle
-    G4double hittime = aTrack->GetGlobalTime();  
+    G4double hittime = aTrack->GetGlobalTime();
     G4ThreeVector hitmom = aTrack->GetMomentum();
     //    G4int nHits = DCCollection->entries();
     G4ThreeVector hitpos = aStep->GetPreStepPoint()->GetPosition();
@@ -71,7 +71,7 @@ G4bool DCSD::ProcessHits( G4Step *aStep,
 
     if(hitLayer==131||hitLayer==132) G4cout<<"hit ScFi"<<G4endl;
     //    G4cout<<"hitLayer="<<hitLayer<<G4endl;
-  
+
     //Decay Particle Tracking
     //G4double path=aTrack->GetTrackLength();
     //G4cout<< "pathlength=" << path<<G4endl;
@@ -113,9 +113,9 @@ G4bool DCSD::ProcessHits( G4Step *aStep,
     DCCollection->insert( aHit );
   // }
 #if 0
-  G4cout << "[DCSD] " << "Layer=" << hitLayer 
-    //	 << " edep=" << edep/keV << "keV"  
-	 << " G: " << hitpos << "  L: " << hitposl 
+  G4cout << "[DCSD] " << "Layer=" << hitLayer
+    //	 << " edep=" << edep/keV << "keV"
+	 << " G: " << hitpos << "  L: " << hitposl
 	 <<" P: "<< hitmom << G4endl;
 #endif
 
@@ -150,4 +150,3 @@ void DCSD::clear()
 //   for( G4int i=0; i<nHits; ++i)
 //     (*DCCollection)[i]->Print();
 // }
-

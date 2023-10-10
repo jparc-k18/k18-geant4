@@ -26,8 +26,8 @@ ACSD::ACSD( G4String name )
 {
   collectionName.insert( name/*G4String( "ACCollection" )*/ );
 
-  ConfMan *confMan = ConfMan::GetConfManager();
-  EMFlag = confMan->GetEMFlag();
+  const auto& confMan = ConfMan::GetInstance();
+  EMFlag = confMan.GetEMFlag();
 }
 
 ACSD::~ACSD()
@@ -60,13 +60,13 @@ G4bool ACSD::ProcessHits( G4Step *aStep,
   G4int hitLayer = theTouchable->GetReplicaNumber();
   //  G4int trackNo = aTrack->GetTrackID();
   //All Perticle
-  G4double hittime = aTrack->GetGlobalTime();  
+  G4double hittime = aTrack->GetGlobalTime();
   G4ThreeVector hitmom = aTrack->GetMomentum();
   G4int nHits = ACCollection->entries();
   G4ThreeVector hitpos = aStep->GetPreStepPoint()->GetPosition();
   G4ThreeVector hitposl = theTouchable->GetHistory()->
     GetTopTransform().TransformPoint( hitpos );
-  
+
   //Decay Particle Tracking
   G4String decayName= aTrack->GetDefinition()->GetParticleName();
   //  G4double path=aTrack->GetTrackLength();
@@ -106,9 +106,9 @@ G4bool ACSD::ProcessHits( G4Step *aStep,
   ACCollection->insert( aHit );
 
 #if 0
-  G4cout << "[ACSD] " << "Layer=" << hitLayer 
-	 << " edep=" << edep/keV << "keV"  
-	 << " G: " << hitpos << "  L: " << hitposl 
+  G4cout << "[ACSD] " << "Layer=" << hitLayer
+	 << " edep=" << edep/keV << "keV"
+	 << " G: " << hitpos << "  L: " << hitposl
 	 <<" P: "<< hitmom << G4endl;
 #endif
 
@@ -143,4 +143,3 @@ void ACSD::clear()
 //   for( G4int i=0; i<nHits; ++i)
 //     (*ACCollection)[i]->Print();
 // }
-

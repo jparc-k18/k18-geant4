@@ -1,28 +1,30 @@
-/*
-  "S2SAnalysis.hh"
-  
-  K.Shirotori, 2007/4
-  Modified by Toshi Gogami , 10Nov2014
-*/
+// -*- C++ -*-
 
-#ifndef S2SAnalysis_h
-#define S2SAnalysis_h 1
-
-#include "globals.hh"
-#include "G4ThreeVector.hh"
-#include "G4String.hh"
-#include "RootHelper.hh"
-#include "TFile.h"
-#include "ConfMan.hh"
+#ifndef S2SAnaManager_h
+#define S2SAnaManager_h 1
 
 #include <fstream>
+#include <map>
+#include <vector>
 
-#include <TVector3.h>
+#include <globals.hh>
+#include <G4ThreeVector.hh>
+#include <G4String.hh>
+
+#include <TParticle.h>
 #include <TRandom3.h>
+#include <TVector3.h>
+
+#include "RootHelper.hh"
 
 class G4Run;
 class G4Event;
 class PrimaryInfo;
+
+class TFile;
+class TTree;
+
+class VHitInfo;
 
 #ifndef NumDC
 #define NumDC 30
@@ -36,25 +38,27 @@ class PrimaryInfo;
 #ifndef NumDC
 #define NumDC 4
 #endif
-#ifndef MaxHits1 
+#ifndef MaxHits1
 #define MaxHits1 10
 #endif
-#ifndef MaxHits2 
+#ifndef MaxHits2
 #define MaxHits2 60
 #endif
-#ifndef MaxHits3 
+#ifndef MaxHits3
 #define MaxHits3 80
 #endif
-
 
 const int TOFSTOREMAX = 10;
 
 namespace
 {
-  using namespace root;
+using namespace root;
 }
 
-struct Event{
+struct Event
+{
+  std::map<TString, std::vector<TParticle>> hits;
+
   double x0In;
   double y0In;
   double z0In;
@@ -67,10 +71,10 @@ struct Event{
   double p0;
   double t0;
   int Id;
-  
+
   G4int nP, nN, nL, nSm, nSz, nSp, nXm, nXz, nXsm, nXsz;
   G4int nPim, nPiz, nPip, nKm, nKp;
-  
+
   double DCXObs[NumDC];
   double DCYObs[NumDC];
   double DCX[NumDC];
@@ -101,7 +105,7 @@ struct Event{
   int SlitNK[11];
   int SlitNPi[11];
   int SlitF[11];
-  
+
   // ---- TOF detectors ----
   //int tofco[18];
   int TOFNhits;
@@ -109,7 +113,7 @@ struct Event{
   double toftime_reso[18];
   double tofdE[18];
   double tofn[18];
-  
+
   // ---- Water Cherenkov detector ----
   int WCNhits;
   double wctime[12];
@@ -126,20 +130,20 @@ struct Event{
   double wcnpe2[6];
   //int wclayer;
   //int wcseg;
-  
+
   // ----- Trigger -----
   G4bool TOFTrig;
-  G4bool VDTrig; 
+  G4bool VDTrig;
   G4bool WCTrig;
   G4bool Q1Trig;
   G4bool Q2Trig;
-  
+
   //double toftime[TOFSTOREMAX];
   //double tofdE[TOFSTOREMAX];
 //   double TOFAll;
 //   double TOFt[NumTOFSeg];
 //   double TOFtObs[NumTOFSeg];
-  
+
 
 //   int TOFHit;
 //   double ACX;
@@ -154,63 +158,86 @@ struct Event{
   //int WCHit;
 };
 
-class S2SAnalysis
+class S2SAnaManager
 {
 public:
-  S2SAnalysis( G4String histname );
-  S2SAnalysis( ConfMan* );
-  S2SAnalysis();
-  //S2SAnalysis( Conf );
-  virtual ~S2SAnalysis();
+  static G4String       ClassName();
+  static S2SAnaManager& GetInstance();
+  virtual ~S2SAnaManager();
+
+private:
+  S2SAnaManager();
+  S2SAnaManager(const S2SAnaManager&);
+  S2SAnaManager& operator =(const S2SAnaManager&);
 
 public:
   void BeginOfRun( const G4Run *aRun );
   void EndOfRun( const G4Run *aRun );
   void BeginOfPrimaryAction();
-  void SetPrimaryData(G4double x0, G4double y0, G4double z0, 
-		      G4double u0, G4double v0, G4double phi, 
-		      G4double theta, G4double p0, G4double t0, 
+  void MakeBranch(const G4String& sd_name);
+  void MakeHistogram(const G4String& sd_name);
+  void SetNhits(const G4String& sd_name, G4int nhits);
+  void SetHitData(const VHitInfo* hit);
+  void SetPrimaryData(G4double x0, G4double y0, G4double z0,
+		      G4double u0, G4double v0, G4double phi,
+		      G4double theta, G4double p0, G4double t0,
 		      G4int ParIdNb);
-  void SetProcessData(G4int nP, G4int nN, G4int nL, 
-		      G4int nSm, G4int nSz, G4int nSp, 
-		      G4int nXm, G4int nXz, G4int nXsm, 
+  void SetProcessData(G4int nP, G4int nN, G4int nL,
+		      G4int nSm, G4int nSz, G4int nSp,
+		      G4int nXm, G4int nXz, G4int nXsm,
 		      G4int nXsz,G4int nPim,G4int nPiz,
 		      G4int nPip,G4int nKm,G4int nKp);
   void BeginOfEvent( const G4Event *anEvent );
   void EndOfEvent( const G4Event *anEvent );
 
   void SetFileName( const G4String &filename ) { filename_=filename; }
-  //void DefineHistograms( void );
-  void DefineTree( void );
-  G4bool GetTriggerStatus( void ) const { return fTriggered; }
-  void SaveFile( void ) const;
-  void Terminate( void ) const;
-  const G4String &GetFileName( void ) const { return filename_; }
-  void SetActive( void ) { fActive_=true; }
-  void SetInActive( void ) { fActive_=false; }
-  void ShowStatus( void ) const;
+  //void DefineHistograms();
+  void DefineTree();
+  G4bool GetTriggerStatus() const { return fTriggered; }
+  void SaveFile() const;
+  void Terminate() const;
+  const G4String &GetFileName() const { return filename_; }
+  void SetActive() { fActive_=true; }
+  void SetInActive() { fActive_=false; }
+  void ShowStatus() const;
 
   void SetDataFile( const char *datafile );
 
 private:
-  Event event;
   G4String filename_;
   G4bool fActive_;
   G4bool fTriggered;
-  ConfMan* conf;
   TRandom3* nperand;
 
   G4int trigNum;
   std::ofstream DataFile_;
   //   G4String datafile_;
 
-  TFile *anafile;
+  TFile *m_file;
+  TTree *m_tree;
 
 private:
-  void PrintHitsInformation( const G4Event *anEvent, 
+  void PrintHitsInformation( const G4Event *anEvent,
 			    std::ostream &ost ) const;
 public:
   void InitializeEvent(void);
 };
+
+//_____________________________________________________________________________
+inline G4String
+S2SAnaManager::ClassName()
+{
+  static G4String s_name("S2SAnaManager");
+  return s_name;
+}
+
+
+//_____________________________________________________________________________
+inline S2SAnaManager&
+S2SAnaManager::GetInstance()
+{
+  static S2SAnaManager s_instance;
+  return s_instance;
+}
 
 #endif

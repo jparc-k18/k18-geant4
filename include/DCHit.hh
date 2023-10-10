@@ -80,6 +80,6 @@ inline void DCHit::operator delete( void *aHit )
   DCHitAllocator.
     FreeSingle( static_cast<DCHit *>( aHit ) );
 }
-		       
+
 
 #endif

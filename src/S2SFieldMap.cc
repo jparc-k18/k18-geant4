@@ -1,6 +1,6 @@
 /*
   "S2SFieldMap.cc"
-  
+
   Modified by Toshi Gogami , 21Nov2014
 */
 #include "MagnetConstant.hh"
@@ -37,7 +37,7 @@ bool S2SFieldMap::Initialize( void )
   static const std::string funcname = "S2SFieldMap::Initialize";
 
   std::ifstream fsin( filename_.c_str() );
-  
+
   if(!fsin){
     std::cerr << "[" << funcname << "]: file open fail : " << filename_ << std::endl;
     std::exit(-1);
@@ -63,29 +63,17 @@ bool S2SFieldMap::Initialize( void )
       B[ix][iy].resize(Nz);
     }
   }
-  
+
 
   double xlim_Q1 = -(rhoD*tan(bendAngleD/2.*Deg2Rad) + driftL2 + Q2z + driftL1/2.);
   double xlim_Q2 = -(rhoD*tan(bendAngleD/2.*Deg2Rad) + driftL2/2.);
-  
-  double x,y,z,bx,by,bz;  
+
+  double x,y,z,bx,by,bz;
   int npoint=0;
-  int readn = 0;
-  std::cout << "Now reading Field Map " <<std::endl;
-  while( fsin ){
-    if (npoint%50000 == 0) {
-      //std::cout << " (-_-)p[Wait]q ";
-      if(readn<5)std::cout << "(๑ˇεˇ)  ";
-      else if (readn==5)std::cout << "(๑ˇεˇ)  " << std::endl;
-      else if (readn<10)std::cout << "ヾ(｡>﹏<｡)ﾉﾞ  " ;
-      else if (readn==10)std::cout << "ヾ(｡>﹏<｡)ﾉﾞ" << std::endl;
-      else if (readn<15)std::cout << "(๑ˇεˇ)  ";
-      else if (readn==15)std::cout << "(๑ˇεˇ) " << std::endl;
-      else if (readn<20)std::cout << "ヾ(｡>﹏<｡)ﾉﾞ  " ;
-      else if (readn==20)std::cout << "ヾ(｡>﹏<｡)ﾉﾞ" << std::endl;
-      else std::cout << "." ;
-      fflush( stdout );
-      readn++;
+  G4cout << "Now reading Field Map " << G4endl;
+  while(fsin){
+    if(npoint%50000 == 0){
+      G4cout << "." << std::flush;
     }
     npoint++;
 
@@ -114,7 +102,7 @@ bool S2SFieldMap::Initialize( void )
       }
     }
   }
-  std::cout << std::endl << "Finished reading Field Map " << std::endl;;
+  G4cout << G4endl << "Finished reading Field Map " << G4endl;
   return true;
 }
 
@@ -158,7 +146,7 @@ bool S2SFieldMap::GetFieldValue( const double point[3],
     +wx2*wy1*B[ix2][iy1][iz2].z+wx2*wy2*B[ix2][iy2][iz2].z;
   double bz=wz1*bz1+wz2*bz2;
 
-  Bfield[0]=bx; Bfield[1]=by; Bfield[2]=bz; 
+  Bfield[0]=bx; Bfield[1]=by; Bfield[2]=bz;
   return true;
 }
 

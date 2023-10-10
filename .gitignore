@@ -12,7 +12,9 @@ lib/
 
 CMakeLists.txt
 fieldmap
-/analysis/root
+G4History.macro
+run
+obj
 
 rootfile
 
