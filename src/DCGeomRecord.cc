@@ -16,7 +16,7 @@
 namespace
 {
 enum  EDefinition { kSks, kKurama };
-const EDefinition GlobalCoordinate = kKurama;
+const EDefinition GlobalCoordinate = kSks;
 }
 
 //_____________________________________________________________________________

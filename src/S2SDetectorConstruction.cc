@@ -17,9 +17,11 @@
 #include "ACSD.hh"
 #include "WCSD.hh"
 //#include "Area.hh"
+#include "DetectorID.hh"
 
 #include "ConfMan.hh"
 #include "DCGeomMan.hh"
+#include "DetSizeMan.hh"
 
 #include "G4FieldManager.hh"
 #include "G4ChordFinder.hh"
@@ -56,6 +58,8 @@ namespace
 {
 using namespace CLHEP;
 const auto& confMan = ConfMan::GetInstance();
+const auto& geomMan = DCGeomMan::GetInstance();
+const auto& sizeMan = DetSizeMan::GetInstance();
 }
 
 //_____________________________________________________________________________
@@ -123,6 +127,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 //_____________________________________________________________________________
 void S2SDetectorConstruction::MakeField()
 {
+  return;
   S2SField *field = new S2SField(confMan.GetFieldMap(),
    				 confMan.GetMagScaleQ1(),
 				 confMan.GetMagScaleQ2(),
@@ -1336,9 +1341,8 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
 //     new G4PVPlacement( G4Transform3D(rotSlit7, gloPosSlit[7]),
 // 		       "physSlit[7]", logicSlit, pMother, false, 7 );
 
-  //logicSlit->SetVisAttributes(G4VisAttributes(true,G4Colour(0.8,1.0,1.0)));//::GetInvisible());
-  //logicSlit->SetVisAttributes(G4VisAttributes::GetInvisible());
-
+  // logicSlit->SetVisAttributes(G4Color::Gray());
+  logicSlit->SetVisAttributes(G4VisAttributes::GetInvisible());
 
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();
   SlSD *slSD = new SlSD("SlSD");
@@ -1348,19 +1352,46 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
 }
 
 //_____________________________________________________________________________
-
-
-void S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
+void
+S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
 {
-  const DCGeomMan & geomMan=DCGeomMan::GetInstance();
+  // const auto& ra2 = gGeom.GetRotAngle2("TOF") * CLHEP::deg;
+  // const auto& half_size = gSize.GetSize("TofSeg") * 0.5 * mm;
+  // const G4double pitch = gGeom.GetWirePitch("TOF") * mm;
+  // auto tofSD = new TOFSD("TOF");
+  // AddNewDetector(tofSD);
+  // // Mother
+  // auto mother_solid = new G4Box("TofMotherSolid",
+  //                               half_size.x()*NumOfSegTOF + 50.*mm,
+  //                               half_size.y() + 50.*mm,
+  //                               half_size.z()*2 + 50.*mm);
+  // auto mother_lv = new G4LogicalVolume(mother_solid,
+  //                                      m_material_map["Air"],
+  //                                      "FtofMotherLV");
+  // auto rot = new G4RotationMatrix;
+  // rot->rotateY(- ra2 - m_rotation_angle);
+  // auto pos = (gGeom.GetGlobalPosition("KURAMA") +
+  //             gGeom.GetGlobalPosition("TOF"));
+  // pos.rotateY(m_rotation_angle);
+  // new G4PVPlacement(rot, pos, mother_lv,
+  //                   "FtofMotherPV", m_world_lv, false, 0, m_check_overlaps);
+  // mother_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
+  // // Segment
+  // auto segment_solid = new G4Box("FtofSegmentSolid", half_size.x(),
+  //                                half_size.y(), half_size.z());
+  // auto segment_lv = new G4LogicalVolume(segment_solid,
+  //                                       m_material_map["Scintillator"],
+  //                                       "FtofSegmentLV");
+  // for(G4int i=0; i<NumOfSegFTOF; ++i){
+  //   segment_lv->SetVisAttributes(G4Colour::Cyan());
+  //   segment_lv->SetSensitiveDetector(tofSD);
+  //   pos = G4ThreeVector((-NumOfSegFTOF/2 + i)*pitch,
+  //                       0.0,
+  //                       2.*(- i%2 + 0.5)*half_size.z());
+  //   new G4PVPlacement(nullptr, pos, segment_lv,
+  //                     "FtofSegmentPV", mother_lv, false, i, m_check_overlaps);
+  // }
 
-  /*
-    const int SegNumTOF = 25;
-    double TOFX = 70.*mm;
-    double TOFY = 20.*mm;
-    double TOFZ = 1000.*mm;
-  */
-  // ~~~~ New configuration , Toshi, Nov2014 ~~~~
   const int SegNumTOF = 18;
   double TOFX = 70.*mm;
   double TOFY = 20.*mm;
@@ -1598,15 +1629,13 @@ S2SDetectorConstruction::MakeAerogelCounter(G4VPhysicalVolume* pMother)
   logACArea ->SetVisAttributes(AreaAtt);
   //logACArea->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 1.0)));
   logACRad->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 0.0, 1.0)));
-  logACLayer->SetVisAttributes(G4VisAttributes::GetInvisible());
-
+  // logACLayer->SetVisAttributes(G4VisAttributes::GetInvisible());
 
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();
   ACSD *acSD = new ACSD("AC");
   SDMan->AddNewDetector(acSD);
   //logACLayer->SetSensitiveDetector(acSD);
   logACRad->SetSensitiveDetector(acSD);
-
 }
 
 

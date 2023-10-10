@@ -1,4 +1,4 @@
-# 
+#
 # Name Explaination (use DCGeomRecord as refference):
 #		Xs2s:	x
 #		Ys2s:	y
@@ -10,7 +10,7 @@
 #		Res:	resolution
 #		W0:	origin position
 #		dXdW:	wire distance
-#		Ofs:	offset    
+#		Ofs:	offset
 #
 ############################# Real    ########################
 # Id Name      Xs2s[mm]  Ys2s[mm]  Zs2s[mm] TA[deg] RA1[deg] RA2[deg]  L[mm]  Res[mm]   W0   dXdW    Ofs
@@ -66,4 +66,5 @@
 # original -->
 # 61 TOF       1351.19   3712.37     00.00   00.00   90.00   160.00    0.00    0.30    25.00   0.00   0.00
 # Toshi, 19Nov2014 -->
- 61 TOF       1320.00   3627.00     00.00   00.00   90.00   160.00    0.00    0.30    25.00   0.00   0.00 
+61 TOF       1320.00   3627.00     00.00   00.00   90.00   160.00    0.00    0.30    25.00   0.00   0.00
+# 55	TOF	3616.24	0.00	1316.20	0.0	0.0	70.0	3848.32	0.00	8.5	66.0	0.5
