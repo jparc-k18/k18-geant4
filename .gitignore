@@ -5,6 +5,7 @@
 *.pyc
 *.dev
 *.root
+*.wrl
 build/
 bin/
 lib/
@@ -15,7 +16,7 @@ fieldmap
 G4History.macro
 run
 obj
-
+c1.pdf
 rootfile
 
 /run/conf/*

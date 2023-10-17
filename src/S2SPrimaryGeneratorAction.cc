@@ -15,6 +15,7 @@
 
 #include <TMath.h>
 
+#include <DCGeomMan.hh>
 #include "S2SPrimaryGeneratorAction.hh"
 #include "FuncName.hh"
 #include "Area.hh"
@@ -27,6 +28,7 @@
 namespace
 {
 const auto& confMan = ConfMan::GetInstance();
+const auto& geomMan = DCGeomMan::GetInstance();
 auto& anaMan = S2SAnaManager::GetInstance();
 }
 
@@ -366,8 +368,9 @@ void S2SPrimaryGeneratorAction::GenerateMonoBeam(G4Event* anEvent)
   const G4double z0 = -rhoD*tan(bendAngleD*TMath::DegToRad()/2.)-driftL2-Q2z-driftL1-Q1z  - 600*CLHEP::mm;
   // G4LorentzVector p(0, 0, p0, TMath::Sqrt(p0*p0 + m0*m0));
   // G4LorentzVector v(0, 0, z0, 0);
-  G4LorentzVector p(p0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
-  G4LorentzVector v(-10*m, 0, 0, 0);
+  const auto& target_pos = geomMan.GetGlobalPosition("Target");
+  G4LorentzVector p(0, 0, p0, TMath::Sqrt(p0*p0 + m0*m0));
+  G4LorentzVector v(target_pos, 0);
   particleGun->SetParticleDefinition(m_particle);
   particleGun->SetParticleMomentumDirection(p.v());
   particleGun->SetParticleEnergy(p.e() - m0);

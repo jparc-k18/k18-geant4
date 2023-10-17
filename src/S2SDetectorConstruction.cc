@@ -108,17 +108,17 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   ConstructD1(physiWorld);
 #endif
 
-#if 1
+#if 0
   MakePositionDetector(physiWorld);
 #endif
 
-#if 1
+#if 0
   MakeTOFCounter(physiWorld);
   MakeAerogelCounter(physiWorld);
   MakeWaterCounter(physiWorld);
 #endif
 
-#if 1
+#if 0
   MakeSlits(physiWorld);
 #endif
 
@@ -128,11 +128,10 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 //_____________________________________________________________________________
 void S2SDetectorConstruction::MakeField()
 {
-  return;
-  S2SField *field = new S2SField(confMan.GetFieldMap(),
-   				 confMan.GetMagScaleQ1(),
-				 confMan.GetMagScaleQ2(),
-				 confMan.GetMagScale());
+  S2SField *field = new S2SField(confMan.GetFieldMap());
+//    				 confMan.GetMagScaleQ1(),
+// 				 confMan.GetMagScaleQ2(),
+// 				 confMan.GetMagScale());
   auto fieldManager =
     G4TransportationManager::GetTransportationManager()->GetFieldManager();
   fieldManager->SetDetectorField(field);
@@ -180,8 +179,6 @@ S2SDetectorConstruction::ConstructTarget(G4VPhysicalVolume *pMother)
   logTarget->SetVisAttributes(G4Color::Gray());
 }
 
-
-
 //_____________________________________________________________________________
 void
 S2SDetectorConstruction::ConstructQ1(G4VPhysicalVolume *pMother)
@@ -190,399 +187,182 @@ S2SDetectorConstruction::ConstructQ1(G4VPhysicalVolume *pMother)
   G4Material* PoleMater = m_material_list->Fe;
   // G4Material* Q1GapMater = m_material_list->at("Air");
   G4Material* Q1GapMater = m_material_list->at("HeGas");
-
-  // const G4double phiStart = 22.5*deg;
-  // const G4double phiTotal = 360.*deg;
-  // const G4int numSide   = 8;
-  // const G4int numZPlane = 2;
-  // const G4double zPlane[] = { -440.0*mm, 440.0*mm };
-  // const G4double rInner[] = { 0., 0. };
-  // const G4double rOuter[] = { 1200.0*mm, 1200.0*mm };
-  // const G4double a0 = 155*mm; // phi=310mm
-
-  // G4VSolid* solidQ1Gap;
-  // solidQ1Gap = new G4Box("solidQ1Gap", 540*mm/2, 540*mm/2, 900*mm/2);
-  // const G4double rCorner = (540*mm*std::sqrt(2)-2*a0)/2.;
+  const G4double phiStart = 22.5*deg;
+  const G4double phiTotal = 360.*deg;
+  const G4int numSide   = 8;
+  const G4int numZPlane = 2;
+  const G4double zPlane[] = { -440.0*mm, 440.0*mm };
+  const G4double rInner[] = { 0., 0. };
+  const G4double rOuter[] = { 1200.0*mm, 1200.0*mm };
+  const G4double a0 = 155*mm; // phi=310mm
+  const G4ThreeVector pos(0, 0, -3885.35*mm);
+  ///// Pole
+  G4VSolid* solidQ1Gap;
+  auto solidQ1Box = new G4Box("solidQ1Gap", 540*mm/2, 540*mm/2, 900*mm/2);
+  const G4double rCorner = (540*mm*std::sqrt(2)-2*a0)/2.;
   // auto solidCorner = new G4Tubs("solidCorner",
   //                               0*mm, rCorner, 900*mm,
   //                               phiStart, phiTotal);
-  // solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Gap,
-  //                                     solidCorner, nullptr, G4ThreeVector(270*mm, 270*mm, 0));
-  // solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Gap,
-  //                                     solidCorner, nullptr, G4ThreeVector(270*mm, -270*mm, 0));
-  // solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Gap,
-  //                                     solidCorner, nullptr, G4ThreeVector(-270*mm, 270*mm, 0));
-  // solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Gap,
-  //                                     solidCorner, nullptr, G4ThreeVector(-270*mm, -270*mm, 0));
-
-  // G4VSolid* solidQ1Yoke;
-  // solidQ1Yoke = new G4Polyhedra
-  //   ("solidQ1Yoke", phiStart, phiTotal, numSide, numZPlane,
-  //    zPlane, rInner, rOuter);
-  // solidQ1Yoke = new G4SubtractionSolid("solidQ1Yoke", solidQ1Yoke,
-  //                                      solidQ1Gap, nullptr, G4ThreeVector());
-  // auto lvQ1Yoke = new G4LogicalVolume
-  //   (solidQ1Yoke, m_material_list->Fe, "lvQ1Yoke");
-  // new G4PVPlacement(G4Transform3D(G4RotationMatrix(), G4ThreeVector()),
-  //                   "pvQ1Yoke", lvQ1Yoke, pMother, false, 0, m_check_overlaps);
-  // lvQ1Yoke->SetVisAttributes(G4Color::Cyan());
-
-  // return;
-
-
-  G4double tmpB1 = 193.75*mm;
-  G4double tmpPoleR = 180.84*mm;
-  G4double Q1a0 = 155*mm;
-
+  G4double zPlaneCorner[] = { -500*mm, 500*mm };
+  G4double rOuterCorner[] = { rCorner, rCorner };
+  auto solidCorner = new G4Polyhedra("solidCorner", 0*deg, 360*deg, 4, 2,
+                                     zPlaneCorner, rInner, rOuterCorner);
+  solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Box,
+                                      solidCorner, nullptr, G4ThreeVector(270*mm, 270*mm, 0));
+  solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Gap,
+                                      solidCorner, nullptr, G4ThreeVector(270*mm, -270*mm, 0));
+  solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Gap,
+                                      solidCorner, nullptr, G4ThreeVector(-270*mm, 270*mm, 0));
+  solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Gap,
+                                      solidCorner, nullptr, G4ThreeVector(-270*mm, -270*mm, 0));
   G4RotationMatrix rotQ1Box;
   rotQ1Box.rotateZ(45*deg);
   G4double Q1Box3V = 900+1000/sqrt(2);
-
-  G4Box *solQ1Box = new G4Box("solidQ1Pole", 2400*mm/2, 2400*mm/2, 880*mm/2);
-  G4Box *tmpQ1Box = new G4Box("tmp",2000*mm/2, 2000*mm/2, 2000*mm/2);
-  G4SubtractionSolid *solQ1Pole1
-    = new G4SubtractionSolid("tmp", solQ1Box, tmpQ1Box,
-			     G4Transform3D(rotQ1Box, G4ThreeVector(Q1Box3V,Q1Box3V,0)));
-  G4SubtractionSolid *solQ1Pole2
-    = new G4SubtractionSolid("tmp", solQ1Pole1, tmpQ1Box,
-			     G4Transform3D(rotQ1Box, G4ThreeVector(-Q1Box3V,Q1Box3V,0)));
-  G4SubtractionSolid *solQ1Pole3
-    = new G4SubtractionSolid("tmp", solQ1Pole2, tmpQ1Box,
-			     G4Transform3D(rotQ1Box, G4ThreeVector(Q1Box3V,-Q1Box3V,0)));
-  G4SubtractionSolid *solQ1Pole4
-    = new G4SubtractionSolid("tmp", solQ1Pole3, tmpQ1Box,
-			     G4Transform3D(rotQ1Box, G4ThreeVector(-Q1Box3V,-Q1Box3V,0)));
-
-  G4Box *tmpBox1 = new G4Box("tmp", tmpB1+100*mm, tmpB1+100*mm, 882*mm/2);
-  G4Tubs *tmpSolPole = new G4Tubs("tmp",
-				 0*m, tmpPoleR, 884*mm/2,
-				 0*degree, 360*degree );
-
-  G4double tmpPoleCent = (tmpPoleR+Q1a0)/sqrt(2);
-  G4SubtractionSolid *tmpSolGap1
-    = new G4SubtractionSolid("tmp", tmpBox1, tmpSolPole,
-			     0, G4ThreeVector(+tmpPoleCent, +tmpPoleCent, 0) );
-  G4SubtractionSolid *tmpSolGap2
-    = new G4SubtractionSolid("tmp", tmpSolGap1, tmpSolPole,
-			     0, G4ThreeVector(-tmpPoleCent, +tmpPoleCent, 0) );
-  G4SubtractionSolid *tmpSolGap3
-    = new G4SubtractionSolid("tmp", tmpSolGap2, tmpSolPole,
-			     0, G4ThreeVector(-tmpPoleCent, -tmpPoleCent, 0) );
-  G4SubtractionSolid *tmpSolGap4
-    = new G4SubtractionSolid("tmp", tmpSolGap3, tmpSolPole,
-			     0, G4ThreeVector(+tmpPoleCent, -tmpPoleCent, 0) );
-
-  G4Trd *tmpSolTrd = new G4Trd("tmp", 37, 62, 882/2., 882/2., (257-193.75)/2);
-  G4RotationMatrix tmpGapRot1;
-  tmpGapRot1.rotateX(90.*deg);
-
-  G4UnionSolid *tmpSolGap5
-    = new G4UnionSolid("tmp", tmpSolGap4, tmpSolTrd,
-		       G4Transform3D(tmpGapRot1,G4ThreeVector(0,(257+193.75)/2,0)));
-  tmpGapRot1.rotateZ(90*deg);
-  G4UnionSolid *tmpSolGap6
-    = new G4UnionSolid("tmp", tmpSolGap5, tmpSolTrd,
-		       G4Transform3D(tmpGapRot1,G4ThreeVector(-(257+193.75)/2,0,0)));
-  tmpGapRot1.rotateZ(90*deg);
-  G4UnionSolid *tmpSolGap7
-    = new G4UnionSolid("tmp", tmpSolGap6, tmpSolTrd,
-		       G4Transform3D(tmpGapRot1,G4ThreeVector(0,-(257+193.75)/2,0)));
-  tmpGapRot1.rotateZ(90*deg);
-  G4UnionSolid *tmpSolGap8
-    = new G4UnionSolid("tmp", tmpSolGap7, tmpSolTrd,
-		       G4Transform3D(tmpGapRot1,G4ThreeVector((257+193.75)/2,0,0)));
-
-  G4Box *tmpBox2 = new G4Box("tmp", 37., 11./2, 882./2);
-  G4RotationMatrix tmpGapRot2;
-
-  G4UnionSolid *tmpSolGap9
-    = new G4UnionSolid("tmp", tmpSolGap8, tmpBox2,
-		       G4Transform3D(tmpGapRot2,G4ThreeVector(0,5.5+257,0)));
-  tmpGapRot2.rotateZ(90.*deg);
-  G4UnionSolid *tmpSolGap10
-    = new G4UnionSolid("tmp", tmpSolGap9, tmpBox2,
-		       G4Transform3D(tmpGapRot2,G4ThreeVector(-5.5-257,0,0)));
-  tmpGapRot2.rotateZ(90.*deg);
-  G4UnionSolid *tmpSolGap11
-    = new G4UnionSolid("tmp", tmpSolGap10, tmpBox2,
-		       G4Transform3D(tmpGapRot2,G4ThreeVector(0,-5.5-257,0)));
-  tmpGapRot2.rotateZ(90.*deg);
-  G4UnionSolid *tmpSolGap12
-    = new G4UnionSolid("tmp", tmpSolGap11, tmpBox2,
-		       G4Transform3D(tmpGapRot2,G4ThreeVector(5.5+257,0,0)));
-
-  //  G4SubtractionSolid *solQ1Pole5 = new G4SubtractionSolid("solQ1Pole", solQ1Pole4, tmpSolPolePart12);
-
-  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//
-  //_____________________________________________________________________________//_____________________________________________________________________________//
-
-  //  G4Trd *tmpSolTrd = new G4Trd("tmp", 37, 62, 882/2., 882/2., (257-193.75)/2);
-  //  G4RotationMatrix tmpGapRot1;
-
-  // tmpGapRot1.rotateX(90.*deg);
-
-  G4SubtractionSolid *tmpSolPolePart5 = new G4SubtractionSolid("tmp", solQ1Pole4, tmpSolTrd,
-					      G4Transform3D(tmpGapRot1,G4ThreeVector(0,(257+193.75)/2,0)));
-  tmpGapRot1.rotateZ(90*deg);
-  G4SubtractionSolid *tmpSolPolePart6 = new G4SubtractionSolid("tmp", tmpSolPolePart5, tmpSolTrd,
-					      G4Transform3D(tmpGapRot1,G4ThreeVector(-(257+193.75)/2,0,0)));
-  tmpGapRot1.rotateZ(90*deg);
-  G4SubtractionSolid *tmpSolPolePart7 = new G4SubtractionSolid("tmp", tmpSolPolePart6, tmpSolTrd,
-					      G4Transform3D(tmpGapRot1,G4ThreeVector(0,-(257+193.75)/2,0)));
-  tmpGapRot1.rotateZ(90*deg);
-  G4SubtractionSolid *tmpSolPolePart8 = new G4SubtractionSolid("tmp", tmpSolPolePart7, tmpSolTrd,
-					      G4Transform3D(tmpGapRot1,G4ThreeVector((257+193.75)/2,0,0)));
-
-
-  //  G4Box *tmpBox2 = new G4Box("tmp", 37., 11./2, 882./2);
-  //  G4RotationMatrix tmpGapRot2;
-  tmpGapRot2.rotateZ(90.*deg);
-
-  G4SubtractionSolid *tmpSolPolePart9 = new G4SubtractionSolid("tmp", tmpSolPolePart8, tmpBox2,
-					      G4Transform3D(tmpGapRot2,G4ThreeVector(0,5.5+257,0)));
-  tmpGapRot2.rotateZ(90.*deg);
-  G4SubtractionSolid *tmpSolPolePart10 = new G4SubtractionSolid("tmp", tmpSolPolePart9, tmpBox2,
-					       G4Transform3D(tmpGapRot2,G4ThreeVector(-5.5-257,0,0)));
-  tmpGapRot2.rotateZ(90.*deg);
-  G4SubtractionSolid *tmpSolPolePart11 = new G4SubtractionSolid("tmp", tmpSolPolePart10, tmpBox2,
-					      G4Transform3D(tmpGapRot2,G4ThreeVector(0,-5.5-257,0)));
-  tmpGapRot2.rotateZ(90.*deg);
-  G4SubtractionSolid *tmpSolPolePart12 = new G4SubtractionSolid("tmp", tmpSolPolePart11, tmpBox2,
-					       G4Transform3D(tmpGapRot2,G4ThreeVector(5.5+257,0,0)));
-
-  G4SubtractionSolid *solQ1Pole5 = new G4SubtractionSolid("solQ1Pole", solQ1Pole4, tmpBox1);
-  //  G4SubtractionSolid *solQ1Pole5 = new G4SubtractionSolid("solQ1Pole", tmpSolPolePart12, tmpSolGap4);
-  //_____________________________________________________________________________//_____________________________________________________________________________////
-  //_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//_____________________________________________________________________________//
-
-  G4LogicalVolume *logQ1Pole = new G4LogicalVolume(solQ1Pole5, PoleMater, "logQ1Pole");
-  G4LogicalVolume *logQ1Gap = new G4LogicalVolume(tmpSolGap12, Q1GapMater, "logQ1Gap");
-  //  G4LogicalVolume *logQ1Gap = new G4LogicalVolume(tmpBox1, Q1GapMater, "logQ1Gap");
-
-  G4RotationMatrix rotQ1Pole;
-  rotQ1Pole.rotateZ(90*deg);
-  rotQ1Pole.rotateY(90*deg);
-  x = -(rhoD*tan(bendAngleD/2.*Deg2Rad) + driftL2 + Q2z + driftL1 + Q1z/2.);
-  // x = 0.*m;
-  y = 0.*m;
-  z = 0.*m;
-  G4ThreeVector gloPosQ1(x, y, z);
-
-  //  G4VPhysicalVolume* physQ1Pole =
-  new G4PVPlacement(G4Transform3D(rotQ1Pole,gloPosQ1),
-                    "physQ1Pole", logQ1Pole, pMother, false, 0, m_check_overlaps);
-  //  G4VPhysicalVolume* physQ1Gap =
-  new G4PVPlacement(G4Transform3D(rotQ1Pole,gloPosQ1),
-                    "physQ1Gap", logQ1Gap, pMother, false, 0, m_check_overlaps);
-
-  logQ1Pole->SetVisAttributes(/*G4VisAttributes::GetInvisible());*/G4VisAttributes(true,G4Colour(0.0, 1.0, 0.0)));
-  logQ1Gap->SetVisAttributes(G4VisAttributes::GetInvisible());//(true,G4Colour(1.0, 1.0, 0.0)));
-
+  G4VSolid* solidQ1Pole = nullptr;
+  solidQ1Pole = new G4Box("solidQ1Pole", 2400*mm/2, 2400*mm/2, 880*mm/2);
+  auto solidQ1Corner = new G4Box("tmp", 2000*mm/2, 2000*mm/2, 2000*mm/2);
+  solidQ1Pole = new G4SubtractionSolid("tmp", solidQ1Pole, solidQ1Corner,
+                                       G4Transform3D(rotQ1Box, G4ThreeVector(Q1Box3V,Q1Box3V,0)));
+  solidQ1Pole = new G4SubtractionSolid("tmp", solidQ1Pole, solidQ1Corner,
+                                       G4Transform3D(rotQ1Box, G4ThreeVector(-Q1Box3V,Q1Box3V,0)));
+  solidQ1Pole = new G4SubtractionSolid("tmp", solidQ1Pole, solidQ1Corner,
+                                       G4Transform3D(rotQ1Box, G4ThreeVector(Q1Box3V,-Q1Box3V,0)));
+  solidQ1Pole = new G4SubtractionSolid("tmp", solidQ1Pole, solidQ1Corner,
+                                       G4Transform3D(rotQ1Box, G4ThreeVector(-Q1Box3V,-Q1Box3V,0)));
+  solidQ1Pole = new G4SubtractionSolid("solidQ1Pole", solidQ1Pole,
+                                       solidQ1Gap, nullptr, G4ThreeVector());
+  auto lvQ1Pole = new G4LogicalVolume
+    (solidQ1Pole, m_material_list->Fe, "lvQ1Pole");
+  new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos),
+                    "pvQ1Pole", lvQ1Pole, pMother, false, 0, m_check_overlaps);
+  lvQ1Pole->SetVisAttributes(G4Color::Cyan());
+  ///// Coil
+  G4VSolid* solidQ1Coil = nullptr;
+  solidQ1Coil = new G4Box("solidQ1Coil", 1400*mm/2, 1400*mm/2, 180*mm/2);
+  solidQ1Coil = new G4SubtractionSolid("solidQ1Coil", solidQ1Coil, solidQ1Box,
+                                       nullptr, G4ThreeVector());
+  auto lvQ1Coil = new G4LogicalVolume
+    (solidQ1Coil, m_material_list->Cu, "lvQ1Coil");
+  new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos - G4ThreeVector(0, 0, 530*mm)),
+                    "pvQ1CoilU", lvQ1Coil, pMother, false, 0, m_check_overlaps);
+  new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos + G4ThreeVector(0, 0, 530*mm)),
+                    "pvQ1CoilD", lvQ1Coil, pMother, false, 1, m_check_overlaps);
+  lvQ1Coil->SetVisAttributes(G4Color::Brown());
 }
 
-//_____________________________________________________________________________//_____________________________________________________________________________
-/// Q2 ///
-//_____________________________________________________________________________//_____________________________________________________________________________
-
-void S2SDetectorConstruction::ConstructQ2(G4VPhysicalVolume *pMother)
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructQ2(G4VPhysicalVolume *pMother)
 {
-
   G4double x, y, z;
   G4Material *PoleMater = m_material_list->Fe;
-  //G4Material *Q2GapMater = m_material_list->at("Vacuum");//HeGas;
-  //G4Material *Q2GapMater = m_material_list->at("Air");//HeGas;
+  //G4Material *Q2GapMater = m_material_list->at("Air");
   G4Material *Q2GapMater = m_material_list->at("HeGas");
-
-  G4double tmpB2=243.61*mm;
-  G4double tmpPoleR2 = 219.28*mm;
-  G4double Q2a0 = 180*mm;
-
-  //G4Box *solQ2Box = new G4Box("solidQ2Pole", 1050*mm, 770*mm, 540*mm/2);
-  G4Box *solQ2Box = new G4Box("solidQ2Pole", 1050.0*mm, 770.0*mm, 500.0*mm/2.0); // Corrected, 16Mar2015
-
-  //G4Box *tmpBox1 = new G4Box("tmp", tmpB2+150*mm, tmpB2+150*mm, 542*mm/2);
-  G4Box *tmpBox1 = new G4Box("tmp", tmpB2+150.0*mm, tmpB2+150.0*mm, 502.0*mm/2.0);
-  G4Tubs *tmpSolPole = new G4Tubs("tmp",
-				  //0*m, tmpPoleR2, 544*mm/2,
-				  0*m, tmpPoleR2, 504.0*mm/2.0,
-				  //0*m, tmpPoleR2, 500.0*mm/2.0,
-				  0*degree, 360.0*degree );
-
-  G4double tmpPoleCent = (tmpPoleR2+Q2a0)/sqrt(2);
-  G4SubtractionSolid *tmpSolGap1 = new G4SubtractionSolid("tmp", tmpBox1, tmpSolPole,
-							0, G4ThreeVector(+tmpPoleCent, +tmpPoleCent, 0) );
-  G4SubtractionSolid *tmpSolGap2 = new G4SubtractionSolid("tmp", tmpSolGap1, tmpSolPole,
-							0, G4ThreeVector(-tmpPoleCent, +tmpPoleCent, 0) );
-  G4SubtractionSolid *tmpSolGap3 = new G4SubtractionSolid("tmp", tmpSolGap2, tmpSolPole,
-							0, G4ThreeVector(-tmpPoleCent, -tmpPoleCent, 0) );
-  G4SubtractionSolid *tmpSolGap4 = new G4SubtractionSolid("tmp", tmpSolGap3, tmpSolPole,
-							0, G4ThreeVector(+tmpPoleCent, -tmpPoleCent, 0) );
-
-  //G4Trd *tmpSolTrdY = new G4Trd("tmp", 53, 66.5, 542/2., 542/2., (249.85-243.61)/2);
-  G4Trd *tmpSolTrdY = new G4Trd("tmp", 53.0, 66.5, 502.0/2.0, 502.0/2.0, (249.85-243.61)/2.0);
-  G4RotationMatrix tmpGapRot1Y;
-  // tmpGapRot1Y.rotateX(90.*deg);
-
-  G4UnionSolid *tmpSolGap5 = new G4UnionSolid("tmp", tmpSolGap4, tmpSolTrdY,
-					      G4Transform3D(tmpGapRot1Y,G4ThreeVector(0,(249.85+243.61)/2,0)));
-  tmpGapRot1Y.rotateZ(180*deg);
-  G4UnionSolid *tmpSolGap6 = new G4UnionSolid("tmp", tmpSolGap5, tmpSolTrdY,
-					      G4Transform3D(tmpGapRot1Y,G4ThreeVector(0,-(249.85+243.61)/2,0)));
-
-  //G4Trd *tmpSolTrdX = new G4Trd("tmp", 42.6316, 66.5, 542/2., 542/2., (380-243.61)/2);
-  G4Trd *tmpSolTrdX = new G4Trd("tmp", 42.6316, 66.5, 502/2., 502/2., (380-243.61)/2);
-  G4RotationMatrix tmpGapRot1X;
-  // tmpGapRot1X.rotateX(90.*deg);
-
-  tmpGapRot1X.rotateZ(-90.*deg);
-  G4UnionSolid *tmpSolGap7 = new G4UnionSolid("tmp", tmpSolGap6, tmpSolTrdX,
-					      G4Transform3D(tmpGapRot1X,G4ThreeVector((380+243.61)/2,0,0)));
-  tmpGapRot1X.rotateZ(180*deg);
-  G4UnionSolid *tmpSolGap8 = new G4UnionSolid("tmp", tmpSolGap7, tmpSolTrdX,
-					      G4Transform3D(tmpGapRot1X,G4ThreeVector(-(380+243.61)/2,0,0)));
-
-  //G4Trd *tmpSolTrdX2 = new G4Trd("tmp", 33, 42.6316, 542/2., 542/2., (465.85-380)/2);
-  G4Trd *tmpSolTrdX2 = new G4Trd("tmp", 33, 42.6316, 502.0/2.0, 502.0/2.0, (465.85-380)/2);
-  G4RotationMatrix tmpGapRot1X2;
-  //tmpGapRot1X2.rotateX(90.*deg);
-
-  tmpGapRot1X2.rotateZ(-90.*deg);
-  G4UnionSolid *tmpSolGap9 = new G4UnionSolid("tmp", tmpSolGap8, tmpSolTrdX2,
-					      G4Transform3D(tmpGapRot1X2,G4ThreeVector((465.85+380)/2,0,0)));
-  tmpGapRot1X2.rotateZ(180*deg);
-  G4UnionSolid *tmpSolGap10 = new G4UnionSolid("tmp", tmpSolGap9, tmpSolTrdX2,
-					      G4Transform3D(tmpGapRot1X2,G4ThreeVector(-(465.85+380)/2,0,0)));
-
-  ///Gap Box///
-  //G4Box *tmpBox2Y = new G4Box("tmp", 53., (303-249.85)/2, 542./2);
-  G4Box *tmpBox2Y = new G4Box("tmp", 53., (303-249.85)/2, 502./2.);
-  G4RotationMatrix tmpGapRot2Y;
-
-  G4UnionSolid *tmpSolGap11 = new G4UnionSolid("tmp", tmpSolGap10, tmpBox2Y,
-					      G4Transform3D(tmpGapRot2Y,G4ThreeVector(0,(303+249.85)/2,0)));
-  tmpGapRot2Y.rotateZ(180.*deg);
-  G4UnionSolid *tmpSolGap12 = new G4UnionSolid("tmp", tmpSolGap11, tmpBox2Y,
-					       G4Transform3D(tmpGapRot2Y,G4ThreeVector(0,-(303+249.85)/2,0)));
-
-  //G4Box *tmpBox2X = new G4Box("tmp", (593-465.85)/2, 33., 542./2);
-  G4Box *tmpBox2X = new G4Box("tmp", (593-465.85)/2, 33., 502./2.0);
-  G4RotationMatrix tmpGapRot2X;
-
-  G4UnionSolid *tmpSolGap13 = new G4UnionSolid("tmp", tmpSolGap12, tmpBox2X,
-					       G4Transform3D(tmpGapRot2X,G4ThreeVector((593+465.85)/2,0,0)));
-  G4UnionSolid *tmpSolGap14 = new G4UnionSolid("tmp", tmpSolGap13, tmpBox2X,
-					       G4Transform3D(tmpGapRot2X,G4ThreeVector(-(593+465.85)/2,0,0)));
-
-  //  G4SubtractionSolid *solQ2Pole5 = new G4SubtractionSolid("solQ2Pole", solQ2Box, tmpSolGap14);
-  G4SubtractionSolid *solQ2Pole5 = new G4SubtractionSolid("solQ2Pole", solQ2Box, tmpBox1);
-
-  G4LogicalVolume *logQ2Pole = new G4LogicalVolume(solQ2Pole5, PoleMater, "logQ2Pole");
-  G4LogicalVolume *logQ2Gap = new G4LogicalVolume(tmpSolGap14, Q2GapMater, "logQ2Gap");
-
-  G4RotationMatrix rotQ2Pole;
-  rotQ2Pole.rotateZ(90*deg);
-  rotQ2Pole.rotateY(90*deg);
-  x = -(rhoD*tan(bendAngleD/2.*Deg2Rad) + driftL2 + Q2z/2);
-  y = 0.*m;
-  z = 0.*m;
-  G4ThreeVector gloPosQ2(x, y, z);
-
-  //  G4VPhysicalVolume* physQ2Pole =
-    new G4PVPlacement( G4Transform3D(rotQ2Pole,gloPosQ2),
-		       "physQ2Pole", logQ2Pole, pMother, false, 0, m_check_overlaps );
-  //  G4VPhysicalVolume* physQ2Gap =
-    new G4PVPlacement( G4Transform3D(rotQ2Pole,gloPosQ2),
- 		       "physQ2Gap", logQ2Gap, pMother, false, 0, m_check_overlaps );
-
-    logQ2Pole->SetVisAttributes(/*G4VisAttributes::GetInvisible());/*/G4VisAttributes(true,G4Colour(0.0, 1.0, 0.0)));
-    //logQ2Pole->SetVisAttributes(G4VisAttributes::GetInvisible());
-    logQ2Gap->SetVisAttributes(G4VisAttributes::GetInvisible());//(true,G4Colour(1.0, 1.0, 0.0)));
-    //logQ2Gap->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 1.0, 0.0)));
-
+  const G4double a0 = 180*mm; // phi=360mm
+  const G4ThreeVector pos(0, 0, -2776.5*mm);
+  ///// Pole
+  G4VSolid* solidQ2Pole = nullptr;
+  solidQ2Pole = new G4Box("solidQ2Pole", 2100*mm/2, 1540*mm/2, 540*mm/2);
+  auto solidQ2Gap = new G4Box("solidQ2Gap", 360*mm/2, 360*mm/2, 550*mm/2);
+  // 1200x600 mm2;
+  G4RotationMatrix rot;
+  rot.rotateZ(45*deg);
+  solidQ2Pole = new G4SubtractionSolid("solidQ2Pole", solidQ2Pole, solidQ2Gap,
+                                       G4Transform3D(rot, G4ThreeVector()));
+  auto lvQ2Pole = new G4LogicalVolume(solidQ2Pole, PoleMater, "lvQ2Pole");
+  new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos),
+                    "pvQ2Pole", lvQ2Pole, pMother, false, 0, m_check_overlaps);
+  lvQ2Pole->SetVisAttributes(G4Color::Cyan());
+  ///// Coil
+  G4VSolid* solidQ2Coil = nullptr;
+  solidQ2Coil = new G4Box("solidQ2Coil", 1320*mm/2, 880*mm/2, 130*mm/2);
+  auto solidQ2Box = new G4Box("solidQ2Gap", 1200*mm/2, 600*mm/2, 900*mm/2);
+  solidQ2Coil = new G4SubtractionSolid("solidQ2Coil", solidQ2Coil, solidQ2Box,
+                                       nullptr, G4ThreeVector());
+  auto lvQ2Coil = new G4LogicalVolume
+    (solidQ2Coil, m_material_list->Cu, "lvQ2Coil");
+  new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos - G4ThreeVector(0, 0, 335*mm)),
+                    "pvQ2CoilU", lvQ2Coil, pMother, false, 0, m_check_overlaps);
+  new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos + G4ThreeVector(0, 0, 335*mm)),
+                    "pvQ2CoilD", lvQ2Coil, pMother, false, 1, m_check_overlaps);
+  lvQ2Coil->SetVisAttributes(G4Color::Brown());
 }
 
-
-void S2SDetectorConstruction::ConstructD1(G4VPhysicalVolume *pMother)
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructD1(G4VPhysicalVolume *pMother)
 {
-
   G4double x, y, z;
   G4Material *PoleMater = m_material_list->Fe;
-  //G4Material *D1GapMater = m_material_list->at("Vacuum");//HeGas;
+  //G4Material *D1GapMater = m_material_list->at("Vacuum");
   G4Material *D1GapMater = m_material_list->at("HeGas");
-
   // D magnet surface
-  G4Tubs *solD1Tub = new G4Tubs( "solD1Tub",
-				 0,  Dfr2, DfHalfGap,
-				 0.*degree, bendAngleDf*degree );
+  G4Tubs *solD1Tub = new G4Tubs("solD1Tub",
+                                0,  Dfr2, DfHalfGap,
+                                0.*degree, bendAngleDf*degree);
   // D magnet
-  G4Tubs *solD1Gap = new G4Tubs( "solD1Gap",
-				 Dr1,  Dr2,  DHalfGap,
-				 0.*degree, bendAngleD*degree );
-
+  G4Tubs *solD1Gap = new G4Tubs("solD1Gap",
+                                Dr1,  Dr2,  DHalfGap,
+                                0.*degree, bendAngleD*degree);
   G4Box *tmpD1 = new G4Box("tmp", 1000, 1000, 1000);
   G4RotationMatrix tmpD1rot;
   tmpD1rot.rotateZ(35*deg);
   G4double tmpD1r = 1380-1000;
-  G4ThreeVector tmpD13Y(tmpD1r*cos(35*deg),tmpD1r*sin(35*deg),0);
-
-  // D magnet yoke
+  G4ThreeVector tmpD13Y(tmpD1r*std::cos(35*deg),tmpD1r*std::sin(35*deg),0);
+  ///// Yoke
   G4SubtractionSolid *tmpsolD1Pole
-    = new G4SubtractionSolid( "tmp",
-			      solD1Tub,
-			      solD1Gap );
+    = new G4SubtractionSolid("tmp", solD1Tub, solD1Gap);
   G4SubtractionSolid *solD1Pole
-    = new G4SubtractionSolid( "solidDy",
-			      tmpsolD1Pole,
-			      tmpD1,
-			      G4Transform3D(tmpD1rot, tmpD13Y) );
-  G4LogicalVolume *logD1Gap = new G4LogicalVolume(solD1Gap,
+    = new G4SubtractionSolid("solidDy",
+                             tmpsolD1Pole,
+                             tmpD1,
+                             G4Transform3D(tmpD1rot, tmpD13Y));
+  G4LogicalVolume *lvD1Gap = new G4LogicalVolume(solD1Gap,
 						  D1GapMater,
-						  "logD1Gap");
-  G4LogicalVolume *logD1Pole = new G4LogicalVolume(solD1Pole,
+						  "lvD1Gap");
+  G4LogicalVolume *lvD1Pole = new G4LogicalVolume(solD1Pole,
 						   PoleMater,
-						   "logD1Pole");
-
+						   "lvD1Pole");
   G4RotationMatrix rotD1;
-  rotD1.rotateZ(-90.*deg);
-
-  x = -rhoD/cos(bendAngleD/2.*degree) * sin((bendAngleD/2.)*degree);
-  y = rhoD/cos(bendAngleD/2.*degree) * cos((bendAngleD/2.)*degree);
-  z = 0.*m;
-  G4ThreeVector gloPosD1(x,y,z);
-
-  //G4VPhysicalVolume* physD1Pole =
-  new G4PVPlacement( G4Transform3D(rotD1, gloPosD1),
-		     "physD1Pole", logD1Pole, pMother, false, 0, m_check_overlaps );
-  //G4VPhysicalVolume* physD1Gap =
-  new G4PVPlacement( G4Transform3D(rotD1, gloPosD1),
-		     "physD1Gap", logD1Gap, pMother/*physD1Pole*/, false, 0, m_check_overlaps );
-
-  // ~~~~~ D magnet endguard ~~~~~~~
-  G4Box *solEnd1 = new G4Box("solEnd1",1880*mm/2.,1600*mm/2.,76*mm/2.);
-  G4Box *solEnd2 = new G4Box("solEnd2",810*mm/2.,330*mm/2.,80*mm/2.);
-  G4SubtractionSolid *solEnd = new G4SubtractionSolid("solEnd", solEnd1, solEnd2);
-
-  G4LogicalVolume *logEnd = new G4LogicalVolume(solEnd, m_material_list->Fe, "logEnd");
-
-  x = rhoD*tan(bendAngleD/2.*Deg2Rad) + 240*mm + 76*mm/2.;
-  y = 0.*m;
-  z = 0.*m;
-  G4ThreeVector gloPosEnd(x, y, z);
-  gloPosEnd.rotateZ(70.*deg);
-
-  G4RotationMatrix rotEnd;
-  rotEnd.rotateX(90.*deg);
-  rotEnd.rotateZ(-20.*deg);
-
-  //  G4VPhysicalVolume *physEnd =
-  new G4PVPlacement(G4Transform3D(rotEnd, gloPosEnd),
-		    "physEnd", logEnd, pMother, false, 0, m_check_overlaps);
-  logD1Pole->SetVisAttributes(G4VisAttributes(true,G4Colour(0.0, 0.5, 1.0)));
-  logD1Gap->SetVisAttributes(G4VisAttributes(true,G4Colour(1.0, 1.0, 0.0)));
-  logEnd->SetVisAttributes(G4VisAttributes(true,G4Colour(0.0, 0.0, 1.0)));
-  G4UserLimits* D1Limit = new G4UserLimits(3.0 * mm);
-  logD1Gap->SetUserLimits(D1Limit);
-
+  rotD1.rotateX(90.*deg);
+  rotD1.rotateY(-110.*deg);
+  G4ThreeVector pos(3*m, 0, -3*m*std::tan(35*deg));
+  new G4PVPlacement(G4Transform3D(rotD1, pos),
+                    "physD1Pole", lvD1Pole, pMother, false, 0, m_check_overlaps);
+  new G4PVPlacement(G4Transform3D(rotD1, pos),
+                    "physD1Gap", lvD1Gap, pMother, false, 0, m_check_overlaps);
+  ///// Endguard
+  G4Box *solidEG1 = new G4Box("solidEG1", 1880*mm/2., 1600*mm/2., 76*mm/2.);
+  G4Box *solidEG2 = new G4Box("solidEG2", 810*mm/2., 330*mm/2., 80*mm/2.);
+  auto solidD1EG = new G4SubtractionSolid("solEnd", solidEG1, solidEG2);
+  auto lvD1EG = new G4LogicalVolume(solidD1EG, m_material_list->Fe, "lvD1EG");
+  G4ThreeVector posEG(3*m*std::tan(35*deg) + 278.5*mm);
+  posEG.rotateY(-20.*deg);
+  G4RotationMatrix rotEG;
+  rotEG.rotateY(70.*deg);
+  new G4PVPlacement(G4Transform3D(rotEG, posEG),
+        	    "pvD1EG", lvD1EG, pMother, false, 0, m_check_overlaps);
+  lvD1Pole->SetVisAttributes(G4Color::Blue());
+  lvD1Gap->SetVisAttributes(G4Color::Blue());
+  lvD1EG->SetVisAttributes(G4Color::Blue());
+  lvD1Gap->SetUserLimits(new G4UserLimits(3.*mm));
+  ///// Coil
+  G4VSolid* solidD1Coil = nullptr;
+  solidD1Coil = new G4Box("solidD1Coil", 1600*mm/2, 1600*mm/2, 165*mm/2);
+  auto solidD1Box = new G4Box("solidD1Gap", 800*mm/2, 500*mm/2, 900*mm/2);
+  solidD1Coil = new G4SubtractionSolid("solidD1Coil", solidD1Coil, solidD1Box,
+                                       nullptr, G4ThreeVector());
+  auto lvD1Coil = new G4LogicalVolume
+    (solidD1Coil, m_material_list->Cu, "lvD1Coil");
+  G4ThreeVector posCoil(0, 0, -3*m*std::tan(35*deg)-165*mm/2);
+  new G4PVPlacement(G4Transform3D(G4RotationMatrix(), posCoil),
+                    "pvD1CoilU", lvD1Coil, pMother, false, 0, m_check_overlaps);
+  posCoil.rotateY(-110*deg);
+  G4RotationMatrix rotCoil;
+  rotCoil.rotateY(-110*deg);
+  new G4PVPlacement(G4Transform3D(rotCoil, posCoil),
+                    "pvD1CoilD", lvD1Coil, pMother, false, 1, m_check_overlaps);
+  lvD1Coil->SetVisAttributes(G4Color::Brown());
 }
 
 

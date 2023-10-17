@@ -1,84 +1,94 @@
-/*
-  "S2SField.cc"
-  
-  Modified by Toshi Gogami , 21Nov2014
-*/
+// -*- C++ -*-
 
 #include "S2SField.hh"
-#include "SimpleFieldElement.hh"
 
-#include "globals.hh"
-#include "G4ThreeVector.hh"
-#include "G4SystemOfUnits.hh"
+#include <fstream>
+#include <iomanip>
 
-S2SField::S2SField( const std::string &FieldMapName, double scaleFactorQ1, double scaleFactorQ2, double scaleFactor)
-  : fMap( FieldMapName.c_str(),scaleFactorQ1,scaleFactorQ2,scaleFactor)
+#include <CLHEP/Units/PhysicalConstants.h>
+#include <G4ThreeVector.hh>
+#include <G4TwoVector.hh>
+
+#include "ConfMan.hh"
+#include "DCGeomMan.hh"
+#include "DetSizeMan.hh"
+#include "S2SFieldMap.hh"
+#include "FuncName.hh"
+#include "PrintHelper.hh"
+
+namespace
 {
-  fMap.Initialize();
+const auto& gConf = ConfMan::GetInstance();
+const auto& gGeom = DCGeomMan::GetInstance();
+const auto& gSize = DetSizeMan::GetInstance();
 }
 
+//_____________________________________________________________________________
+S2SField::S2SField(const G4String& file_name)
+  : m_is_ready(false),
+    m_field_map(new S2SFieldMap(file_name))
+{
+  Initialize();
+}
+
+//_____________________________________________________________________________
 S2SField::~S2SField()
-{}
-
-void S2SField::GetFieldValue( const double Point[4], 
-			      double *Bfield ) const
 {
-  double X[3];
-  //   X[0]=Point[0]/cm; X[1]=Point[1]/cm; X[2]=Point[2]/cm;
-  X[0]=Point[0]; X[1]=Point[1]; X[2]=Point[2];
-  G4ThreeVector x(X[0],X[1],X[2]);
-  G4ThreeVector MagOrg(600/tan(55*deg),-600,0);
-  
-  if( InMagnet(X) ){
-    if( fMap.GetFieldValue( X, Bfield ) ){
-      Bfield[0] *= tesla;
-      Bfield[1] *= tesla;
-      Bfield[2] *= tesla;
-    }
-  }
-  else{
-    Bfield[0]=Bfield[1]=Bfield[2]=0.0;
-  }
-  
-  
-  G4ThreeVector gPos( Point[0], Point[1], Point[2] );
-  G4ThreeVector B( 0., 0., 0. );
-  FMIterator end=elemList_.end();
-  for( FMIterator itr=elemList_.begin(); itr!=end; ++itr ){
-    if( (*itr)->ExistMagneticField() )
-      B += (*itr)->GetMagneticField( gPos );
-  }
-  
-  Bfield[0] += B.x(); Bfield[1] += B.y(); Bfield[2] += B.z();
-  
+}
+
+//_____________________________________________________________________________
+G4bool
+S2SField::Initialize()
+{
+  G4cout << FUNC_NAME << G4endl;
+  m_field_map->Initialize();
+  m_is_ready = true;
+  return true;
+}
+
+//_____________________________________________________________________________
+void
+S2SField::GetFieldValue(const G4double Point[4], G4double* Bfield) const
+{
+  Bfield[0] = 0.*CLHEP::tesla;
+  Bfield[1] = 0.*CLHEP::tesla;
+  Bfield[2] = 0.*CLHEP::tesla;
+
+  if (!m_is_ready)
+    return;
+
+  G4double pos[3] =
+    { Point[0]/CLHEP::cm, Point[1]/CLHEP::cm, Point[2]/CLHEP::cm };
+  m_field_map->GetFieldValue(pos, Bfield);
+
 #if 0
-  G4cout << "X=(" << X[0] << "," << X[1] << "," << X[2] << ") "
-	 << "B=(" << Bfield[0]/tesla << "," << Bfield[1]/tesla
-	 << "," << Bfield[2]/tesla << ")" << G4endl;
+  G4ThreeVector b(Bfield[0], Bfield[1], Bfield[2]);
+  if(b.mag() > 0.001*CLHEP::tesla
+     || true
+     ){
+    PrintHelper helper(4, std::ios::fixed, G4cout);
+    G4cout << FUNC_NAME << " X=("
+	   << std::setw(10) << Point[0] << " "
+	   << std::setw(10) << Point[1] << " "
+	   << std::setw(10) << Point[2] << " "
+	   << std::setw(10) << Point[3] << "), B=("
+	   << std::setw(10) << Bfield[0]/CLHEP::tesla << " "
+	   << std::setw(10) << Bfield[1]/CLHEP::tesla << " "
+	   << std::setw(10) << Bfield[2]/CLHEP::tesla << ")" << G4endl;
+  }
 #endif
+
+  return;
 }
 
-bool S2SField::InMagnet(double *pos) const
+//_____________________________________________________________________________
+const G4ThreeVector&
+S2SField::GetSizeField() const
 {
-
-  G4ThreeVector gPos(pos[0], pos[1], pos[2]);
-  G4ThreeVector MagOrg(600/tan(55*deg),-600,0);
-  bool bx,by,bz;
-
-  if(-5500<gPos.x() && gPos.x()<6500) bx=true; else bx=false;
-  if(-600<gPos.y() && gPos.y()<3000) by=true; else by=false;
-  if(-320<gPos.z() && gPos.z()<320) bz=true; else bz=false;
-  if(bx&&by&&bz) return true;
-  else return false;
-}
-
-
-void S2SField::cleanupSimpleElementList( void )
-{
-  elemList_.clear();
-}
-
-void S2SField::AddSimpleElement( SimpleFieldElement *elem )
-{
-  elemList_.push_back( elem );
+  if(m_field_map){
+    return m_field_map->GetFieldSize();
+  }else{
+    static G4ThreeVector nullvector;
+    return nullvector;
+  }
 }
