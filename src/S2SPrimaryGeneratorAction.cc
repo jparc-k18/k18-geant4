@@ -363,16 +363,18 @@ void S2SPrimaryGeneratorAction::GenerateMonoBeam(G4Event* anEvent)
   // m_particle = particleTable->FindParticle("proton");
   const G4double m0 = m_particle->GetPDGMass();
   const G4double p0 = 1.37*CLHEP::GeV;
-  const G4double x0 = -rhoD*tan(bendAngleD*TMath::DegToRad()/2.)-driftL2-Q2z-driftL1-Q1z;
+  const G4double z0 = -rhoD*tan(bendAngleD*TMath::DegToRad()/2.)-driftL2-Q2z-driftL1-Q1z  - 600*CLHEP::mm;
+  // G4LorentzVector p(0, 0, p0, TMath::Sqrt(p0*p0 + m0*m0));
+  // G4LorentzVector v(0, 0, z0, 0);
   G4LorentzVector p(p0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
-  G4LorentzVector v(x0 - 600*CLHEP::mm, 0, 0, 0);
+  G4LorentzVector v(-10*m, 0, 0, 0);
   particleGun->SetParticleDefinition(m_particle);
   particleGun->SetParticleMomentumDirection(p.v());
   particleGun->SetParticleEnergy(p.e() - m0);
   particleGun->SetParticlePosition(v.v());
   particleGun-> GeneratePrimaryVertex(anEvent);
-  anaMan.SetPrimaryData(v.y(), v.z(), v.x()-x0,
-                        p.y()/p.x(), p.z()/p.x(),
+  anaMan.SetPrimaryData(v.x(), v.y(), v.z()-z0,
+                        p.x()/p.z(), p.y()/p.z(),
                         0, 0,
                         p.v().mag(),
                         p.e() - m0,

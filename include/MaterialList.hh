@@ -6,14 +6,23 @@
 #ifndef MaterialList_h
 #define MaterialList_h 1
 
+#include <map>
+
+#include <G4String.hh>
+
 class G4Element;
 class G4Material;
 
 struct MaterialList
 {
 public:
+  static G4String ClassName();
   MaterialList();
   ~MaterialList();
+
+  std::map<G4String, G4Element*> element_map;
+  std::map<G4String, G4Material*> material_map;
+  G4Material* at(const G4String& key) const;
 
   G4Element *elH;
   G4Element *elHe;
@@ -45,9 +54,9 @@ public:
   G4Element *elPb;
   G4Element *elBi;
 
-  G4Material *HeGas;
   G4Material *HeLiq;
   G4Material *Li;
+  G4Material *Be9;
   G4Material *B10;
   G4Material *B11;
   G4Material *C;
@@ -63,8 +72,6 @@ public:
   G4Material *Pt;
   G4Material *Pb;
 
-  G4Material *Vacuum;
-  G4Material *Air;
   G4Material *Water;
   G4Material *BGO;
   G4Material *PWO;
@@ -90,9 +97,17 @@ public:
   G4Material *Ar80IsoButane20Gas;
 
 private:
-  MaterialList( const MaterialList & );
-  MaterialList & operator=(const MaterialList & );
- 
+  MaterialList(const MaterialList&);
+  MaterialList& operator=(const MaterialList&);
+
 };
+
+//_____________________________________________________________________________
+inline G4String
+MaterialList::ClassName()
+{
+  static const G4String s_name("MaterialList");
+  return s_name;
+}
 
 #endif

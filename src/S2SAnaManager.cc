@@ -192,6 +192,8 @@ void S2SAnaManager::BeginOfEvent( const G4Event *anEvent )
 
 void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
 {
+  return;
+
   InitializeEvent();
 
   auto HCE = anEvent->GetHCofThisEvent();
