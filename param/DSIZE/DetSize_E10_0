@@ -16,8 +16,25 @@ World		15000	12000	12000
 
 Target	 	75.0	75.0	20.0
 
-TofSeg		78.0	600.0	20.0
+TofSeg		80.0	580.0	30.0
 
+Ac1Frame        1550.0  1300.0  500.0
+Ac1Radiator     1450.0  995.0  113.0
+
+WcSegIn         190.0   690.0  140.0
+WcSegOut        230.0   730.0  180.0
+
+### DCs
+Sdc1Frame       578.0   430.0   146.0
+Sdc1Drift       384.0   264.0   0.001
+Sdc2Frame       400.0   494.0   70.0
+Sdc2Drift       160.0   300.0   0.001
+Sdc3Frame       1330.0  1330.0  90.0
+Sdc3Drift       1152.0  1152.0  0.001
+Sdc4Frame       1330.0  1330.0  90.0
+Sdc4Drift       1152.0  1152.0  0.001
+Sdc5Frame       1330.0  1330.0  90.0
+Sdc5Drift       1152.0  1152.0  0.001
 
 ### Counters
 Bh2Seg		14.0	100.0	5.0

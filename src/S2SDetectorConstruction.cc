@@ -98,7 +98,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 
   MakeField();
 
-#if 0
+#if 1
   ConstructTarget(physiWorld);
 #endif
 
@@ -108,14 +108,21 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   ConstructD1(physiWorld);
 #endif
 
-#if 0
-  MakePositionDetector(physiWorld);
+#if 1
+  ConstructSDC1(physiWorld);
+  ConstructSDC2(physiWorld);
 #endif
 
-#if 0
-  MakeTOFCounter(physiWorld);
-  MakeAerogelCounter(physiWorld);
-  MakeWaterCounter(physiWorld);
+#if 1
+  ConstructSDC3(physiWorld);
+  ConstructSDC4(physiWorld);
+  ConstructSDC5(physiWorld);
+  ConstructTOF(physiWorld);
+  ConstructAC1(physiWorld);
+  ConstructWC(physiWorld);
+  // MakeTOFCounter(physiWorld);
+  // MakeAerogelCounter(physiWorld);
+  // MakeWaterCounter(physiWorld);
 #endif
 
 #if 0
@@ -128,6 +135,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 //_____________________________________________________________________________
 void S2SDetectorConstruction::MakeField()
 {
+  return;
   S2SField *field = new S2SField(confMan.GetFieldMap());
 //    				 confMan.GetMagScaleQ1(),
 // 				 confMan.GetMagScaleQ2(),
@@ -365,7 +373,445 @@ S2SDetectorConstruction::ConstructD1(G4VPhysicalVolume *pMother)
   lvD1Coil->SetVisAttributes(G4Color::Brown());
 }
 
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructSDC1(G4VPhysicalVolume* pMother)
+{
+  auto sdSDC1 = new DCSD("SDC1");
+  G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC1);
+  const auto& sdc1_pos = (geomMan.GetGlobalPosition("SDC1-V1") +
+                          geomMan.GetGlobalPosition("SDC1-U2"))/2;
+  const auto& frame_size = sizeMan.GetSize("Sdc1Frame")*mm/2;
+  const auto& drift_size = sizeMan.GetSize("Sdc1Drift")*mm/2;
+  auto sdc1_solid = new G4Box("Sdc1Solid", frame_size.x(),
+                              frame_size.y(), frame_size.z());
+  auto sdc1_lv = new G4LogicalVolume(sdc1_solid, m_material_list->Ar80IsoButane20Gas,
+                                     "Sdc1LV", 0, 0, 0 );
+  sdc1_lv->SetVisAttributes(G4Colour::Green());
+  new G4PVPlacement(0, sdc1_pos,
+                    "Sdc1PV", sdc1_lv, pMother, false, 0, m_check_overlaps);
+  auto sdc1pl_solid = new G4Box("Sdc1PlSolid", drift_size.x(),
+                                drift_size.y(), drift_size.z());
+  G4String plane_name[] = { "Sdc1V1", "Sdc1V2", "Sdc1X1",
+			    "Sdc1X2", "Sdc1U1", "Sdc1U2" };
+  for(G4int i=0; i<NumOfLayersSDC1; ++i){
+    G4ThreeVector pos;
+    switch (i) {
+    case 0:
+      pos.setZ( -22.5985*mm );
+      break;
+    case 1:
+      pos.setZ( -17.4015*mm );
+      break;
+    case 2:
+      pos.setZ( -2.5985*mm );
+      break;
+    case 3:
+      pos.setZ( 2.5985*mm );
+      break;
+    case 4:
+      pos.setZ( 17.4015*mm );
+      break;
+    case 5:
+      pos.setZ( 22.5985*mm );
+      break;
+    }
+    auto sdc1pl_lv = new G4LogicalVolume(sdc1pl_solid,
+                                         m_material_list->Ar80IsoButane20Gas,
+                                         plane_name[i] + "LV", 0, 0, 0);
+    sdc1pl_lv->SetSensitiveDetector(sdSDC1);
+    new G4PVPlacement(nullptr, pos, sdc1pl_lv, plane_name[i] + "PV",
+                      sdc1_lv, false, 101+i, m_check_overlaps);
+  }
+}
 
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructSDC2(G4VPhysicalVolume* pMother)
+{
+  auto sdSDC2 = new DCSD("SDC2");
+  G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC2);
+  const auto& sdc2_pos = (geomMan.GetGlobalPosition("SDC2-V1") +
+                          geomMan.GetGlobalPosition("SDC2-U2"))/2;
+  const auto& frame_size = sizeMan.GetSize("Sdc2Frame")*mm/2;
+  const auto& drift_size = sizeMan.GetSize("Sdc2Drift")*mm/2;
+  auto sdc2_solid = new G4Box("Sdc2Solid", frame_size.x(),
+                              frame_size.y(), frame_size.z());
+  auto sdc2_lv = new G4LogicalVolume(sdc2_solid, m_material_list->Ar80IsoButane20Gas,
+                                     "Sdc2LV", 0, 0, 0 );
+  sdc2_lv->SetVisAttributes(G4Colour::Green());
+  new G4PVPlacement(0, sdc2_pos,
+                    "Sdc2PV", sdc2_lv, pMother, false, 0, m_check_overlaps);
+  auto sdc2pl_solid = new G4Box("Sdc2PlSolid", drift_size.x(),
+                                drift_size.y(), drift_size.z());
+  G4String plane_name[] = { "Sdc2V1", "Sdc2V2",
+                            "Sdc2U1", "Sdc2U2" };
+  for(G4int i=0; i<NumOfLayersSDC2; ++i){
+    G4ThreeVector pos;
+    switch(i){
+    case 0:
+      pos.setZ(-12.4*mm);
+      break;
+    case 1:
+      pos.setZ(-7.6*mm);
+      break;
+    case 2:
+      pos.setZ(7.6*mm);
+      break;
+    case 3:
+      pos.setZ(12.4*mm);
+      break;
+    }
+    auto sdc2pl_lv = new G4LogicalVolume(sdc2pl_solid,
+                                         m_material_list->Ar80IsoButane20Gas,
+                                         plane_name[i] + "LV", 0, 0, 0);
+    sdc2pl_lv->SetSensitiveDetector(sdSDC2);
+    new G4PVPlacement(nullptr, pos, sdc2pl_lv, plane_name[i] + "PV",
+                      sdc2_lv, false, 101+i, m_check_overlaps);
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructSDC3(G4VPhysicalVolume* pMother)
+{
+  auto sdSDC3 = new DCSD("SDC3");
+  G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC3);
+  const auto& sdc3_pos = (geomMan.GetGlobalPosition("SDC3-X1") +
+                          geomMan.GetGlobalPosition("SDC3-Y2"))/2;
+  const auto& frame_size = sizeMan.GetSize("Sdc3Frame")*mm/2;
+  const auto& drift_size = sizeMan.GetSize("Sdc3Drift")*mm/2;
+  const auto& ra2 = geomMan.GetRotAngle2("SDC3-X1")*deg;
+  auto sdc3_solid = new G4Box("Sdc3Solid", frame_size.x(),
+                              frame_size.y(), frame_size.z());
+  auto sdc3_lv = new G4LogicalVolume(sdc3_solid, m_material_list->Ar80IsoButane20Gas,
+                                     "Sdc3LV", 0, 0, 0 );
+  sdc3_lv->SetVisAttributes(G4Colour::Green());
+  auto rot = new G4RotationMatrix;
+  rot->rotateY(-ra2);
+  new G4PVPlacement(rot, sdc3_pos,
+                    "Sdc3PV", sdc3_lv, pMother, false, 0, m_check_overlaps);
+  auto sdc3pl_solid = new G4Box("Sdc3PlSolid", drift_size.x(),
+                                drift_size.y(), drift_size.z());
+  G4String plane_name[] = { "Sdc3X1", "Sdc3X2",
+                            "Sdc3Y1", "Sdc3Y2" };
+  for(G4int i=0; i<NumOfLayersSDC3; ++i){
+    G4ThreeVector pos;
+    switch(i){
+    case 0:
+      pos.setZ(-16.0*mm);
+      break;
+    case 1:
+      pos.setZ(-8.206*mm);
+      break;
+    case 2:
+      pos.setZ(8.206*mm);
+      break;
+    case 3:
+      pos.setZ(16.0*mm);
+      break;
+    }
+    auto sdc3pl_lv = new G4LogicalVolume(sdc3pl_solid,
+                                         m_material_list->Ar80IsoButane20Gas,
+                                         plane_name[i] + "LV", 0, 0, 0);
+    sdc3pl_lv->SetSensitiveDetector(sdSDC3);
+    new G4PVPlacement(nullptr, pos, sdc3pl_lv, plane_name[i] + "PV",
+                      sdc3_lv, false, 101+i, m_check_overlaps);
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructSDC4(G4VPhysicalVolume* pMother)
+{
+  auto sdSDC4 = new DCSD("SDC4");
+  G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC4);
+  const auto& sdc4_pos = (geomMan.GetGlobalPosition("SDC4-Y1") +
+                          geomMan.GetGlobalPosition("SDC4-X2"))/2;
+  const auto& frame_size = sizeMan.GetSize("Sdc4Frame")*mm/2;
+  const auto& drift_size = sizeMan.GetSize("Sdc4Drift")*mm/2;
+  const auto& ra2 = geomMan.GetRotAngle2("SDC4-X1")*deg;
+  auto sdc4_solid = new G4Box("Sdc4Solid", frame_size.x(),
+                              frame_size.y(), frame_size.z());
+  auto sdc4_lv = new G4LogicalVolume(sdc4_solid, m_material_list->Ar80IsoButane20Gas,
+                                     "Sdc4LV", 0, 0, 0 );
+  sdc4_lv->SetVisAttributes(G4Colour::Green());
+  auto rot = new G4RotationMatrix;
+  rot->rotateY(-ra2);
+  new G4PVPlacement(rot, sdc4_pos,
+                    "Sdc4PV", sdc4_lv, pMother, false, 0, m_check_overlaps);
+  auto sdc4pl_solid = new G4Box("Sdc4PlSolid", drift_size.x(),
+                                drift_size.y(), drift_size.z());
+  G4String plane_name[] = { "Sdc4Y1", "Sdc4Y2",
+                            "Sdc4X1", "Sdc4X2" };
+  for(G4int i=0; i<NumOfLayersSDC4; ++i){
+    G4ThreeVector pos;
+    switch(i){
+    case 0:
+      pos.setZ(-16.0*mm);
+      break;
+    case 1:
+      pos.setZ(-8.206*mm);
+      break;
+    case 2:
+      pos.setZ(8.206*mm);
+      break;
+    case 3:
+      pos.setZ(16.0*mm);
+      break;
+    }
+    auto sdc4pl_lv = new G4LogicalVolume(sdc4pl_solid,
+                                         m_material_list->Ar80IsoButane20Gas,
+                                         plane_name[i] + "LV", 0, 0, 0);
+    sdc4pl_lv->SetSensitiveDetector(sdSDC4);
+    new G4PVPlacement(nullptr, pos, sdc4pl_lv, plane_name[i] + "PV",
+                      sdc4_lv, false, 101+i, m_check_overlaps);
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructSDC5(G4VPhysicalVolume* pMother)
+{
+  auto sdSDC5 = new DCSD("SDC5");
+  G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC5);
+  const auto& sdc5_pos = (geomMan.GetGlobalPosition("SDC5-Y1") +
+                          geomMan.GetGlobalPosition("SDC5-X2"))/2;
+  const auto& frame_size = sizeMan.GetSize("Sdc5Frame")*mm/2;
+  const auto& drift_size = sizeMan.GetSize("Sdc5Drift")*mm/2;
+  const auto& ra2 = geomMan.GetRotAngle2("SDC5-X1")*deg;
+  auto sdc5_solid = new G4Box("Sdc5Solid", frame_size.x(),
+                              frame_size.y(), frame_size.z());
+  auto sdc5_lv = new G4LogicalVolume(sdc5_solid, m_material_list->Ar80IsoButane20Gas,
+                                     "Sdc5LV", 0, 0, 0 );
+  sdc5_lv->SetVisAttributes(G4Colour::Green());
+  auto rot = new G4RotationMatrix;
+  rot->rotateY(-ra2);
+  new G4PVPlacement(rot, sdc5_pos,
+                    "Sdc5PV", sdc5_lv, pMother, false, 0, m_check_overlaps);
+  auto sdc5pl_solid = new G4Box("Sdc5PlSolid", drift_size.x(),
+                                drift_size.y(), drift_size.z());
+  G4String plane_name[] = { "Sdc5Y1", "Sdc5Y2",
+                            "Sdc5X1", "Sdc5X2" };
+  for(G4int i=0; i<NumOfLayersSDC5; ++i){
+    G4ThreeVector pos;
+    switch(i){
+    case 0:
+      pos.setZ(-16.0*mm);
+      break;
+    case 1:
+      pos.setZ(-8.206*mm);
+      break;
+    case 2:
+      pos.setZ(8.206*mm);
+      break;
+    case 3:
+      pos.setZ(16.0*mm);
+      break;
+    }
+    auto sdc5pl_lv = new G4LogicalVolume(sdc5pl_solid,
+                                         m_material_list->Ar80IsoButane20Gas,
+                                         plane_name[i] + "LV", 0, 0, 0);
+    sdc5pl_lv->SetSensitiveDetector(sdSDC5);
+    new G4PVPlacement(nullptr, pos, sdc5pl_lv, plane_name[i] + "PV",
+                      sdc5_lv, false, 101+i, m_check_overlaps);
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructTOF(G4VPhysicalVolume* pMother)
+{
+  const auto& ra2 = geomMan.GetRotAngle2("TOF") * deg;
+  const auto& half_size = sizeMan.GetSize("TofSeg")*mm/2;
+  const G4double pitch = geomMan.GetWirePitch("TOF")*mm;
+  auto sdTOF = new TOFSD("TOF");
+  G4SDManager::GetSDMpointer()->AddNewDetector(sdTOF);
+  // Mother
+  auto mother_solid = new G4Box("TofMotherSolid",
+                                half_size.x()*NumOfSegTOF + 50.*mm,
+                                half_size.y() + 50.*mm,
+                                half_size.z()*2 + 50.*mm);
+  auto mother_lv = new G4LogicalVolume(mother_solid,
+                                       m_material_list->at("Air"),
+                                       "TofMotherLV");
+  auto rot = new G4RotationMatrix;
+  rot->rotateY(-ra2);
+  auto pos = geomMan.GetGlobalPosition("TOF");
+  new G4PVPlacement(rot, pos, "TofMotherPV", mother_lv, pMother, false, 0, m_check_overlaps);
+  mother_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
+  // Segment
+  auto segment_solid = new G4Box("TofSegmentSolid", half_size.x(),
+                                 half_size.y(), half_size.z());
+  auto segment_lv = new G4LogicalVolume(segment_solid,
+                                        m_material_list->Scin,
+                                        "TofSegmentLV");
+  for(G4int i=0; i<NumOfSegTOF; ++i){
+    segment_lv->SetVisAttributes(G4Colour::Cyan());
+    segment_lv->SetSensitiveDetector(sdTOF);
+    pos = G4ThreeVector( ( -NumOfSegTOF/2 + i )*pitch,
+			 0.0,
+			 2.*( - i%2 + 0.5 )*half_size.z() );
+    new G4PVPlacement(nullptr, pos, segment_lv,
+                      "TofSegmentPV", mother_lv, false, i, m_check_overlaps);
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructAC1(G4VPhysicalVolume* pMother)
+{
+  auto ac1_sd = new ACSD("AC1");
+  // ac1_sd->SetRefractiveIndex( 1.05 );
+  G4SDManager::GetSDMpointer()->AddNewDetector( ac1_sd );
+  const auto& ra2 = geomMan.GetRotAngle2("AC1") * deg;
+  const auto& frame_size = sizeMan.GetSize("Ac1Frame") * 0.5 * mm;
+  const auto& radiator_size = sizeMan.GetSize("Ac1Radiator") * 0.5 * mm;
+  // Mother
+  auto mother_solid = new G4Box( "Ac1MotherSolid",
+				 frame_size.x() + 5.*mm,
+				 frame_size.y() + 5.*mm,
+				 frame_size.z() + 5.*mm );
+  auto mother_lv = new G4LogicalVolume( mother_solid,
+					m_material_list->at("Air"),
+					"Ac1MotherLV" );
+  auto rot = new G4RotationMatrix;
+  rot->rotateY(-ra2);
+  auto pos = geomMan.GetGlobalPosition("AC1");
+  G4ThreeVector offset( 0., 0., frame_size.z() - radiator_size.z());
+  offset.rotateY(ra2);
+  new G4PVPlacement(rot, pos + offset,
+                    "Ac1MotherPV", mother_lv, pMother, false, 0, m_check_overlaps);
+  mother_lv->SetVisAttributes( G4VisAttributes::GetInvisible());
+  // Frame
+  auto frame_solid = new G4Box( "Ac1FrameSolid", frame_size.x(),
+				frame_size.y(), frame_size.z() );
+  auto frame_lv = new G4LogicalVolume( frame_solid,
+				       m_material_list->at("Air"),
+				       "Ac1FrameLV" );
+  pos.setMag( 0. );
+  new G4PVPlacement( nullptr, pos, frame_lv,
+		     "Ac1FramePV", mother_lv, false, 0 );
+  // Radiator
+  auto radiator_solid = new G4Box( "Ac1RadiatorSolid", radiator_size.x(),
+				   radiator_size.y(), radiator_size.z() );
+  auto radiator_lv = new G4LogicalVolume( radiator_solid,
+					  m_material_list->Aerogel,
+					  "Ac1RadiatorLV" );
+  radiator_lv->SetSensitiveDetector( ac1_sd );
+  radiator_lv->SetVisAttributes( G4Color::Magenta() );
+  pos.set( 0., 0., -frame_size.z() + radiator_size.z());
+  new G4PVPlacement( nullptr, pos, radiator_lv,
+		     "Ac1RadiatorPV", frame_lv, false, 0 );
+  // Mirror
+  const G4double mirror_thickness = 1.*mm/2.;
+  const G4double mirror_space = 20.*mm;
+  const G4ThreeVector triangle_size( 1100*mm/2, frame_size.y(), 340.*mm );
+  const G4double mirror_angle = std::atan2(triangle_size.z(),
+                                           triangle_size.x());
+  const G4ThreeVector mirror1_size( ( frame_size.x() - triangle_size.x() )/2.,
+				    triangle_size.y(), mirror_thickness );
+  const G4ThreeVector mirror2_size( std::hypot( triangle_size.x(),
+						triangle_size.z() )/2.,
+				    triangle_size.y(),
+				    mirror_thickness );
+  auto mirror1_solid = new G4Box( "Ac1Mirror1Solid", mirror1_size.x(),
+				  mirror1_size.y(), mirror1_size.z() );
+  auto mirror1_lv = new G4LogicalVolume( mirror1_solid,
+					 m_material_list->Al,
+					"Ac1Mirror1LV" );
+  auto mirror2_solid = new G4Box( "Ac1Mirror2Solid", mirror2_size.x(),
+				  mirror2_size.y(), mirror2_size.z() );
+  auto mirror2_lv = new G4LogicalVolume( mirror2_solid,
+					 m_material_list->Al,
+					"Ac1Mirror2LV" );
+  for( G4int i=0; i<2; ++i ){
+    pos.set( ( triangle_size.x() + mirror1_size.x() ) * ( i*2 - 1 ),
+	     0., frame_size.z() - mirror_space );
+    new G4PVPlacement( nullptr, pos, mirror1_lv,
+		       "Ac1MirrorPV", frame_lv, false, 0 );
+    pos.set( triangle_size.x()/2 * ( i*2 - 1 ),
+	     0., frame_size.z() - triangle_size.z()/2 - mirror_space );
+    rot = new G4RotationMatrix;
+    rot->rotateY( mirror_angle * ( i*2 - 1 ) );
+    new G4PVPlacement( rot, pos, mirror2_lv,
+		       "Ac1MirrorPV", frame_lv, false, 0 );
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructWC(G4VPhysicalVolume* pMother)
+{
+  const auto& ra2 = geomMan.GetRotAngle2("WC") * deg;
+  const auto& half_size_In = sizeMan.GetSize("WcSegIn") * 0.5 * mm;
+  const auto& half_size_Out = sizeMan.GetSize("WcSegOut") * 0.5 * mm;
+  const G4double pitch = geomMan.GetWirePitch("WC");
+  auto wcSD = new WCSD("WC");
+  // wcSD->SetRefractiveIndex( 1.33 );
+  G4SDManager::GetSDMpointer()->AddNewDetector( wcSD );
+  // Mother
+  auto mother_solid = new G4Box( "WcMotherSolid",
+				 half_size_Out.x()*NumOfSegWC + 200.*mm,
+				 half_size_Out.y() + 200.*mm,
+				 half_size_Out.z()*2 + 200.*mm );
+				 // half_size_Out.x()*NumOfSegWC + 50.*mm,
+				 // half_size_Out.y() + 50.*mm,
+				 // half_size_Out.z()*2 + 50.*mm );
+
+  auto mother_lv = new G4LogicalVolume( mother_solid,
+					m_material_list->at("Air"),
+					"WcMotherLV" );
+  auto rot = new G4RotationMatrix;
+  rot->rotateY(-ra2);
+  auto pos = geomMan.GetGlobalPosition("WC");
+  new G4PVPlacement(rot, pos,
+                    "WcMotherPV",  mother_lv, pMother, false, 0, m_check_overlaps);
+  mother_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
+  // Segment
+  auto segment_solid = new G4Box( "WcSegmentSolid", half_size_In.x(),
+				  half_size_In.y(), half_size_In.z() );
+  auto segment_lv = new G4LogicalVolume( segment_solid,
+					 m_material_list->Water,
+					 "WcSegmentLV" );
+  auto WCContainer     = new G4Box("WCContainer",
+				   half_size_Out.x(),
+				   half_size_Out.y(),
+				   half_size_Out.z());
+  auto WCContainer_gap = new G4Box("WCContainer_gap",
+				   half_size_In.x(),
+				   half_size_In.y(),
+				   half_size_In.z());
+  //G4RotationMatrix* rot_wccontainer_gap;
+  auto rot_wccontainer_gap = new G4RotationMatrix;
+  G4ThreeVector pos_wccontainer_gap(0.0, 0.0 ,0.0);
+  auto solid_WCContainer
+    = new G4SubtractionSolid("solid_WCContainer",
+   			     WCContainer, WCContainer_gap,
+   			     rot_wccontainer_gap,
+			     pos_wccontainer_gap);
+  auto logWCContainer = new G4LogicalVolume(solid_WCContainer,
+					    m_material_list->Acrylic,
+					    "logWCContainer");
+  for(G4int i=0; i<NumOfSegWC; ++i){
+    pos = G4ThreeVector( ( -NumOfSegWC/2 + i )*pitch,
+			 0.0,
+			 2.*( i%2 - 0.5 )*half_size_Out.z() );
+    //for Vessel
+    //    logWCContainer->SetVisAttributes( G4Colour::White() );
+    logWCContainer->SetVisAttributes( G4Colour::Cyan() );
+    new G4PVPlacement( nullptr, pos, logWCContainer,
+		       "WcSegmentContainerPV", mother_lv, false, i );
+    //for Water
+    segment_lv->SetVisAttributes( G4Colour::Cyan() );
+    segment_lv->SetSensitiveDetector( wcSD );
+    new G4PVPlacement( nullptr, pos, segment_lv,
+		       "WcSegmentPV", mother_lv, false, i );
+
+  }
+}
+
+//_____________________________________________________________________________
 void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 {
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();
@@ -1128,9 +1574,9 @@ void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
 void
 S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
 {
-  // const auto& ra2 = gGeom.GetRotAngle2("TOF") * CLHEP::deg;
-  // const auto& half_size = gSize.GetSize("TofSeg") * 0.5 * mm;
-  // const G4double pitch = gGeom.GetWirePitch("TOF") * mm;
+  // const auto& ra2 = geomMan.GetRotAngle2("TOF") * CLHEP::deg;
+  // const auto& half_size = sizeMan.GetSize("TofSeg") * 0.5 * mm;
+  // const G4double pitch = geomMan.GetWirePitch("TOF") * mm;
   // auto tofSD = new TOFSD("TOF");
   // AddNewDetector(tofSD);
   // // Mother
@@ -1143,8 +1589,8 @@ S2SDetectorConstruction::MakeTOFCounter(G4VPhysicalVolume *pMother)
   //                                      "FtofMotherLV");
   // auto rot = new G4RotationMatrix;
   // rot->rotateY(- ra2 - m_rotation_angle);
-  // auto pos = (gGeom.GetGlobalPosition("KURAMA") +
-  //             gGeom.GetGlobalPosition("TOF"));
+  // auto pos = (geomMan.GetGlobalPosition("KURAMA") +
+  //             geomMan.GetGlobalPosition("TOF"));
   // pos.rotateY(m_rotation_angle);
   // new G4PVPlacement(rot, pos, mother_lv,
   //                   "FtofMotherPV", m_world_lv, false, 0, m_check_overlaps);

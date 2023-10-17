@@ -39,6 +39,14 @@ private:
   void ConstructQ1(G4VPhysicalVolume* pMother);
   void ConstructQ2(G4VPhysicalVolume* pMother);
   void ConstructD1(G4VPhysicalVolume* pMother);
+  void ConstructSDC1(G4VPhysicalVolume* pMother);
+  void ConstructSDC2(G4VPhysicalVolume* pMother);
+  void ConstructSDC3(G4VPhysicalVolume* pMother);
+  void ConstructSDC4(G4VPhysicalVolume* pMother);
+  void ConstructSDC5(G4VPhysicalVolume* pMother);
+  void ConstructTOF(G4VPhysicalVolume* pMother);
+  void ConstructAC1(G4VPhysicalVolume* pMother);
+  void ConstructWC(G4VPhysicalVolume* pMother);
 
   void SetTarget(G4VPhysicalVolume* pMother);
   void MakePositionDetector(G4VPhysicalVolume* pMother);
@@ -49,7 +57,5 @@ private:
   G4bool IsVolumeStopper( G4VPhysicalVolume *physVol ) const ;
 
 };
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 #endif
