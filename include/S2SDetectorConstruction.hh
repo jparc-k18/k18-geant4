@@ -47,13 +47,13 @@ private:
   void ConstructTOF(G4VPhysicalVolume* pMother);
   void ConstructAC1(G4VPhysicalVolume* pMother);
   void ConstructWC(G4VPhysicalVolume* pMother);
+  void ConstructVP(G4VPhysicalVolume* pMother);
 
   void SetTarget(G4VPhysicalVolume* pMother);
   void MakePositionDetector(G4VPhysicalVolume* pMother);
   void MakeTOFCounter(G4VPhysicalVolume* pMother);
   void MakeAerogelCounter(G4VPhysicalVolume* pMother);
   void MakeWaterCounter(G4VPhysicalVolume* pMother);
-  void MakeSlits(G4VPhysicalVolume* pMother);
   G4bool IsVolumeStopper( G4VPhysicalVolume *physVol ) const ;
 
 };

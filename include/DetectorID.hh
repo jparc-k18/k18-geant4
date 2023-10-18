@@ -10,5 +10,6 @@ const G4int NumOfLayersSDC2 = 4;
 const G4int NumOfLayersSDC3 = 4;
 const G4int NumOfLayersSDC4 = 4;
 const G4int NumOfLayersSDC5 = 4;
+const G4int NumOfLayersVP = 11;
 
 #endif

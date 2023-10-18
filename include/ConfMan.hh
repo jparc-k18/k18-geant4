@@ -11,8 +11,6 @@
 
 #include <TMath.h>
 
-//class EvDisp;
-
 //_____________________________________________________________________________
 class ConfMan
 {
@@ -40,24 +38,16 @@ private:
   IntList    m_int;
   BoolList   m_bool;
 
-
-  std::string DCGeomFileName_;
-  std::string BfieldMap_;
-  std::string BfieldMap_link; // symbolic link for Bfield
-  std::string oROOTFile;
   //std::string LogFileName;
-  //G4String oROOTFile;
   //EvDisp *evDisp_;
   //bool FlagEvDisp_;
   //double K18Momentum_;
-  int GeomFlag_;
   Int_t EMFlag_;
   Int_t DecayFlag_;
   Int_t HadronFlag_;
   Int_t GenPID;
   Int_t TargetID;
   Int_t generator;
-  Int_t link_len; // symbolic link for Bfield
   double tposz;
   double tthickness;
   double momcent, mombite;
@@ -73,13 +63,9 @@ public:
   const G4String& ConfBuf() const { return m_conf_buf; }
   template <typename T>
   static const T& Get(const G4String& key);
-  std::string GetFieldMap( void ) const { return BfieldMap_; };
-  //double K18Momentum( void ) const { return K18Momentum_;};
-  int GeomFlag( void )    const  { return GeomFlag_;    };
   Int_t GetEMFlag(void)     const  { return EMFlag_;    };
   Int_t GetDecayFlag(void)  const  { return DecayFlag_; };
   Int_t GetHadronFlag(void)  const { return HadronFlag_;};
-  G4String GetOutROOTFile() const  { return oROOTFile;  };
   double GetGenMomCent() const     { return momcent;    };
   double GetGenMomBite() const     { return mombite;    };
   double GetGenTheta()   const     { return thetamax;   };

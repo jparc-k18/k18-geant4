@@ -43,7 +43,7 @@
 #include "MaterialList.hh"
 #include "RadDeg.hh"
 #include "DCSD.hh"
-#include "SlSD.hh"
+#include "VPSD.hh"
 #include "TOFSD.hh"
 #include "ACSD.hh"
 #include "WCSD.hh"
@@ -117,16 +117,16 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   ConstructSDC3(physiWorld);
   ConstructSDC4(physiWorld);
   ConstructSDC5(physiWorld);
+#endif
+
+#if 1
   ConstructTOF(physiWorld);
   ConstructAC1(physiWorld);
   ConstructWC(physiWorld);
-  // MakeTOFCounter(physiWorld);
-  // MakeAerogelCounter(physiWorld);
-  // MakeWaterCounter(physiWorld);
 #endif
 
-#if 0
-  MakeSlits(physiWorld);
+#if 1
+  ConstructVP(physiWorld);
 #endif
 
   return physiWorld;
@@ -135,11 +135,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 //_____________________________________________________________________________
 void S2SDetectorConstruction::MakeField()
 {
-  return;
-  S2SField *field = new S2SField(confMan.GetFieldMap());
-//    				 confMan.GetMagScaleQ1(),
-// 				 confMan.GetMagScaleQ2(),
-// 				 confMan.GetMagScale());
+  S2SField *field = new S2SField(confMan.Get<G4String>("FLDMAP"));
   auto fieldManager =
     G4TransportationManager::GetTransportationManager()->GetFieldManager();
   fieldManager->SetDetectorField(field);
@@ -377,7 +373,7 @@ S2SDetectorConstruction::ConstructD1(G4VPhysicalVolume *pMother)
 void
 S2SDetectorConstruction::ConstructSDC1(G4VPhysicalVolume* pMother)
 {
-  auto sdSDC1 = new DCSD("SDC1");
+  auto sdSDC1 = new DCSD("SDC");
   G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC1);
   const auto& sdc1_pos = (geomMan.GetGlobalPosition("SDC1-V1") +
                           geomMan.GetGlobalPosition("SDC1-U2"))/2;
@@ -1467,107 +1463,22 @@ void S2SDetectorConstruction::MakePositionDetector(G4VPhysicalVolume *pMother)
 }//Make PositionDetectors
 
 //_____________________________________________________________________________
-void S2SDetectorConstruction::MakeSlits(G4VPhysicalVolume *pMother)
+void
+S2SDetectorConstruction::ConstructVP(G4VPhysicalVolume *pMother)
 {
-
-  G4Material *SlitMater = m_material_list->at("Vacuum");//Scin;
-
-  //G4Box *solidSlit = new G4Box("solidSlit",4.0/2.*m, 4.0/2.*m, 0.000001/2.*mm); //Original
-  //G4Box *solidSlit = new G4Box("solidSlit",1.5/2.*m, 1.5/2.*m, 0.000001/2.*mm); // Toshi , 25Nov2014
-  //G4Box *solidSlit = new G4Box("solidSlit",1.5/2.*m, 0.8/2.*m, 0.000001/2.*mm); // Toshi , 25Nov2014
-  G4Box *solidSlit = new G4Box("solidSlit",4.0/2.*m, 4.0/2.*m, 0.000001/2.*mm); // Toshi , 25Nov2014
-  G4LogicalVolume *logicSlit = new G4LogicalVolume(solidSlit, SlitMater, "logicSlit");
-  G4VPhysicalVolume *physSlit[11];
-
-  G4RotationMatrix rotQ;
-  rotQ.rotateZ(90.*deg);
-  rotQ.rotateY(90.*deg);
-  G4ThreeVector gloPosSlit[11];
-  double x,y,z;
-  y = 0;
-  z = 0;
-
-  x = -(rhoD*tan(bendAngleD/2.*Deg2Rad) + driftL2 + Q2z + driftL1 + Q1z/2.);
-  gloPosSlit[0]=G4ThreeVector(x-Q1z/2.-5, y, z);
-  gloPosSlit[1]=G4ThreeVector(x+Q1z/2.+5, y, z);
-
-  x = -(rhoD*tan(bendAngleD/2.*Deg2Rad) + driftL2 + Q2z/2.);
-  gloPosSlit[2]=G4ThreeVector(x-Q2z/2.-5, y, z);
-  gloPosSlit[3]=G4ThreeVector(x+Q2z/2.+5, y, z);
-  //gloPosSlit[2]=G4ThreeVector(x-Q2z/2.-50.0, y, z);
-  //gloPosSlit[3]=G4ThreeVector(x+Q2z/2.+50.0, y, z);
-
-  gloPosSlit[4]=G4ThreeVector(-rhoD*tan(bendAngleD/2.*Deg2Rad)-5, 0, 0);//D entrance
-  gloPosSlit[5]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+5, 0, 0);//D exit
-  gloPosSlit[6]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+240+76, 0, 0);//End guard
-
-  // Order -->
-  // vd8 | TOF | vd9 | AC | vd10 | WC | vd11 (vd[10])
-  gloPosSlit[7]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1200, 0, 0);        // Toshi , 27Nov2014
-  gloPosSlit[8]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1200+100, 0, 0);    // Toshi , 27Nov2014
-  gloPosSlit[9]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1200+100+580, 0, 0);// Toshi , 27Nov2014
-  gloPosSlit[10]=G4ThreeVector( rhoD*tan(bendAngleD/2.*Deg2Rad)+500+1000+1400+140, 0, 0);   // Toshi , 25Nov2014
-
-  gloPosSlit[5].rotateZ(bendAngleD*Deg2Rad);
-  gloPosSlit[6].rotateZ(bendAngleD*Deg2Rad);
-  gloPosSlit[7].rotateZ(bendAngleD*Deg2Rad);
-  gloPosSlit[8].rotateZ(bendAngleD*Deg2Rad);
-  gloPosSlit[9].rotateZ(bendAngleD*Deg2Rad);
-  gloPosSlit[10].rotateZ(bendAngleD*Deg2Rad);
-
-  G4RotationMatrix rotSlit5;
-  rotSlit5.rotateZ(90.*degree);
-  rotSlit5.rotateY(90.*degree);
-  rotSlit5.rotateZ((bendAngleD)*Deg2Rad);
-
-  /*
-    G4RotationMatrix rotSlit6;
-    rotSlit6.rotateZ(90.*degree);
-    rotSlit6.rotateY(90.*degree);
-    rotSlit6.rotateZ((bendAngleD)*Deg2Rad);
-    G4RotationMatrix rotSlit7;
-    rotSlit7.rotateZ(90.*degree);
-    rotSlit7.rotateY(90.*degree);
-    rotSlit7.rotateZ((bendAngleD)*Deg2Rad);
-    G4RotationMatrix rotSlit8;
-    rotSlit8.rotateZ(90.*degree);
-    rotSlit8.rotateY(90.*degree);
-    rotSlit8.rotateZ((bendAngleD)*Deg2Rad);
-  */
-
-  char name[11][100]={"slitNo.1","slitNo.2","slitNo.3","slitNo.4",
-		      "slitNo.5","slitNo.6","slitNo.7","slitNo.8",
-		      "slitNo.9","slitNo.10","slitNo.11"};
-
-//   physSlit[0] =
-//     new G4PVPlacement( G4Transform3D(rotQ, gloPosSlit[0]),
-// 		       "physSlit[0]", logicSlit, pMother, false, 0 );
-  for(int i=0;i<5;i++){
-    physSlit[i] =
-      new G4PVPlacement( G4Transform3D(rotQ, gloPosSlit[i]),
-			 name[i], logicSlit, pMother, false, i, m_check_overlaps );
+  G4Material *VPMater = m_material_list->at("Air");
+  auto solidVP = new G4Box("solidVP", 4*m/2, 4*m/2, 1*CLHEP::um/2);
+  auto logicVP = new G4LogicalVolume(solidVP, VPMater, "logicVP");
+  auto sdVP = new VPSD("VP");
+  G4SDManager::GetSDMpointer()->AddNewDetector(sdVP);
+  logicVP->SetSensitiveDetector(sdVP);
+  for(G4int i=0; i<NumOfLayersVP; ++i){
+    auto pos = geomMan.GetGlobalPosition("VP"+std::to_string(i+1));
+    auto rot = new G4RotationMatrix;
+    rot->rotateY(-geomMan.GetRotAngle2("VP"+std::to_string(i+1))*deg);
+    new G4PVPlacement(rot, pos, "pvVP", logicVP, pMother, false, i,
+                      m_check_overlaps);
   }
-
-  for(int i=5;i<11;i++){
-    physSlit[i] =
-      new G4PVPlacement( G4Transform3D(rotSlit5, gloPosSlit[i]),
-			 name[i], logicSlit, pMother, false, i, m_check_overlaps );
-  }
-  //   physSlit[6] =
-//     new G4PVPlacement( G4Transform3D(rotSlit6, gloPosSlit[6]),
-// 		       "physSlit[6]", logicSlit, pMother, false, 6 );
-//   physSlit[7] =
-//     new G4PVPlacement( G4Transform3D(rotSlit7, gloPosSlit[7]),
-// 		       "physSlit[7]", logicSlit, pMother, false, 7 );
-
-  // logicSlit->SetVisAttributes(G4Color::Gray());
-  logicSlit->SetVisAttributes(G4VisAttributes::GetInvisible());
-
-  G4SDManager *SDMan = G4SDManager::GetSDMpointer();
-  SlSD *slSD = new SlSD("SlSD");
-  SDMan->AddNewDetector(slSD);
-
-  logicSlit->SetSensitiveDetector(slSD);
 }
 
 //_____________________________________________________________________________

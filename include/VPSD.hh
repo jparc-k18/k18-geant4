@@ -1,23 +1,21 @@
-/*
-  SlSD.hh
-  2007/4  K.Shirotori
-*/
+// -*- C++ -*-
 
-#ifndef SlSD_h
-#define SlSD_h 1
+#ifndef VP_SD_HH
+#define VP_SD_HH
 
 #include "G4VSensitiveDetector.hh"
-#include "SlHit.hh"
+#include "VPHit.hh"
 
 class G4Step;
 class G4HCofThisEvent;
 class G4TouchableHistory;
 
-class SlSD : public G4VSensitiveDetector
+//_____________________________________________________________________________
+class VPSD : public G4VSensitiveDetector
 {
 public:
-  SlSD( G4String name );
-  ~SlSD();
+  VPSD(G4String name);
+  ~VPSD();
 
   void Initialize( G4HCofThisEvent *HCE );
   G4bool ProcessHits( G4Step *aStep, G4TouchableHistory *ROhist );
@@ -29,7 +27,7 @@ public:
 
 private:
   int EMFlag;
-  SlHitsCollection *SlCollection;
+  VPHitsCollection *VPCollection;
 
 };
 

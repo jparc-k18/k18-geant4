@@ -25,8 +25,6 @@ ConfMan::ConfMan()
     m_conf_dir(),
     m_conf_buf(),
     // K18Momentum_(1.8),
-    oROOTFile("0"),
-    GeomFlag_(0),
     EMFlag_(0),
     DecayFlag_(0),
     generator(0),
@@ -90,10 +88,7 @@ ConfMan::Initialize(const G4String& file_name)
     m_int[key]    = std::strtol(val, nullptr, 10);
     m_bool[key]   = static_cast<G4bool>(std::strtol(val, nullptr, 10));
 
-    if(key == "BMAP"){
-      BfieldMap_ = val;
-    }
-    else if(key == "GenMomCent[GeV/c]"){
+    if(key == "GenMomCent[GeV/c]"){
       momcent = std::strtod(val, nullptr);
     }
     else if(key == "GenMomBite[GeV/c]"){
@@ -128,10 +123,6 @@ ConfMan::Initialize(const G4String& file_name)
     // else if( sscanf(buf,"HADRON: %d", &intval )==1 ){
     //   HadronFlag_=intval;
     // }
-    // else if( sscanf(buf,"ROOTFile: %s",buf1)==1 ){
-    //   if(oROOTFile[0]=='0')
-    //     oROOTFile = buf1;
-    // }
     // else if( sscanf(buf,"TOF_OVERLAP[mm]: %lf", &val )==1 ){
     //   tof_overlap=val;
     // }
@@ -164,21 +155,6 @@ ConfMan::Initialize(const G4String& file_name)
   if(!mag_Q2)
     mag_scale_Q2 = mag_scale;
 
-  /*
-    std::cout << "----------"  << ConfFileName_ << "--------" << std::endl;
-    std::cout << "**********Geometry**********" << std::endl;
-    std::cout << "DC Geom. Param.:  "  << DCGeomFileName_   << std::endl;
-    std::cout << "**********BfieldMap*********" << std::endl;
-    std::cout << "B field Map :     "  << BfieldMap_  << std::endl;
-    std::cout << "**********Primary Action**********" << std::endl;
-    std::cout << "Momentum [GeV/c]:    "  << momcent << " +/- "
-    << mombite << std::endl;
-    std::cout << "**********Physics Process**********" << std::endl;
-    std::cout << "EM Process:    "  << EMFlag_              << std::endl;
-    std::cout << "Decay Process:    "  << DecayFlag_              << std::endl;
-    std::cout << "-----------------------------------------------" << std::endl;
-  */
-
   return InitializeParameterFiles();
 }
 
@@ -200,9 +176,6 @@ void ConfMan::ShowParam()
 {
   G4cout << G4endl;
   G4cout << " ------------ Used Parameters ------------ "  << G4endl;
-  G4cout << "ROOT file:   " << oROOTFile    << G4endl;
-  G4cout << "DCGeometry:  " << DCGeomFileName_ << G4endl;
-  G4cout << "FieldMap:    " << BfieldMap_  << BfieldMap_link  << G4endl;
   G4cout << "Mag Scale:   " << mag_scale   << G4endl;
   G4cout << "Mag Scale Q1:   " << mag_scale_Q1   << G4endl;
   G4cout << "Mag Scale Q2:   " << mag_scale_Q2   << G4endl;
@@ -223,48 +196,6 @@ void ConfMan::ShowParam()
   G4cout << "Generator:  " << generator  << G4endl;
   G4cout << "                 ╭( ･ㅂ･)و ̑̑" << G4endl;
 }
-
-//_____________________________________________________________________________
-void
-ConfMan::OutputLog()
-{
-  std::string LogFoot("_Log");
-  std::string LogFileName = oROOTFile+LogFoot;
-
-  std::ofstream ofs(LogFileName);
-  ofs << "  /// S-2S Geant4 simulation ///" << G4endl;
-  ofs << "  /// Used Parameters -->    ///"  << G4endl;
-  ofs << "ROOT file:   " << oROOTFile    << G4endl;
-  ofs << "DCGeometry:  " << DCGeomFileName_ << G4endl;
-  ofs << "FieldMap:    " << BfieldMap_  << BfieldMap_link  << G4endl;
-  ofs << "Mag Scale:   " << mag_scale   << G4endl;
-  ofs << "Mag Scale Q1:   " << mag_scale_Q1   << G4endl;
-  ofs << "Mag Scale Q2:   " << mag_scale_Q2   << G4endl;
-  ofs << "TargetID:    " << TargetID << G4endl;
-  ofs << "TargetThickness: " << tthickness << " g/cm^{2}" << G4endl;
-  ofs << "TargetPosZ:  " << tposz << " mm" << G4endl;
-  //G4cout << "Momentum:    " << K18Momentum_ << G4endl;
-  ofs << "Momentum:    " << momcent << " +/- "
-      << mombite << " GeV/c" << G4endl;
-  ofs << "Theta:       0 - " << thetamax << " deg " <<G4endl;
-  ofs << "GenPID:      " << GenPID
-      << " (1:K+ 2:K- 3:pi+ 4:pi- 5:p 6:e- 7:mu- 8:xi-)" << G4endl;
-  ofs << "BeamWidth:   " << beamx << "(sigma), " << beamy << "(sigma), "
-      << beamz << "(uniform) mm" << G4endl;
-  ofs << "EMFlag:      " << EMFlag_      << G4endl;
-  ofs << "DecayFlag:   " << DecayFlag_   << G4endl;
-  ofs << "HadronFlag:  " << HadronFlag_  << G4endl;
-  ofs << "Generator:  " << generator  << G4endl;
-}
-
-/*
-  bool ConfMan::InitializeEvDisp()
-  {
-  static const std::string funcname = "[ConfMan::InitializeEvDisp]";
-  evDisp_ = & EvDisp::GetInstance();
-  evDisp_->Initialize();
-  }
-*/
 
 //_____________________________________________________________________________
 G4String

@@ -1,9 +1,9 @@
 /*
-  SlSD.cc
+  VPSD.cc
   2007/4  K.Shirotori
 */
 
-#include "SlSD.hh"
+#include "VPSD.hh"
 
 #include "G4HCofThisEvent.hh"
 #include "G4VPhysicalVolume.hh"
@@ -25,33 +25,35 @@ const double PositionSeparationThreshold = 2.0*cm;
 const double TimeSeparationThreshold     = 5.0*ns;
 }
 
-SlSD::SlSD( G4String name )
-  : G4VSensitiveDetector(name), EMFlag(0)
+//_____________________________________________________________________________
+VPSD::VPSD( G4String name )
+  : G4VSensitiveDetector(name),
+    EMFlag(0)
 {
-  collectionName.insert( name/*G4String( "SlCollection" )*/ );
-
+  collectionName.insert(name);
   EMFlag = confMan.GetEMFlag();
 }
 
-SlSD::~SlSD()
+//_____________________________________________________________________________
+VPSD::~VPSD()
 {
 }
 
-void SlSD::Initialize( G4HCofThisEvent *HCE )
+//_____________________________________________________________________________
+void
+VPSD::Initialize( G4HCofThisEvent *HCE )
 {
   static int HCID = -1;
-  SlCollection =
-    new SlHitsCollection( SensitiveDetectorName,
-			     collectionName[0] );
+  VPCollection = new VPHitsCollection(SensitiveDetectorName,
+                                      collectionName[0]);
   if( HCID<0 )
     HCID = GetCollectionID(0);
-
-  HCE->AddHitsCollection( HCID, SlCollection );
-
+  HCE->AddHitsCollection( HCID, VPCollection );
 }
 
-G4bool SlSD::ProcessHits( G4Step *aStep,
-			     G4TouchableHistory *ROhist )
+//_____________________________________________________________________________
+G4bool
+VPSD::ProcessHits( G4Step *aStep, G4TouchableHistory *ROhist )
 {
   //ConfMan *confMan = ConfMan::GetConfManager();
   //  G4double edep = aStep->GetTotalEnergyDeposit();
@@ -66,7 +68,7 @@ G4bool SlSD::ProcessHits( G4Step *aStep,
   //All Perticle
   G4double hittime = aTrack->GetGlobalTime();
   G4ThreeVector hitmom = aTrack->GetMomentum();
-  //  G4int nHits = SlCollection->entries();
+  //  G4int nHits = VPCollection->entries();
   G4ThreeVector hitpos = aStep->GetPreStepPoint()->GetPosition();
   G4ThreeVector hitposl = theTouchable->GetHistory()->
     GetTopTransform().TransformPoint( hitpos );
@@ -80,7 +82,7 @@ G4bool SlSD::ProcessHits( G4Step *aStep,
     //    G4cout<<"decayName=\""<<decayName<<"\""<<G4endl;
 
 //     for( G4int i=0; i<nHits; ++i ){
-//       SlHit *aHit = (*SlCollection)[i];
+//       VPHit *aHit = (*VPCollection)[i];
 //       if( hitLayer==aHit->GetLayerID() ){
 // 	G4double time = aHit->GetTime();
 // 	G4double lposx = aHit->GetXLocal();
@@ -101,7 +103,7 @@ G4bool SlSD::ProcessHits( G4Step *aStep,
 //       }
 //     }
 
-    SlHit *aHit = new SlHit();
+    VPHit *aHit = new VPHit();
     aHit->SetPath( path );
     //    if(hitLayer==0) G4cout<<"path[0]="<<path<<G4endl;
     aHit->SetLayerID( hitLayer );//Need
@@ -111,10 +113,10 @@ G4bool SlSD::ProcessHits( G4Step *aStep,
     //  aHit->SetTrackNo( trackNo );
     aHit->SetLocalPos( hitposl.x(), hitposl.y() );
     aHit->SetDecayParticleName( decayName );
-    SlCollection->insert( aHit );
+    VPCollection->insert( aHit );
   }
 #if 0
-  G4cout << "[SlSD] " << "Layer=" << hitLayer
+  G4cout << "[VPSD] " << "Layer=" << hitLayer
     //	 << " edep=" << edep/keV << "keV"
 	 << " G: " << hitpos << "  L: " << hitposl
 	 <<" P: "<< hitmom << G4endl;
@@ -123,31 +125,33 @@ G4bool SlSD::ProcessHits( G4Step *aStep,
   return true;
 }
 
-void SlSD::EndOfEvent( G4HCofThisEvent *HCE )
+//_____________________________________________________________________________
+void VPSD::EndOfEvent( G4HCofThisEvent *HCE )
 {
 }
 
-void SlSD::clear()
+//_____________________________________________________________________________
+void VPSD::clear()
 {
-  G4int nHits = SlCollection->entries();
+  G4int nHits = VPCollection->entries();
   for( G4int i=nHits-1; i>=0; --i )
-    delete (*SlCollection)[i];
+    delete (*VPCollection)[i];
 }
 
-// void SlSD::DrawAll() const
+// void VPSD::DrawAll() const
 // {
 //   G4VVisManager *pVisManager = G4VVisManager::GetConcreteInstance();
 
 //   if( pVisManager ){
-//     G4int nHits = SlCollection->entries();
+//     G4int nHits = VPCollection->entries();
 //     for( G4int i=0; i<nHits; ++i )
-//       (*SlCollection)[i]->Draw();
+//       (*VPCollection)[i]->Draw();
 //   }
 // }
 
-// void SlSD::PrintAll() const
+// void VPSD::PrintAll() const
 // {
-//   G4int nHits = SlCollection->entries();
+//   G4int nHits = VPCollection->entries();
 //   for( G4int i=0; i<nHits; ++i)
-//     (*SlCollection)[i]->Print();
+//     (*VPCollection)[i]->Print();
 // }

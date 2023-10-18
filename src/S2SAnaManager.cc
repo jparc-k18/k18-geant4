@@ -31,7 +31,7 @@
 #include "TOFHit.hh"
 #include "ACHit.hh"
 #include "WCHit.hh"
-#include "SlHit.hh"
+#include "VPHit.hh"
 #include "HistMan.hh"
 
 namespace
@@ -192,8 +192,6 @@ void S2SAnaManager::BeginOfEvent( const G4Event *anEvent )
 
 void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
 {
-  return;
-
   InitializeEvent();
 
   auto HCE = anEvent->GetHCofThisEvent();
@@ -201,21 +199,21 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
 
   //   G4int nhAc=0;
   G4int nhWC=0;
-  G4int nhSl=0;
+  G4int nhVP=0;
 
-  static const G4int colIdDC = SDMan->GetCollectionID("BcSD");
+  static const G4int colIdDC = SDMan->GetCollectionID("SDC");
   // static const G4int colIdAC = SDMan->GetCollectionID("AC");
-  static const G4int colIdWC = SDMan->GetCollectionID("WCSD");
-  static const G4int colIdSl = SDMan->GetCollectionID("SlSD");
+  static const G4int colIdWC = SDMan->GetCollectionID("WC");
+  static const G4int colIdVP = SDMan->GetCollectionID("VP");
 
   auto DCHC = dynamic_cast<DCHitsCollection*>(HCE->GetHC(colIdDC));
   // auto ACHC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(colIdAC));
   auto WCHC = dynamic_cast<WCHitsCollection*>(HCE->GetHC(colIdWC));
-  auto SlHC = dynamic_cast<SlHitsCollection*>(HCE->GetHC(colIdSl));
+  auto VPHC = dynamic_cast<VPHitsCollection*>(HCE->GetHC(colIdVP));
 
   // if(ACHC) nhAc = ACHC ->entries();
   if(WCHC) nhWC = WCHC ->entries();
-  if(SlHC) nhSl = SlHC ->entries();
+  if(VPHC) nhVP = VPHC ->entries();
 
   G4double pos_res = 0.0*mm; // 0 um
   // G4double pos_res = 0.2*mm; // 200 um
@@ -265,109 +263,6 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
       if(i==3 && event.DCt[i*6+j]>-999) event.DC4Hit = 1;
     }
   }
-
-  //int nhitSl1=0;
-  // ~~~~ Bending angle of the S-2S dipole magnet ~~~~
-  const double BendingAngle = 70.0; // [deg]
-  // ~~~~      ~~~~~   ~~~~~~ ~~~~  ~~~~   ~~~~~   ~~~
-  if(SlHC){
-    for( int i=0; i<nhSl; ++i ){
-      SlHit *aHit = (*SlHC)[i];
-      G4int Sllayer = aHit->GetLayerID();
-      G4int nh = event.SlitNh[Sllayer];
-      G4double lx = aHit->GetXLocal()/mm;
-      G4double ly = aHit->GetYLocal()/mm;
-      G4double time = aHit->GetTime()/ns;
-      G4ThreeVector pVec = aHit->GetMom();
-      G4double path = aHit->GetPath()/mm;
-      G4String name = aHit->GetDecayParticleName(0);
-      G4double mom = pVec.mag();
-      event.SlituDeg[Sllayer] = atan(pVec.y()/pVec.x())*TMath::RadToDeg();
-      event.SlitvDeg[Sllayer] = atan(pVec.z()/pVec.x())*TMath::RadToDeg();
-      event.SlitX[Sllayer][nh]  = lx;
-      // ------ High momentum: Large x (Toshi, 19Mar2015) ------
-      //G4cout<<"layer ="<<Sllayer<<" lx= "<<lx<<G4endl;
-      event.SlitX[Sllayer][nh] = -1.0 * event.SlitX[Sllayer][nh];
-      event.SlituDeg[Sllayer] = -1.0 * event.SlituDeg[Sllayer];
-      if(Sllayer>4){ // ~~~~~ After the dipole magnet ~~~~~
-	event.SlituDeg[Sllayer] = event.SlituDeg[Sllayer] + BendingAngle;
-      }
-      // -------------------------------------------------------
-      event.SlitY[Sllayer]  = ly;
-      event.Slitt[Sllayer]  = time;
-      event.SlitMom[Sllayer]= mom;
-      event.Slitp[Sllayer]  = path;
-      event.SlitNh[Sllayer]++;
-      if(name=="proton"){
-	event.SlitNP[Sllayer]++;
-	event.SlitF[Sllayer]=1;
-      }
-      else if(name=="kaon+"){
-	event.SlitNK[Sllayer]++;
-	event.SlitF[Sllayer]=2;
-      }
-      else if(name=="pi+"){
-	event.SlitNPi[Sllayer]++;
-        event.SlitF[Sllayer]=3;
-      }
-      else if(name=="anti_proton"){
-	event.SlitNPi[Sllayer]++;
-	event.SlitF[Sllayer]=4;
-      }
-      else if(name=="kaon-"){
-	event.SlitNPi[Sllayer]++;
-	event.SlitF[Sllayer]=5;
-      }
-      else if(name=="pi-"){
-	event.SlitNPi[Sllayer]++;
-	event.SlitF[Sllayer]=6;
-      }
-      else if(name=="e+"){
-	event.SlitNPi[Sllayer]++;
-	event.SlitF[Sllayer]=7;
-      }
-      else if(name=="e-"){
-	event.SlitNPi[Sllayer]++;
-	event.SlitF[Sllayer]=8;
-      }
-      else if(name=="mu+"){
-	event.SlitNPi[Sllayer]++;
-	event.SlitF[Sllayer]=9;
-      }
-      else if(name=="mu-"){
-	event.SlitNPi[Sllayer]++;
-	event.SlitF[Sllayer]=10;
-      }
-      else if(name=="neutron"){
-	event.SlitNPi[Sllayer]++;
-	event.SlitF[Sllayer]=11;
-      }
-      else if(name=="gamma"){
-	event.SlitNPi[Sllayer]++;
-	event.SlitF[Sllayer]=12;
-      }
-      else{
-	//if(Sllayer==7) G4cerr<<"Enigma Particle Name="<<name<<G4endl;
-      }
-    }
-  }
-
-  G4bool SlitFlag = false;
-  if ( event.SlitX[0][0]>-1000.0 && // Before Q1
-       //event.SlitX[1]>-1000.0 &&
-       //event.SlitX[2]>-1000.0 &&
-       //event.SlitX[3]>-1000.0 &&
-       //event.SlitX[4]>-1000.0 &&
-       event.SlitX[5][0]>-1000.0 && //After Dipole
-       event.SlitX[6][0]>-1000.0 && //After Dipole end guard
-       event.SlitX[7][0]>-1000.0 && // After Chamber
-       event.SlitX[8][0]>-1000.0 && // After TOF
-       event.SlitX[9][0]>-1000.0 && // After AC
-       event.SlitX[10][0]>-1000.0 // After WC
-       ){
-    SlitFlag = true;
-  }
-  else{ SlitFlag=false; }
 
   // ~~~~~~~~~ Q1Flag (T.Gogami, 23Mar2015) ~~~~~~~~~~~~~~~
   G4bool Q1Flag1 = false; // Q1 entrance
@@ -500,7 +395,7 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
   // event.TOFTrig = TOFTrig;
 
 
-  event.VDTrig  = SlitFlag;
+  // event.VDTrig  = SlitFlag;
 
   //for(int j=0;j<NumTOFSeg;j++){
   //  if(event.TOFt[j]>0) event.TOFHit = 1;
@@ -639,9 +534,9 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
   // m_file->Write();
   //if(TOFTrig==true){
 
-  if(SlitFlag==true){
-    //m_tree->Fill();
-  }
+  // if(SlitFlag==true){
+  //   //m_tree->Fill();
+  // }
   m_tree->Fill();
 }
 
