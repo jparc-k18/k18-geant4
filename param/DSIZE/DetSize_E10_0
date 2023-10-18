@@ -16,6 +16,10 @@ World		15000	12000	12000
 
 Target	 	75.0	75.0	20.0
 
+HeBagMylarThickness	0.016
+
+### Counters
+
 TofSeg		80.0	580.0	30.0
 
 Ac1Frame        1550.0  1300.0  500.0

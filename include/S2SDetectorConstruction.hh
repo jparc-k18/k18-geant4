@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
-#ifndef S2SDetectorConstruction_h
-#define S2SDetectorConstruction_h 1
+#ifndef S2S_DETECTOR_CONSTRUCTION_HH
+#define S2S_DETECTOR_CONSTRUCTION_HH 1
 
 #include <G4VUserDetectorConstruction.hh>
 #include <globals.hh>
@@ -25,35 +25,27 @@ public:
   G4VPhysicalVolume* Construct();
 
 private:
-  G4Box*             solidWorld;    //pointer to the solid World
-  G4LogicalVolume*   logicWorld;    //pointer to the logical World
-  G4VPhysicalVolume* physiWorld;    //pointer to the physical World
-  G4UniformMagField* magField;      //pointer to the magnetic field
-  MaterialList*      m_material_list;
-  G4Material* DMaterial;
-  G4bool m_check_overlaps;
+  void ConstructField();
+  //     void ConstructCalorimeter();
+  void ConstructTarget ();
+  void ConstructQ1();
+  void ConstructQ2();
+  void ConstructD1();
+  void ConstructSDC1();
+  void ConstructSDC2();
+  void ConstructSDC3();
+  void ConstructSDC4();
+  void ConstructSDC5();
+  void ConstructTOF();
+  void ConstructAC1();
+  void ConstructWC();
+  void ConstructVP();
 
-  void MakeField();
-  //     void ConstructCalorimeter(G4VPhysicalVolume* pMother);
-  void ConstructTarget (G4VPhysicalVolume* pMother);
-  void ConstructQ1(G4VPhysicalVolume* pMother);
-  void ConstructQ2(G4VPhysicalVolume* pMother);
-  void ConstructD1(G4VPhysicalVolume* pMother);
-  void ConstructSDC1(G4VPhysicalVolume* pMother);
-  void ConstructSDC2(G4VPhysicalVolume* pMother);
-  void ConstructSDC3(G4VPhysicalVolume* pMother);
-  void ConstructSDC4(G4VPhysicalVolume* pMother);
-  void ConstructSDC5(G4VPhysicalVolume* pMother);
-  void ConstructTOF(G4VPhysicalVolume* pMother);
-  void ConstructAC1(G4VPhysicalVolume* pMother);
-  void ConstructWC(G4VPhysicalVolume* pMother);
-  void ConstructVP(G4VPhysicalVolume* pMother);
-
-  void SetTarget(G4VPhysicalVolume* pMother);
-  void MakePositionDetector(G4VPhysicalVolume* pMother);
-  void MakeTOFCounter(G4VPhysicalVolume* pMother);
-  void MakeAerogelCounter(G4VPhysicalVolume* pMother);
-  void MakeWaterCounter(G4VPhysicalVolume* pMother);
+  void SetTarget();
+  void MakePositionDetector();
+  void MakeTOFCounter();
+  void MakeAerogelCounter();
+  void MakeWaterCounter();
   G4bool IsVolumeStopper( G4VPhysicalVolume *physVol ) const ;
 
 };

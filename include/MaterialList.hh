@@ -1,10 +1,7 @@
-/*
-  MaterialList.hh
-  2007/4  K.Shirotori
-*/
+// -*- C++ -*-
 
-#ifndef MaterialList_h
-#define MaterialList_h 1
+#ifndef MATERIAL_LIST_HH
+#define MATERIAL_LIST_HH
 
 #include <map>
 
@@ -13,6 +10,7 @@
 class G4Element;
 class G4Material;
 
+//_____________________________________________________________________________
 struct MaterialList
 {
 public:
@@ -64,7 +62,6 @@ public:
   G4Material *Si;
   G4Material *ArGas;
   G4Material *Ti;
-  G4Material *Fe;
   G4Material *Ni;
   G4Material *Cu;
   G4Material *Ge;
@@ -88,7 +85,6 @@ public:
   G4Material *PET;
   G4Material *LH;
   G4Material *LD;
-  G4Material *Mylar;
   G4Material *MethaneGas;
   G4Material *EthaneGas;
   G4Material *IsoButaneGas;

@@ -18,7 +18,6 @@
 #include <DCGeomMan.hh>
 #include "S2SPrimaryGeneratorAction.hh"
 #include "FuncName.hh"
-#include "Area.hh"
 #include "S2SAnaManager.hh"
 #include "MagnetConstant.hh"
 #include "ConfMan.hh"

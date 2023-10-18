@@ -1,21 +1,16 @@
-/*
-  MaterialList.cc
-  2007/4  K.Shirotori
-*/
+// -*- C++ -*-
 
 #include "MaterialList.hh"
 
-#include "G4String.hh"
-#include "G4Element.hh"
-#include "G4Material.hh"
-#include "G4SystemOfUnits.hh"
+#include <G4String.hh>
+#include <G4Element.hh>
+#include <G4Material.hh>
+#include <G4SystemOfUnits.hh>
 
-#include <FuncName.hh>
+#include "FuncName.hh"
 
 MaterialList::MaterialList()
 {
-  material_map["Be9"] = new G4Material("Be9",   4.,  9.012182*g/mole, 1.85  * g/cm3);
-
   // Elements
   elH  = new G4Element( "Hydrogen"  , "H"  ,  1.,   1.00794 *g/mole );
   elHe = new G4Element( "Helium"    , "He" ,  2.,   4.002602*g/mole );
@@ -48,7 +43,14 @@ MaterialList::MaterialList()
   elBi = new G4Element( "Bismuth"   , "Bi" , 83., 208.98    *g/mole );
 
   // Simple Materials, Compounds & Mixtures
+  material_map["Be9"]   = new G4Material("Be9",   4.,  9.012182*g/mole, 1.85  * g/cm3);
+  material_map["Fe"]    = new G4Material("Fe",   26., 55.847   *g/mole, 7.87  * g/cm3);
   material_map["HeGas"] = new G4Material("HeGas", 2.,  4.002602*g/mole, 0.1787*mg/cm3);
+  material_map["Mylar"] = new G4Material("Mylar", 1.39*g/cm3, 3);
+  material_map["Mylar"]->AddElement(elC, 5);
+  material_map["Mylar"]->AddElement(elH, 4);
+  material_map["Mylar"]->AddElement(elO, 2);
+
   HeLiq = new G4Material( "HeLiq", 2.,  4.002602*g/mole, 0.1249* g/cm3 );
   Li    = new G4Material( "Li",    3.,  7.0     *g/mole, 0.534 * g/cm3 );
   B10   = new G4Material( "B10",   5., 10.0     *g/mole, 1.42  * g/cm3 );
@@ -58,7 +60,6 @@ MaterialList::MaterialList()
   Si    = new G4Material( "Si",   14., 28.0855  *g/mole, 2.33  * g/cm3 );
   ArGas = new G4Material( "ArGas",18., 39.948   *g/mole, 1.7834*mg/cm3 );
   Ti    = new G4Material( "Ti",   22., 47.867   *g/mole, 4.54  * g/cm3 );
-  Fe    = new G4Material( "Fe",   26., 55.847   *g/mole, 7.87  * g/cm3 );
   Ni    = new G4Material( "Ni",   28., 58.69    *g/mole, 8.902 * g/cm3 );
   Cu    = new G4Material( "Cu",   29., 63.546   *g/mole, 8.96  * g/cm3 );
   Ge    = new G4Material( "Ge",   32., 72.61    *g/mole, 5.323 * g/cm3 );
@@ -154,12 +155,6 @@ MaterialList::MaterialList()
   PET->AddElement( elO,  4 );
   PET->AddElement( elH,  8 );
 
-  //Mylar
-  Mylar = new G4Material("Mylar", 1.39*g/cm3, 3);
-  Mylar->AddElement(elC, 5);
-  Mylar->AddElement(elH, 4);
-  Mylar->AddElement(elO, 2);
-
   // MethaneGas
   MethaneGas = new G4Material("MethaneGas", 0.7162*mg/cm3, 2, kStateGas );
   MethaneGas->AddElement(elH,4);
@@ -215,7 +210,6 @@ MaterialList::~MaterialList()
   delete Al;
   delete ArGas;
   delete Ti;
-  delete Fe;
   delete Ni;
   delete Cu;
   delete Ge;
@@ -239,7 +233,6 @@ MaterialList::~MaterialList()
   delete LiN;
   delete Brass;
   delete PET;
-  delete Mylar;
 
   delete MethaneGas;
   delete EthaneGas;
