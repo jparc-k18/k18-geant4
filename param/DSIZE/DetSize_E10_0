@@ -16,7 +16,14 @@ World		15000	12000	12000
 
 Target	 	75.0	75.0	20.0
 
+### Mylars
 HeBagMylarThickness	0.016
+AlMylarThickness        0.050    # 50um
+AlPlateThickness        0.000005 # 5nm
+Sdc1MylarThickness	0.100
+Sdc3MylarThickness	0.100
+Sdc4MylarThickness	0.100
+Sdc5MylarThickness	0.100
 
 ### Counters
 
@@ -29,7 +36,7 @@ WcSegIn         190.0   690.0  140.0
 WcSegOut        230.0   730.0  180.0
 
 ### DCs
-Sdc1Frame       578.0   430.0   146.0
+Sdc1Frame       578.0   430.0   136.0
 Sdc1Drift       384.0   264.0   0.001
 Sdc2Frame       400.0   494.0   70.0
 Sdc2Drift       160.0   300.0   0.001

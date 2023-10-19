@@ -117,7 +117,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   ConstructWC();
 #endif
 
-#if 1
+#if 0
   ConstructVP();
 #endif
 
@@ -127,6 +127,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 //_____________________________________________________________________________
 void S2SDetectorConstruction::ConstructField()
 {
+  return;
   S2SField *field = new S2SField(confMan.Get<G4String>("FLDMAP"));
   auto fieldManager =
     G4TransportationManager::GetTransportationManager()->GetFieldManager();
@@ -406,7 +407,7 @@ S2SDetectorConstruction::ConstructSDC1()
   auto sdc1_lv = new G4LogicalVolume(sdc1_solid, mlist.Ar80IsoButane20Gas,
                                      "Sdc1LV", 0, 0, 0);
   sdc1_lv->SetVisAttributes(G4Colour::Green());
-  new G4PVPlacement(0, sdc1_pos,
+  new G4PVPlacement(nullptr, sdc1_pos,
                     "Sdc1PV", sdc1_lv, physWorld, false, 0, check_overlaps);
   auto sdc1pl_solid = new G4Box("Sdc1PlSolid", drift_size.x(),
                                 drift_size.y(), drift_size.z());
@@ -441,6 +442,45 @@ S2SDetectorConstruction::ConstructSDC1()
     new G4PVPlacement(nullptr, pos, sdc1pl_lv, plane_name[i] + "PV",
                       sdc1_lv, false, 101+i, check_overlaps);
   }
+  ///// Mylar
+  const G4double almylar_thickness = sizeMan.Get("AlMylarThickness")*mm;
+  const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
+  const G4double mylar_thickness = sizeMan.Get("Sdc1MylarThickness")*mm;
+  auto solidMylar = new G4Box("solidMylar", frame_size.x(),
+                                frame_size.y(), mylar_thickness/2);
+  auto logicMylar = new G4LogicalVolume
+    (solidMylar, mlist.at("Mylar"), "logicMylar");
+  G4ThreeVector pos = sdc1_pos;
+  pos.setZ(sdc1_pos.z()-frame_size.z()-mylar_thickness/2);
+  new G4PVPlacement(nullptr, pos, "physMylar", logicMylar,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc1_pos.z()+frame_size.z()+mylar_thickness/2);
+  new G4PVPlacement(nullptr, pos, "physMylar", logicMylar,
+                    physWorld, false, 1, check_overlaps);
+  ///// Al mylar
+  auto solidAlMylar = new G4Box("solidAlMylar", frame_size.x(),
+                                frame_size.y(), almylar_thickness/2);
+  auto logicAlMylar = new G4LogicalVolume
+    (solidAlMylar, mlist.at("Mylar"), "logicAlMylar");
+  pos = sdc1_pos;
+  pos.setZ(sdc1_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness/2);
+  new G4PVPlacement(nullptr, pos, "physAlMylar", logicAlMylar,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc1_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness/2);
+  new G4PVPlacement(nullptr, pos, "physAlMylar", logicAlMylar,
+                    physWorld, false, 1, check_overlaps);
+  ///// Al plate
+  auto solidAlPlate = new G4Box("solidAlMylar", frame_size.x(),
+                                frame_size.y(), alplate_thickness/2);
+  auto logicAlPlate = new G4LogicalVolume
+    (solidAlPlate, mlist.at("Al"), "logicAlPlate");
+  pos = sdc1_pos;
+  pos.setZ(sdc1_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness-alplate_thickness/2);
+  new G4PVPlacement(nullptr, pos, "physAlPlate", logicAlPlate,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc1_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness+alplate_thickness/2);
+  new G4PVPlacement(nullptr, pos, "physAlPlate", logicAlPlate,
+                    physWorld, false, 1, check_overlaps);
 }
 
 //_____________________________________________________________________________
@@ -487,6 +527,46 @@ S2SDetectorConstruction::ConstructSDC2()
     new G4PVPlacement(nullptr, pos, sdc2pl_lv, plane_name[i] + "PV",
                       sdc2_lv, false, 101+i, check_overlaps);
   }
+
+  // ///// Mylar
+  // const G4double almylar_thickness = sizeMan.Get("AlMylarThickness")*mm;
+  // const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
+  // const G4double mylar_thickness = sizeMan.Get("Sdc2MylarThickness")*mm;
+  // auto solidMylar = new G4Box("solidMylar", frame_size.x(),
+  //                               frame_size.y(), mylar_thickness/2);
+  // auto logicMylar = new G4LogicalVolume
+  //   (solidMylar, mlist.at("Mylar"), "logicMylar");
+  // G4ThreeVector pos = sdc2_pos;
+  // pos.setZ(sdc2_pos.z()-frame_size.z()-mylar_thickness/2);
+  // new G4PVPlacement(nullptr, pos, "physMylar", logicMylar,
+  //                   physWorld, false, 0, check_overlaps);
+  // pos.setZ(sdc2_pos.z()+frame_size.z()+mylar_thickness/2);
+  // new G4PVPlacement(nullptr, pos, "physMylar", logicMylar,
+  //                   physWorld, false, 1, check_overlaps);
+  // ///// Al mylar
+  // auto solidAlMylar = new G4Box("solidAlMylar", frame_size.x(),
+  //                               frame_size.y(), almylar_thickness/2);
+  // auto logicAlMylar = new G4LogicalVolume
+  //   (solidAlMylar, mlist.at("Mylar"), "logicAlMylar");
+  // pos = sdc2_pos;
+  // pos.setZ(sdc2_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness/2);
+  // new G4PVPlacement(nullptr, pos, "physAlMylar", logicAlMylar,
+  //                   physWorld, false, 0, check_overlaps);
+  // pos.setZ(sdc2_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness/2);
+  // new G4PVPlacement(nullptr, pos, "physAlMylar", logicAlMylar,
+  //                   physWorld, false, 1, check_overlaps);
+  // ///// Al plate
+  // auto solidAlPlate = new G4Box("solidAlMylar", frame_size.x(),
+  //                               frame_size.y(), alplate_thickness/2);
+  // auto logicAlPlate = new G4LogicalVolume
+  //   (solidAlPlate, mlist.at("Al"), "logicAlPlate");
+  // pos = sdc2_pos;
+  // pos.setZ(sdc2_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness-alplate_thickness/2);
+  // new G4PVPlacement(nullptr, pos, "physAlPlate", logicAlPlate,
+  //                   physWorld, false, 0, check_overlaps);
+  // pos.setZ(sdc2_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness+alplate_thickness/2);
+  // new G4PVPlacement(nullptr, pos, "physAlPlate", logicAlPlate,
+  //                   physWorld, false, 1, check_overlaps);
 }
 
 //_____________________________________________________________________________
@@ -536,6 +616,45 @@ S2SDetectorConstruction::ConstructSDC3()
     new G4PVPlacement(nullptr, pos, sdc3pl_lv, plane_name[i] + "PV",
                       sdc3_lv, false, 101+i, check_overlaps);
   }
+  ///// Mylar
+  const G4double almylar_thickness = sizeMan.Get("AlMylarThickness")*mm;
+  const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
+  const G4double mylar_thickness = sizeMan.Get("Sdc3MylarThickness")*mm;
+  auto solidMylar = new G4Box("solidMylar", frame_size.x(),
+                                frame_size.y(), mylar_thickness/2);
+  auto logicMylar = new G4LogicalVolume
+    (solidMylar, mlist.at("Mylar"), "logicMylar");
+  G4ThreeVector pos = sdc3_pos;
+  pos.setZ(sdc3_pos.z()-frame_size.z()-mylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc3_pos.z()+frame_size.z()+mylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
+                    physWorld, false, 1, check_overlaps);
+  ///// Al mylar
+  auto solidAlMylar = new G4Box("solidAlMylar", frame_size.x(),
+                                frame_size.y(), almylar_thickness/2);
+  auto logicAlMylar = new G4LogicalVolume
+    (solidAlMylar, mlist.at("Mylar"), "logicAlMylar");
+  pos = sdc3_pos;
+  pos.setZ(sdc3_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc3_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
+                    physWorld, false, 1, check_overlaps);
+  ///// Al plate
+  auto solidAlPlate = new G4Box("solidAlMylar", frame_size.x(),
+                                frame_size.y(), alplate_thickness/2);
+  auto logicAlPlate = new G4LogicalVolume
+    (solidAlPlate, mlist.at("Al"), "logicAlPlate");
+  pos = sdc3_pos;
+  pos.setZ(sdc3_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness-alplate_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc3_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness+alplate_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
+                    physWorld, false, 1, check_overlaps);
 }
 
 //_____________________________________________________________________________
@@ -585,6 +704,45 @@ S2SDetectorConstruction::ConstructSDC4()
     new G4PVPlacement(nullptr, pos, sdc4pl_lv, plane_name[i] + "PV",
                       sdc4_lv, false, 101+i, check_overlaps);
   }
+  ///// Mylar
+  const G4double almylar_thickness = sizeMan.Get("AlMylarThickness")*mm;
+  const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
+  const G4double mylar_thickness = sizeMan.Get("Sdc4MylarThickness")*mm;
+  auto solidMylar = new G4Box("solidMylar", frame_size.x(),
+                                frame_size.y(), mylar_thickness/2);
+  auto logicMylar = new G4LogicalVolume
+    (solidMylar, mlist.at("Mylar"), "logicMylar");
+  G4ThreeVector pos = sdc4_pos;
+  pos.setZ(sdc4_pos.z()-frame_size.z()-mylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc4_pos.z()+frame_size.z()+mylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
+                    physWorld, false, 1, check_overlaps);
+  ///// Al mylar
+  auto solidAlMylar = new G4Box("solidAlMylar", frame_size.x(),
+                                frame_size.y(), almylar_thickness/2);
+  auto logicAlMylar = new G4LogicalVolume
+    (solidAlMylar, mlist.at("Mylar"), "logicAlMylar");
+  pos = sdc4_pos;
+  pos.setZ(sdc4_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc4_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
+                    physWorld, false, 1, check_overlaps);
+  ///// Al plate
+  auto solidAlPlate = new G4Box("solidAlMylar", frame_size.x(),
+                                frame_size.y(), alplate_thickness/2);
+  auto logicAlPlate = new G4LogicalVolume
+    (solidAlPlate, mlist.at("Al"), "logicAlPlate");
+  pos = sdc4_pos;
+  pos.setZ(sdc4_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness-alplate_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc4_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness+alplate_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
+                    physWorld, false, 1, check_overlaps);
 }
 
 //_____________________________________________________________________________
@@ -634,6 +792,45 @@ S2SDetectorConstruction::ConstructSDC5()
     new G4PVPlacement(nullptr, pos, sdc5pl_lv, plane_name[i] + "PV",
                       sdc5_lv, false, 101+i, check_overlaps);
   }
+  ///// Mylar
+  const G4double almylar_thickness = sizeMan.Get("AlMylarThickness")*mm;
+  const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
+  const G4double mylar_thickness = sizeMan.Get("Sdc5MylarThickness")*mm;
+  auto solidMylar = new G4Box("solidMylar", frame_size.x(),
+                                frame_size.y(), mylar_thickness/2);
+  auto logicMylar = new G4LogicalVolume
+    (solidMylar, mlist.at("Mylar"), "logicMylar");
+  G4ThreeVector pos = sdc5_pos;
+  pos.setZ(sdc5_pos.z()-frame_size.z()-mylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc5_pos.z()+frame_size.z()+mylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
+                    physWorld, false, 1, check_overlaps);
+  ///// Al mylar
+  auto solidAlMylar = new G4Box("solidAlMylar", frame_size.x(),
+                                frame_size.y(), almylar_thickness/2);
+  auto logicAlMylar = new G4LogicalVolume
+    (solidAlMylar, mlist.at("Mylar"), "logicAlMylar");
+  pos = sdc5_pos;
+  pos.setZ(sdc5_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc5_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
+                    physWorld, false, 1, check_overlaps);
+  ///// Al plate
+  auto solidAlPlate = new G4Box("solidAlMylar", frame_size.x(),
+                                frame_size.y(), alplate_thickness/2);
+  auto logicAlPlate = new G4LogicalVolume
+    (solidAlPlate, mlist.at("Al"), "logicAlPlate");
+  pos = sdc5_pos;
+  pos.setZ(sdc5_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness-alplate_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
+                    physWorld, false, 0, check_overlaps);
+  pos.setZ(sdc5_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness+alplate_thickness/2);
+  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
+                    physWorld, false, 1, check_overlaps);
 }
 
 //_____________________________________________________________________________
@@ -736,12 +933,12 @@ S2SDetectorConstruction::ConstructAC1()
   auto mirror1_solid = new G4Box("Ac1Mirror1Solid", mirror1_size.x(),
 				  mirror1_size.y(), mirror1_size.z());
   auto mirror1_lv = new G4LogicalVolume(mirror1_solid,
-					 mlist.Al,
+                                        mlist.at("Al"),
 					"Ac1Mirror1LV");
   auto mirror2_solid = new G4Box("Ac1Mirror2Solid", mirror2_size.x(),
 				  mirror2_size.y(), mirror2_size.z());
   auto mirror2_lv = new G4LogicalVolume(mirror2_solid,
-					 mlist.Al,
+                                        mlist.at("Al"),
 					"Ac1Mirror2LV");
   for(G4int i=0; i<2; ++i){
     pos.set((triangle_size.x() + mirror1_size.x()) * (i*2 - 1),

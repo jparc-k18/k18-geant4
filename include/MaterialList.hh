@@ -58,7 +58,6 @@ public:
   G4Material *B10;
   G4Material *B11;
   G4Material *C;
-  G4Material *Al;
   G4Material *Si;
   G4Material *ArGas;
   G4Material *Ti;
