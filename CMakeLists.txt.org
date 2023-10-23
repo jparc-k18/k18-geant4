@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 # Setup the project
-cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.25)
 project(S2S)
 
 #----------------------------------------------------------------------------
@@ -14,18 +14,28 @@ find_package(Geant4 REQUIRED)
 #find_package(ROOT REQUIRED)
 
 #----------------------------------------------------------------------------
+option(WITH_GEANT4_UIVIS "Build HypTPC with Geant4 UI and Vis drivers" ON)
+if(WITH_GEANT4_UIVIS)
+  find_package(Geant4 REQUIRED ui_all vis_all)
+else()
+  find_package(Geant4 REQUIRED)
+endif()
+
 # Setup Geant4 include directories and compile definitions
 #
 include(${Geant4_USE_FILE})
-#set(ROOT_INCLUDE_DIR /home/gogami/root/root-5.34.36-install/include/root)
-#set(ROOT_LIBRARIES -L/home/gogami/root/root-5.34.36-install/lib/root -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -pthread -lm -ldl -rdynamic)
-set(ROOT_INCLUDE_DIR /usr/local/include)
-set(ROOT_LIBRARIES -L/usr/local/lib -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
+find_package(ROOT REQUIRED COMPONENTS EG RIO)
+include(${ROOT_USE_FILE})
+include_directories(${ROOT_INCLUDE_DIRS})
+
 
 #----------------------------------------------------------------------------
 # Locate sources and headers for this project
 #
-include_directories(${PROJECT_SOURCE_DIR}/include 
+include_directories(${PROJECT_SOURCE_DIR}/include
                     ${Geant4_INCLUDE_DIR}
 		    ${ROOT_INCLUDE_DIR})
 file(GLOB sources ${PROJECT_SOURCE_DIR}/src/*.cc)
@@ -33,12 +43,14 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 
 #----------------------------------------------------------------------------
 # Add the executables, and link it to the Geant4 libraries
-add_executable(S2S S2S.cc ${sources} ${headers})
-target_link_libraries(S2S ${Geant4_LIBRARIES} ${ROOT_LIBRARIES})
+add_executable(G4S2S main.cc ${sources} ${headers})
+target_link_libraries(G4S2S ${Geant4_LIBRARIES} ${ROOT_LIBRARIES})
+
+# root_generate_dictionary(G4S2S_dict TParticle.h TVector3.h
+# 		LINKDEF ${PROJECT_SOURCE_DIR}/linkdef/LinkDef.h
+# 		MODULE G4S2S)
+# add_library(G4S2S_lib SHARED G4S2S_dict)
+# target_link_libraries(G4S2S G4S2S_lib)
 
 #----------------------------------------------------------------------------
-set(CMAKE_INSTALL_PREFIX /home/dragon/HD-PZU3/S2S)
-install(TARGETS S2S RUNTIME DESTINATION bin)
-add_compile_definitions(G4VIS_USE)
-
-
+install(TARGETS G4S2S RUNTIME DESTINATION bin)

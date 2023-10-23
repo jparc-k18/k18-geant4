@@ -36,11 +36,14 @@ private:
   void ConstructSDC3();
   void ConstructSDC4();
   void ConstructSDC5();
+  void ConstructSFT();
+  void ConstructSSD();
   void ConstructTOF();
   void ConstructAC1();
   void ConstructWC();
   void ConstructVP();
-
+  void ConstructKLChamber(G4int i);
+  void ConstructKLChamberMylar(G4int i);
   void SetTarget();
   void MakePositionDetector();
   void MakeTOFCounter();

@@ -1,15 +1,9 @@
-/*
-  "S2SEventAction.cc"
-
-  Modified by Toshiyuki Gogami on 20Nov2014.
-*/
-
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+// -*- C++ -*-
 
 #include "S2SEventAction.hh"
-//#include "s2sCounterHit.hh"
-#include "S2SAnaManager.hh"
+
+#include <iomanip>
+#include <time.h>
 
 #include "G4Event.hh"
 #include "G4TrajectoryContainer.hh"
@@ -17,14 +11,13 @@
 #include "G4VVisManager.hh"
 #include "G4UnitsTable.hh"
 #include "G4SDManager.hh"
-#include "DCHit.hh"
 #include "Randomize.hh"
-#include <iomanip>
-#include <time.h>
+
+#include "DCHit.hh"
+#include "S2SAnaManager.hh"
 
 namespace
 {
-using namespace CLHEP;
 auto& anaMan = S2SAnaManager::GetInstance();
 }
 

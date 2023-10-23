@@ -22,8 +22,6 @@
 #include "MagnetConstant.hh"
 #include "ConfMan.hh"
 
-// using namespace CLHEP;
-
 namespace
 {
 const auto& confMan = ConfMan::GetInstance();

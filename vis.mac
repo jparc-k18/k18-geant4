@@ -44,5 +44,5 @@
 # /vis/viewer/set/rotationStyle freeRotation
 /vis/viewer/set/viewpointThetaPhi 269. -90.
 
-#/vis/scene/add/scale   # Simple scale line
-#/vis/scene/add/axes    # Simple axes: x=red, y=green, z=blue.
+# /vis/scene/add/scale   # Simple scale line
+# /vis/scene/add/axes    # Simple axes: x=red, y=green, z=blue.

@@ -89,29 +89,36 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
      nullptr, false, 0, check_overlaps);
   logicWorld->SetVisAttributes(G4VisAttributes::GetInvisible());
 
-#if 1
+#if 0
   ConstructTarget();
 #endif
 
-#if 1
+#if 0
   ConstructQ1();
   ConstructQ2();
   ConstructD1();
   ConstructField();
 #endif
 
+  const G4int experiment = confMan.Get<G4int>("Experiment");
+
 #if 1
-  ConstructSDC1();
+  if(experiment == 10){
+    ConstructSSD();
+    ConstructSFT();
+  }else{
+    ConstructSDC1();
+  }
   ConstructSDC2();
 #endif
 
-#if 1
+#if 0
   ConstructSDC3();
   ConstructSDC4();
   ConstructSDC5();
 #endif
 
-#if 1
+#if 0
   ConstructTOF();
   ConstructAC1();
   ConstructWC();
@@ -404,7 +411,7 @@ S2SDetectorConstruction::ConstructSDC1()
   const auto& drift_size = sizeMan.GetSize("Sdc1Drift")*mm/2;
   auto sdc1_solid = new G4Box("Sdc1Solid", frame_size.x(),
                               frame_size.y(), frame_size.z());
-  auto sdc1_lv = new G4LogicalVolume(sdc1_solid, mlist.Ar80IsoButane20Gas,
+  auto sdc1_lv = new G4LogicalVolume(sdc1_solid, mlist.Ar50Ethane50Gas,
                                      "Sdc1LV", 0, 0, 0);
   sdc1_lv->SetVisAttributes(G4Colour::Green());
   new G4PVPlacement(nullptr, sdc1_pos,
@@ -493,39 +500,27 @@ S2SDetectorConstruction::ConstructSDC2()
                           geomMan.GetGlobalPosition("SDC2-U2"))/2;
   const auto& frame_size = sizeMan.GetSize("Sdc2Frame")*mm/2;
   const auto& drift_size = sizeMan.GetSize("Sdc2Drift")*mm/2;
-  auto sdc2_solid = new G4Box("Sdc2Solid", frame_size.x(),
-                              frame_size.y(), frame_size.z());
-  auto sdc2_lv = new G4LogicalVolume(sdc2_solid, mlist.Ar80IsoButane20Gas,
-                                     "Sdc2LV", 0, 0, 0);
-  sdc2_lv->SetVisAttributes(G4Colour::Green());
-  new G4PVPlacement(0, sdc2_pos,
-                    "Sdc2PV", sdc2_lv, physWorld, false, 0, check_overlaps);
-  auto sdc2pl_solid = new G4Box("Sdc2PlSolid", drift_size.x(),
-                                drift_size.y(), drift_size.z());
-  G4String plane_name[] = { "Sdc2V1", "Sdc2V2",
+  auto solidGas = new G4Box("solidSdc2Gas", frame_size.x(),
+                            frame_size.y(), frame_size.z());
+  auto logicGas = new G4LogicalVolume(solidGas, mlist.Ar80IsoButane20Gas,
+                                      "logicSdc2Gas");
+  logicGas->SetVisAttributes(G4Colour::Green());
+  new G4PVPlacement(nullptr, sdc2_pos, "physSdc2Gas", logicGas,
+                    physWorld, false, 0, check_overlaps);
+  auto solidLayer = new G4Box("Sdc2PlSolid", drift_size.x(),
+                              drift_size.y(), drift_size.z());
+  G4String layer_name[] = { "Sdc2V1", "Sdc2V2",
                             "Sdc2U1", "Sdc2U2" };
+  G4double zoffset[] = { (-0.3-12.4)*mm, (-0.3-7.6)*mm,
+                         (-0.3+7.6)*mm, (-0.3+12.4)*mm };
   for(G4int i=0; i<NumOfLayersSDC2; ++i){
-    G4ThreeVector pos;
-    switch(i){
-    case 0:
-      pos.setZ(-12.4*mm);
-      break;
-    case 1:
-      pos.setZ(-7.6*mm);
-      break;
-    case 2:
-      pos.setZ(7.6*mm);
-      break;
-    case 3:
-      pos.setZ(12.4*mm);
-      break;
-    }
-    auto sdc2pl_lv = new G4LogicalVolume(sdc2pl_solid,
-                                         mlist.Ar80IsoButane20Gas,
-                                         plane_name[i] + "LV", 0, 0, 0);
-    sdc2pl_lv->SetSensitiveDetector(sdSDC2);
-    new G4PVPlacement(nullptr, pos, sdc2pl_lv, plane_name[i] + "PV",
-                      sdc2_lv, false, 101+i, check_overlaps);
+    G4ThreeVector pos(0, 0, zoffset[i]);
+    auto logicLayer = new G4LogicalVolume(solidLayer,
+                                          mlist.Ar80IsoButane20Gas,
+                                          "logic"+layer_name[i]);
+    logicLayer->SetSensitiveDetector(sdSDC2);
+    new G4PVPlacement(nullptr, pos, logicLayer, "phys"+layer_name[i],
+                      logicGas, false, 101+i, check_overlaps);
   }
 
   // ///// Mylar
@@ -573,264 +568,261 @@ S2SDetectorConstruction::ConstructSDC2()
 void
 S2SDetectorConstruction::ConstructSDC3()
 {
-  auto sdSDC3 = new DCSD("SDC3");
-  G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC3);
-  const auto& sdc3_pos = (geomMan.GetGlobalPosition("SDC3-X1") +
-                          geomMan.GetGlobalPosition("SDC3-Y2"))/2;
-  const auto& frame_size = sizeMan.GetSize("Sdc3Frame")*mm/2;
-  const auto& drift_size = sizeMan.GetSize("Sdc3Drift")*mm/2;
-  const auto& ra2 = geomMan.GetRotAngle2("SDC3-X1")*deg;
-  auto sdc3_solid = new G4Box("Sdc3Solid", frame_size.x(),
-                              frame_size.y(), frame_size.z());
-  auto sdc3_lv = new G4LogicalVolume(sdc3_solid, mlist.Ar80IsoButane20Gas,
-                                     "Sdc3LV", 0, 0, 0);
-  sdc3_lv->SetVisAttributes(G4Colour::Green());
-  auto rot = new G4RotationMatrix;
-  rot->rotateY(-ra2);
-  new G4PVPlacement(rot, sdc3_pos,
-                    "Sdc3PV", sdc3_lv, physWorld, false, 0, check_overlaps);
-  auto sdc3pl_solid = new G4Box("Sdc3PlSolid", drift_size.x(),
-                                drift_size.y(), drift_size.z());
-  G4String plane_name[] = { "Sdc3X1", "Sdc3X2",
-                            "Sdc3Y1", "Sdc3Y2" };
-  for(G4int i=0; i<NumOfLayersSDC3; ++i){
-    G4ThreeVector pos;
-    switch(i){
-    case 0:
-      pos.setZ(-16.0*mm);
-      break;
-    case 1:
-      pos.setZ(-8.206*mm);
-      break;
-    case 2:
-      pos.setZ(8.206*mm);
-      break;
-    case 3:
-      pos.setZ(16.0*mm);
-      break;
-    }
-    auto sdc3pl_lv = new G4LogicalVolume(sdc3pl_solid,
-                                         mlist.Ar80IsoButane20Gas,
-                                         plane_name[i] + "LV", 0, 0, 0);
-    sdc3pl_lv->SetSensitiveDetector(sdSDC3);
-    new G4PVPlacement(nullptr, pos, sdc3pl_lv, plane_name[i] + "PV",
-                      sdc3_lv, false, 101+i, check_overlaps);
-  }
-  ///// Mylar
-  const G4double almylar_thickness = sizeMan.Get("AlMylarThickness")*mm;
-  const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
-  const G4double mylar_thickness = sizeMan.Get("Sdc3MylarThickness")*mm;
-  auto solidMylar = new G4Box("solidMylar", frame_size.x(),
-                                frame_size.y(), mylar_thickness/2);
-  auto logicMylar = new G4LogicalVolume
-    (solidMylar, mlist.at("Mylar"), "logicMylar");
-  G4ThreeVector pos = sdc3_pos;
-  pos.setZ(sdc3_pos.z()-frame_size.z()-mylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
-                    physWorld, false, 0, check_overlaps);
-  pos.setZ(sdc3_pos.z()+frame_size.z()+mylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
-                    physWorld, false, 1, check_overlaps);
-  ///// Al mylar
-  auto solidAlMylar = new G4Box("solidAlMylar", frame_size.x(),
-                                frame_size.y(), almylar_thickness/2);
-  auto logicAlMylar = new G4LogicalVolume
-    (solidAlMylar, mlist.at("Mylar"), "logicAlMylar");
-  pos = sdc3_pos;
-  pos.setZ(sdc3_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
-                    physWorld, false, 0, check_overlaps);
-  pos.setZ(sdc3_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
-                    physWorld, false, 1, check_overlaps);
-  ///// Al plate
-  auto solidAlPlate = new G4Box("solidAlMylar", frame_size.x(),
-                                frame_size.y(), alplate_thickness/2);
-  auto logicAlPlate = new G4LogicalVolume
-    (solidAlPlate, mlist.at("Al"), "logicAlPlate");
-  pos = sdc3_pos;
-  pos.setZ(sdc3_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness-alplate_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
-                    physWorld, false, 0, check_overlaps);
-  pos.setZ(sdc3_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness+alplate_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
-                    physWorld, false, 1, check_overlaps);
+  ConstructKLChamber(3);
+  ConstructKLChamberMylar(3);
 }
 
 //_____________________________________________________________________________
 void
 S2SDetectorConstruction::ConstructSDC4()
 {
-  auto sdSDC4 = new DCSD("SDC4");
-  G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC4);
-  const auto& sdc4_pos = (geomMan.GetGlobalPosition("SDC4-Y1") +
-                          geomMan.GetGlobalPosition("SDC4-X2"))/2;
-  const auto& frame_size = sizeMan.GetSize("Sdc4Frame")*mm/2;
-  const auto& drift_size = sizeMan.GetSize("Sdc4Drift")*mm/2;
-  const auto& ra2 = geomMan.GetRotAngle2("SDC4-X1")*deg;
-  auto sdc4_solid = new G4Box("Sdc4Solid", frame_size.x(),
-                              frame_size.y(), frame_size.z());
-  auto sdc4_lv = new G4LogicalVolume(sdc4_solid, mlist.Ar80IsoButane20Gas,
-                                     "Sdc4LV", 0, 0, 0);
-  sdc4_lv->SetVisAttributes(G4Colour::Green());
-  auto rot = new G4RotationMatrix;
-  rot->rotateY(-ra2);
-  new G4PVPlacement(rot, sdc4_pos,
-                    "Sdc4PV", sdc4_lv, physWorld, false, 0, check_overlaps);
-  auto sdc4pl_solid = new G4Box("Sdc4PlSolid", drift_size.x(),
-                                drift_size.y(), drift_size.z());
-  G4String plane_name[] = { "Sdc4Y1", "Sdc4Y2",
-                            "Sdc4X1", "Sdc4X2" };
-  for(G4int i=0; i<NumOfLayersSDC4; ++i){
-    G4ThreeVector pos;
-    switch(i){
-    case 0:
-      pos.setZ(-16.0*mm);
-      break;
-    case 1:
-      pos.setZ(-8.206*mm);
-      break;
-    case 2:
-      pos.setZ(8.206*mm);
-      break;
-    case 3:
-      pos.setZ(16.0*mm);
-      break;
-    }
-    auto sdc4pl_lv = new G4LogicalVolume(sdc4pl_solid,
-                                         mlist.Ar80IsoButane20Gas,
-                                         plane_name[i] + "LV", 0, 0, 0);
-    sdc4pl_lv->SetSensitiveDetector(sdSDC4);
-    new G4PVPlacement(nullptr, pos, sdc4pl_lv, plane_name[i] + "PV",
-                      sdc4_lv, false, 101+i, check_overlaps);
-  }
-  ///// Mylar
-  const G4double almylar_thickness = sizeMan.Get("AlMylarThickness")*mm;
-  const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
-  const G4double mylar_thickness = sizeMan.Get("Sdc4MylarThickness")*mm;
-  auto solidMylar = new G4Box("solidMylar", frame_size.x(),
-                                frame_size.y(), mylar_thickness/2);
-  auto logicMylar = new G4LogicalVolume
-    (solidMylar, mlist.at("Mylar"), "logicMylar");
-  G4ThreeVector pos = sdc4_pos;
-  pos.setZ(sdc4_pos.z()-frame_size.z()-mylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
-                    physWorld, false, 0, check_overlaps);
-  pos.setZ(sdc4_pos.z()+frame_size.z()+mylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
-                    physWorld, false, 1, check_overlaps);
-  ///// Al mylar
-  auto solidAlMylar = new G4Box("solidAlMylar", frame_size.x(),
-                                frame_size.y(), almylar_thickness/2);
-  auto logicAlMylar = new G4LogicalVolume
-    (solidAlMylar, mlist.at("Mylar"), "logicAlMylar");
-  pos = sdc4_pos;
-  pos.setZ(sdc4_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
-                    physWorld, false, 0, check_overlaps);
-  pos.setZ(sdc4_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
-                    physWorld, false, 1, check_overlaps);
-  ///// Al plate
-  auto solidAlPlate = new G4Box("solidAlMylar", frame_size.x(),
-                                frame_size.y(), alplate_thickness/2);
-  auto logicAlPlate = new G4LogicalVolume
-    (solidAlPlate, mlist.at("Al"), "logicAlPlate");
-  pos = sdc4_pos;
-  pos.setZ(sdc4_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness-alplate_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
-                    physWorld, false, 0, check_overlaps);
-  pos.setZ(sdc4_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness+alplate_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
-                    physWorld, false, 1, check_overlaps);
+  ConstructKLChamber(4);
+  ConstructKLChamberMylar(4);
 }
 
 //_____________________________________________________________________________
 void
 S2SDetectorConstruction::ConstructSDC5()
 {
-  auto sdSDC5 = new DCSD("SDC5");
-  G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC5);
-  const auto& sdc5_pos = (geomMan.GetGlobalPosition("SDC5-Y1") +
-                          geomMan.GetGlobalPosition("SDC5-X2"))/2;
-  const auto& frame_size = sizeMan.GetSize("Sdc5Frame")*mm/2;
-  const auto& drift_size = sizeMan.GetSize("Sdc5Drift")*mm/2;
-  const auto& ra2 = geomMan.GetRotAngle2("SDC5-X1")*deg;
-  auto sdc5_solid = new G4Box("Sdc5Solid", frame_size.x(),
-                              frame_size.y(), frame_size.z());
-  auto sdc5_lv = new G4LogicalVolume(sdc5_solid, mlist.Ar80IsoButane20Gas,
-                                     "Sdc5LV", 0, 0, 0);
-  sdc5_lv->SetVisAttributes(G4Colour::Green());
+  ConstructKLChamber(5);
+  ConstructKLChamberMylar(5);
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructKLChamber(G4int i)
+{
+  const G4String name = "Sdc"+std::to_string(i);
+  const G4String uname = "SDC"+std::to_string(i);
+  auto sd = new DCSD(uname);
+  G4SDManager::GetSDMpointer()->AddNewDetector(sd);
+  const G4double zoffset[] = { -16.0*mm, -8.206*mm,
+                               8.206*mm, 16.0*mm };
+  G4int NumOfLayers;
+  std::vector<G4String> layer_name;
+  switch(i){
+  case 3:
+    NumOfLayers = NumOfLayersSDC3;
+    layer_name.push_back(name+"X1");
+    layer_name.push_back(name+"X2");
+    layer_name.push_back(name+"Y1");
+    layer_name.push_back(name+"Y2");
+    break;
+  case 4:
+    NumOfLayers = NumOfLayersSDC4;
+    layer_name.push_back(name+"Y1");
+    layer_name.push_back(name+"Y2");
+    layer_name.push_back(name+"X1");
+    layer_name.push_back(name+"X2");
+    break;
+  case 5:
+    NumOfLayers = NumOfLayersSDC5;
+    layer_name.push_back(name+"Y1");
+    layer_name.push_back(name+"Y2");
+    layer_name.push_back(name+"X1");
+    layer_name.push_back(name+"X2");
+    break;
+  default:
+    throw std::out_of_range("no such key : " + name);
+    break;
+  }
+  const auto& frame_size = sizeMan.GetSize(name+"Frame")*mm/2;
+  const auto& ra2 = geomMan.GetRotAngle2(uname+"-X1")*deg;
+  auto solidGas = new G4Box("solid"+name+"Gas", frame_size.x(),
+                            frame_size.y(), frame_size.z());
+  auto logicGas = new G4LogicalVolume(solidGas, mlist.Ar50Ethane50Gas,
+                                      "logic"+name+"Gas");
+  logicGas->SetVisAttributes(G4Colour::Green());
+  { ///// Frame
+    auto rot = new G4RotationMatrix;
+    rot->rotateY(-ra2);
+    const auto& pos = (geomMan.GetGlobalPosition(uname+"-X1") +
+                       geomMan.GetGlobalPosition(uname+"-Y2"))/2;
+    new G4PVPlacement(rot, pos, "phys"+name+"Gas",
+                      logicGas, physWorld, false, 0, check_overlaps);
+  }
+  for(G4int l=0; l<NumOfLayers; ++l){
+    const auto& layer_size = sizeMan.GetSize(layer_name[l]+"Layer")*mm/2;
+    auto solidLayer = new G4Box("solid"+layer_name[l], layer_size.x(),
+                                layer_size.y(), layer_size.z());
+    G4ThreeVector pos(0, 0, zoffset[l]);
+    auto logicLayer = new G4LogicalVolume(solidLayer,
+                                          mlist.Ar50Ethane50Gas,
+                                          "logic"+layer_name[l]);
+    logicLayer->SetSensitiveDetector(sd);
+    new G4PVPlacement(nullptr, pos, logicLayer, "phys"+layer_name[l],
+                      logicGas, false, 101+i, check_overlaps);
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructKLChamberMylar(G4int i)
+{
+  const G4String name = "Sdc"+std::to_string(i);
+  const G4String uname = "SDC"+std::to_string(i);
+  const auto& frame_size = sizeMan.GetSize(name+"Frame")*mm/2;
+  const auto& centerL = ((geomMan.GetGlobalPosition(uname+"-X1") +
+                          geomMan.GetGlobalPosition(uname+"-Y2"))/2).mag();
+  const auto& ra2 = geomMan.GetRotAngle2(uname+"-X1")*deg;
   auto rot = new G4RotationMatrix;
   rot->rotateY(-ra2);
-  new G4PVPlacement(rot, sdc5_pos,
-                    "Sdc5PV", sdc5_lv, physWorld, false, 0, check_overlaps);
-  auto sdc5pl_solid = new G4Box("Sdc5PlSolid", drift_size.x(),
-                                drift_size.y(), drift_size.z());
-  G4String plane_name[] = { "Sdc5Y1", "Sdc5Y2",
-                            "Sdc5X1", "Sdc5X2" };
-  for(G4int i=0; i<NumOfLayersSDC5; ++i){
-    G4ThreeVector pos;
-    switch(i){
-    case 0:
-      pos.setZ(-16.0*mm);
-      break;
-    case 1:
-      pos.setZ(-8.206*mm);
-      break;
-    case 2:
-      pos.setZ(8.206*mm);
-      break;
-    case 3:
-      pos.setZ(16.0*mm);
-      break;
-    }
-    auto sdc5pl_lv = new G4LogicalVolume(sdc5pl_solid,
-                                         mlist.Ar80IsoButane20Gas,
-                                         plane_name[i] + "LV", 0, 0, 0);
-    sdc5pl_lv->SetSensitiveDetector(sdSDC5);
-    new G4PVPlacement(nullptr, pos, sdc5pl_lv, plane_name[i] + "PV",
-                      sdc5_lv, false, 101+i, check_overlaps);
-  }
   ///// Mylar
+  const G4double space = 0.01*mm;
   const G4double almylar_thickness = sizeMan.Get("AlMylarThickness")*mm;
   const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
-  const G4double mylar_thickness = sizeMan.Get("Sdc5MylarThickness")*mm;
+  const G4double mylar_thickness = sizeMan.Get(name+"MylarThickness")*mm;
   auto solidMylar = new G4Box("solidMylar", frame_size.x(),
-                                frame_size.y(), mylar_thickness/2);
+                              frame_size.y(), mylar_thickness/2);
   auto logicMylar = new G4LogicalVolume
     (solidMylar, mlist.at("Mylar"), "logicMylar");
-  G4ThreeVector pos = sdc5_pos;
-  pos.setZ(sdc5_pos.z()-frame_size.z()-mylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
-                    physWorld, false, 0, check_overlaps);
-  pos.setZ(sdc5_pos.z()+frame_size.z()+mylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physMylar", logicMylar,
-                    physWorld, false, 1, check_overlaps);
+  G4double d = frame_size.z() + space + mylar_thickness/2;
+  {
+    G4ThreeVector pos(0, 0, centerL-d);
+    pos.rotateY(ra2);
+    new G4PVPlacement(rot, pos, "physMylar", logicMylar,
+                      physWorld, false, 100*i+0, check_overlaps);
+  }
+  {
+    G4ThreeVector pos(0, 0, centerL+d);
+    pos.rotateY(ra2);
+    new G4PVPlacement(rot, pos, "physMylar", logicMylar,
+                      physWorld, false, 100*i+1, check_overlaps);
+  }
   ///// Al mylar
   auto solidAlMylar = new G4Box("solidAlMylar", frame_size.x(),
                                 frame_size.y(), almylar_thickness/2);
   auto logicAlMylar = new G4LogicalVolume
     (solidAlMylar, mlist.at("Mylar"), "logicAlMylar");
-  pos = sdc5_pos;
-  pos.setZ(sdc5_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
-                    physWorld, false, 0, check_overlaps);
-  pos.setZ(sdc5_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
-                    physWorld, false, 1, check_overlaps);
+  d += mylar_thickness/2 + almylar_thickness/2;
+  {
+    G4ThreeVector pos(0, 0, centerL-d);
+    pos.rotateY(ra2);
+    new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
+                      physWorld, false, 100*i+0, check_overlaps);
+  }
+  {
+    G4ThreeVector pos(0, 0, centerL+d);
+    pos.rotateY(ra2);
+    new G4PVPlacement(rot, pos, "physAlMylar", logicAlMylar,
+                      physWorld, false, 100*i+1, check_overlaps);
+  }
   ///// Al plate
   auto solidAlPlate = new G4Box("solidAlMylar", frame_size.x(),
                                 frame_size.y(), alplate_thickness/2);
   auto logicAlPlate = new G4LogicalVolume
     (solidAlPlate, mlist.at("Al"), "logicAlPlate");
-  pos = sdc5_pos;
-  pos.setZ(sdc5_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness-alplate_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
-                    physWorld, false, 0, check_overlaps);
-  pos.setZ(sdc5_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness+alplate_thickness/2);
-  new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
-                    physWorld, false, 1, check_overlaps);
+  d += almylar_thickness/2 + alplate_thickness/2;
+  {
+    G4ThreeVector pos(0, 0, centerL-d);
+    pos.rotateY(ra2);
+    new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
+                      physWorld, false, 100*i+0, check_overlaps);
+  }
+  {
+    G4ThreeVector pos(0, 0, centerL+d);
+    pos.rotateY(ra2);
+    new G4PVPlacement(rot, pos, "physAlPlate", logicAlPlate,
+                      physWorld, false, 100*i+1, check_overlaps);
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructSSD()
+{
+  const auto& base_size = sizeMan.GetSize("SsdBase")*mm/2;
+  const auto& area_size = sizeMan.GetSize("SsdArea")*mm/2;
+  G4VSolid* solidBase = nullptr;
+  solidBase = new G4Box("solidSsdBase", base_size.x(),
+                        base_size.y(), base_size.z());
+  auto solidWindow = new G4Box("solidSsdWindow", area_size.x(),
+                               area_size.y(), base_size.z()+1*mm);
+  solidBase = new G4SubtractionSolid("solidSsdBase", solidBase, solidWindow);
+  auto solidArea = new G4Box("solidSsdArea", area_size.x(),
+                             area_size.y(), area_size.z());
+
+  auto logicBase = new G4LogicalVolume(solidBase, mlist.at("G10"), "logicSsdBase");
+  auto logicArea = new G4LogicalVolume(solidArea, mlist.at("Si"), "logicSsdArea");
+  logicBase->SetVisAttributes(G4Color::Green());
+  logicArea->SetVisAttributes(G4Color::Yellow());
+  // SSD1StripLV->SetSensitiveDetector( ssdSD );
+  { ///// SSD1
+    G4String name[NumOfLayersSSD1]
+      = { "SSD1-Y1", "SSD1-X1", "SSD1-Y2", "SSD1-X2" };
+    {
+      auto pos = (geomMan.GetGlobalPosition(name[0])+
+                  geomMan.GetGlobalPosition(name[3]))*0.5;
+      new G4PVPlacement(nullptr, pos, "physSsd1Base", logicBase,
+                        physWorld, false, 0, check_overlaps);
+    }
+    for(G4int i=0; i<NumOfLayersSSD1; ++i){
+      const auto& pos = geomMan.GetGlobalPosition(name[i]);
+      new G4PVPlacement(nullptr, pos, "physSsd1Area"+std::to_string(i),
+                        logicArea, physWorld, false, i, check_overlaps);
+    }
+  }
+  { ///// SSD2
+    G4String name[NumOfLayersSSD2]
+      = { "SSD2-X1", "SSD2-Y1", "SSD2-X2", "SSD2-Y2" };
+    {
+      auto pos = (geomMan.GetGlobalPosition(name[0])+
+                  geomMan.GetGlobalPosition(name[3]))*0.5;
+      new G4PVPlacement(nullptr, pos, "physSsd2Base", logicBase,
+                        physWorld, false, 0, check_overlaps);
+    }
+    for(G4int i=0; i<NumOfLayersSSD2; ++i){
+      const auto& pos = geomMan.GetGlobalPosition(name[i]);
+      new G4PVPlacement(nullptr, pos, "physSsd2Area"+std::to_string(i),
+                        logicArea, physWorld, false, i, check_overlaps);
+    }
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructSFT()
+{
+  const auto& frame_size = sizeMan.GetSize("SftFrame")*mm/2;
+  const auto& xarea_size = sizeMan.GetSize("SftXArea")*mm/2;
+  const auto& uvarea_size = sizeMan.GetSize("SftUVArea")*mm/2;
+  G4VSolid* solidFrame = nullptr;
+  solidFrame = new G4Box("solidSftFrame", frame_size.x(),
+                         frame_size.y(), frame_size.z());
+  auto solidWindow = new G4Box("solidSftWindow", uvarea_size.x(),
+                               uvarea_size.y(), frame_size.z()+1*mm);
+  solidFrame = new G4SubtractionSolid("solidSftFrame", solidFrame, solidWindow);
+  auto solidXArea = new G4Box("solidSftXArea", xarea_size.x(),
+                              xarea_size.y(), xarea_size.z());
+  auto solidUVArea = new G4Box("solidSftUVArea", uvarea_size.x(),
+                               uvarea_size.y(), uvarea_size.z());
+  auto logicFrame = new G4LogicalVolume(solidFrame, mlist.at("Al"), "logicSftFrame");
+  auto logicXArea = new G4LogicalVolume(solidXArea, mlist.Scin, "logicSftXArea");
+  auto logicUVArea = new G4LogicalVolume(solidUVArea, mlist.Scin, "logicSftUVArea");
+  logicFrame->SetVisAttributes(G4Color::Green());
+  logicXArea->SetVisAttributes(G4Color::Cyan());
+  logicUVArea->SetVisAttributes(G4Color::Cyan());
+  // SSD1StripLV->SetSensitiveDetector( ssdSD );
+  G4ThreeVector pos = geomMan.GetGlobalPosition("SFT-Frame");
+  { ///// SFT-Frame
+    new G4PVPlacement(nullptr, pos, "physSftFrame", logicFrame,
+                      physWorld, false, 0, check_overlaps);
+  }
+  { ///// SFT-X
+    // const auto pos = geomMan.GetGlobalPosition("SFT-X");
+    new G4PVPlacement(nullptr, G4ThreeVector(0, 0, pos.z()+(-86.5+37+1.9)*mm), "physSftXArea",
+                      logicXArea, physWorld, false, 0, check_overlaps);
+  }
+  { ///// SFT-U
+    // const auto& pos = geomMan.GetGlobalPosition("SFT-U");
+    new G4PVPlacement(nullptr, G4ThreeVector(0, 0, pos.z()+(+86.5-53-16.1)*mm), "physSftUVArea",
+                      logicUVArea, physWorld, false, 0, check_overlaps);
+  }
+  { ///// SFT-V
+    // const auto& pos = geomMan.GetGlobalPosition("SFT-V");
+    new G4PVPlacement(nullptr, G4ThreeVector(0, 0, pos.z()+(+86.5-53+15.9)*mm), "physSftUVArea",
+                      logicUVArea, physWorld, false, 1, check_overlaps);
+  }
 }
 
 //_____________________________________________________________________________

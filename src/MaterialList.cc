@@ -45,19 +45,24 @@ MaterialList::MaterialList()
   // Simple Materials, Compounds & Mixtures
   material_map["Be9"]   = new G4Material("Be9",   4.,  9.012182*g/mole, 1.85  * g/cm3);
   material_map["Al"]    = new G4Material("Al",   13., 26.981539*g/mole, 2.70  * g/cm3);
+  material_map["Si"]    = new G4Material("Si",   14., 28.0855  *g/mole, 2.33  * g/cm3);
   material_map["Fe"]    = new G4Material("Fe",   26., 55.847   *g/mole, 7.87  * g/cm3);
   material_map["HeGas"] = new G4Material("HeGas", 2.,  4.002602*g/mole, 0.1787*mg/cm3);
   material_map["Mylar"] = new G4Material("Mylar", 1.39*g/cm3, 3);
   material_map["Mylar"]->AddElement(elC, 5);
   material_map["Mylar"]->AddElement(elH, 4);
   material_map["Mylar"]->AddElement(elO, 2);
+  material_map["G10"]   = new G4Material("G10", 1.7*g/cm3, 4);
+  material_map["G10"]->AddElement(elSi, 1);
+  material_map["G10"]->AddElement(elO , 2);
+  material_map["G10"]->AddElement(elC , 3);
+  material_map["G10"]->AddElement(elH , 3);
 
   HeLiq = new G4Material( "HeLiq", 2.,  4.002602*g/mole, 0.1249* g/cm3 );
   Li    = new G4Material( "Li",    3.,  7.0     *g/mole, 0.534 * g/cm3 );
   B10   = new G4Material( "B10",   5., 10.0     *g/mole, 1.42  * g/cm3 );
   B11   = new G4Material( "B11",   5., 11.0     *g/mole, 2.38  * g/cm3 );
   C     = new G4Material( "C",     6., 12.0     *g/mole, 1.8   * g/cm3 );
-  Si    = new G4Material( "Si",   14., 28.0855  *g/mole, 2.33  * g/cm3 );
   ArGas = new G4Material( "ArGas",18., 39.948   *g/mole, 1.7834*mg/cm3 );
   Ti    = new G4Material( "Ti",   22., 47.867   *g/mole, 4.54  * g/cm3 );
   Ni    = new G4Material( "Ni",   28., 58.69    *g/mole, 8.902 * g/cm3 );

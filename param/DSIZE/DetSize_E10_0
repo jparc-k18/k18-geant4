@@ -38,14 +38,36 @@ WcSegOut        230.0   730.0  180.0
 ### DCs
 Sdc1Frame       578.0   430.0   136.0
 Sdc1Drift       384.0   264.0   0.001
+
 Sdc2Frame       400.0   494.0   70.0
 Sdc2Drift       160.0   300.0   0.001
+
 Sdc3Frame       1330.0  1330.0  90.0
-Sdc3Drift       1152.0  1152.0  0.001
+Sdc3X1Layer	1152.0	1152.0	0.001
+Sdc3X2Layer	1152.0	1152.0	0.001
+Sdc3Y1Layer	1152.0	1152.0	0.001
+Sdc3Y2Layer	1152.0	1152.0	0.001
+
 Sdc4Frame       1330.0  1330.0  90.0
-Sdc4Drift       1152.0  1152.0  0.001
+Sdc4Y1Layer	1152.0	1152.0	0.001
+Sdc4Y2Layer	1152.0	1152.0	0.001
+Sdc4X1Layer	1152.0	1152.0	0.001
+Sdc4X2Layer	1152.0	1152.0	0.001
+
 Sdc5Frame       1330.0  1330.0  90.0
-Sdc5Drift       1152.0  1152.0  0.001
+Sdc5Y1Layer	1152.0	864.0	0.001
+Sdc5Y2Layer	1152.0	864.0	0.001
+Sdc5X1Layer	1152.0	1152.0	0.001
+Sdc5X2Layer	1152.0	1152.0	0.001
+
+### SSDs
+SsdBase		260	310	1.6
+SsdArea		76.8	76.8	0.3
+
+### SFTs
+SftFrame	794	560	173
+SftXArea	192	160	1.0
+SftUVArea	280	160	0.5
 
 ### Counters
 Bh2Seg		14.0	100.0	5.0
