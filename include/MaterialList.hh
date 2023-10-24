@@ -87,8 +87,6 @@ public:
   G4Material *EthaneGas;
   G4Material *IsoButaneGas;
   G4Material *P10Gas;
-  G4Material *Ar50Ethane50Gas;
-  G4Material *Ar80IsoButane20Gas;
 
 private:
   MaterialList(const MaterialList&);

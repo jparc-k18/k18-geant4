@@ -10,6 +10,7 @@
 #include <QGSP_BERT.hh>
 
 #include "ConfMan.hh"
+#include "S2SAnaManager.hh"
 #include "S2SActionInitialization.hh"
 #include "S2SDetectorConstruction.hh"
 #include "GetNumberFromKernelEntropyPool.hh"
@@ -35,6 +36,8 @@ main(int argc, char** argv)
   if(!confMan.Initialize(argv[kConfFile])){
     return EXIT_FAILURE;
   }
+  auto& anaMan = S2SAnaManager::GetInstance();
+  anaMan.SetFileName(argv[kOutFile]);
 
   auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
   runManager->SetUserInitialization(new S2SDetectorConstruction);

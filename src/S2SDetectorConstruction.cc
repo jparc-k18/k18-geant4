@@ -134,7 +134,6 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 //_____________________________________________________________________________
 void S2SDetectorConstruction::ConstructField()
 {
-  return;
   S2SField *field = new S2SField(confMan.Get<G4String>("FLDMAP"));
   auto fieldManager =
     G4TransportationManager::GetTransportationManager()->GetFieldManager();
@@ -411,7 +410,7 @@ S2SDetectorConstruction::ConstructSDC1()
   const auto& drift_size = sizeMan.GetSize("Sdc1Drift")*mm/2;
   auto sdc1_solid = new G4Box("Sdc1Solid", frame_size.x(),
                               frame_size.y(), frame_size.z());
-  auto sdc1_lv = new G4LogicalVolume(sdc1_solid, mlist.Ar50Ethane50Gas,
+  auto sdc1_lv = new G4LogicalVolume(sdc1_solid, mlist.at("Ar80IsoButane20Gas"),
                                      "Sdc1LV", 0, 0, 0);
   sdc1_lv->SetVisAttributes(G4Colour::Green());
   new G4PVPlacement(nullptr, sdc1_pos,
@@ -443,7 +442,7 @@ S2SDetectorConstruction::ConstructSDC1()
       break;
     }
     auto sdc1pl_lv = new G4LogicalVolume(sdc1pl_solid,
-                                         mlist.Ar80IsoButane20Gas,
+                                         mlist.at("Ar80IsoButane20Gas"),
                                          plane_name[i] + "LV", 0, 0, 0);
     sdc1pl_lv->SetSensitiveDetector(sdSDC1);
     new G4PVPlacement(nullptr, pos, sdc1pl_lv, plane_name[i] + "PV",
@@ -502,7 +501,7 @@ S2SDetectorConstruction::ConstructSDC2()
   const auto& drift_size = sizeMan.GetSize("Sdc2Drift")*mm/2;
   auto solidGas = new G4Box("solidSdc2Gas", frame_size.x(),
                             frame_size.y(), frame_size.z());
-  auto logicGas = new G4LogicalVolume(solidGas, mlist.Ar80IsoButane20Gas,
+  auto logicGas = new G4LogicalVolume(solidGas, mlist.at("Ar80IsoButane20Gas"),
                                       "logicSdc2Gas");
   logicGas->SetVisAttributes(G4Colour::Green());
   new G4PVPlacement(nullptr, sdc2_pos, "physSdc2Gas", logicGas,
@@ -517,7 +516,7 @@ S2SDetectorConstruction::ConstructSDC2()
     for(G4int i=0; i<NumOfLayersSDC2; ++i){
       G4ThreeVector pos(0, 0, zoffset[i]);
       auto logicLayer = new G4LogicalVolume(solidLayer,
-                                            mlist.Ar80IsoButane20Gas,
+                                            mlist.at("Ar80IsoButane20Gas"),
                                             "logic"+layer_name[i]);
       logicLayer->SetSensitiveDetector(sdSDC2);
       new G4PVPlacement(nullptr, pos, logicLayer, "phys"+layer_name[i],
@@ -559,7 +558,7 @@ S2SDetectorConstruction::ConstructSDC2()
   auto solidCathodePlate = new G4Box("solidCathodePlate", frame_size.x(),
                                      frame_size.y(), cplate_thickness/2);
   auto logicCarbonPlate = new G4LogicalVolume
-    (solidAlPlate, mlist.at("C"), "logicCarbonPlate");
+    (solidCathodePlate, mlist.at("C"), "logicCarbonPlate");
   logicCarbonPlate->SetVisAttributes(G4Color::Gray());
   const G4int NumOfCathode = 6;
   G4double zoffset[NumOfCathode] = { -14.8*mm, -10*mm, -5.2*mm,
@@ -608,7 +607,7 @@ S2SDetectorConstruction::ConstructKLChamber(G4int i)
 {
   const G4String name = "Sdc"+std::to_string(i);
   const G4String uname = "SDC"+std::to_string(i);
-  auto sd = new DCSD(uname);
+  auto sd = new DCSD("SDC"+std::to_string(i));
   G4SDManager::GetSDMpointer()->AddNewDetector(sd);
   const G4double zoffset[] = { -16.0*mm, -8.206*mm,
                                8.206*mm, 16.0*mm };
@@ -644,7 +643,7 @@ S2SDetectorConstruction::ConstructKLChamber(G4int i)
   const auto& ra2 = geomMan.GetRotAngle2(uname+"-X1")*deg;
   auto solidGas = new G4Box("solid"+name+"Gas", frame_size.x(),
                             frame_size.y(), frame_size.z());
-  auto logicGas = new G4LogicalVolume(solidGas, mlist.Ar50Ethane50Gas,
+  auto logicGas = new G4LogicalVolume(solidGas, mlist.at("Ar50Ethane50Gas"),
                                       "logic"+name+"Gas");
   logicGas->SetVisAttributes(G4Colour::Green());
   { ///// Frame
@@ -661,7 +660,7 @@ S2SDetectorConstruction::ConstructKLChamber(G4int i)
                                 layer_size.y(), layer_size.z());
     G4ThreeVector pos(0, 0, zoffset[l]);
     auto logicLayer = new G4LogicalVolume(solidLayer,
-                                          mlist.Ar50Ethane50Gas,
+                                          mlist.at("Ar50Ethane50Gas"),
                                           "logic"+layer_name[l]);
     logicLayer->SetSensitiveDetector(sd);
     new G4PVPlacement(nullptr, pos, logicLayer, "phys"+layer_name[l],

@@ -30,8 +30,8 @@ public:
   virtual void Print();
 };
 
+//_____________________________________________________________________________
 using TOFHitsCollection = G4THitsCollection<TOFHit>;
-
 extern G4Allocator<TOFHit> TOFHitAllocator;
 
 //_____________________________________________________________________________

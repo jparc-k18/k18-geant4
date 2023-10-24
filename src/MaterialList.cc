@@ -49,6 +49,7 @@ MaterialList::MaterialList()
   material_map["Si"]    = new G4Material("Si",   14., 28.0855  *g/mole, 2.33  * g/cm3);
   material_map["Fe"]    = new G4Material("Fe",   26., 55.847   *g/mole, 7.87  * g/cm3);
   material_map["HeGas"] = new G4Material("HeGas", 2.,  4.002602*g/mole, 0.1787*mg/cm3);
+  material_map["ArGas"] = new G4Material("ArGas",18., 39.948   *g/mole, 1.7834*mg/cm3);
   material_map["Mylar"] = new G4Material("Mylar", 1.39*g/cm3, 3);
   material_map["Mylar"]->AddElement(elC, 5);
   material_map["Mylar"]->AddElement(elH, 4);
@@ -59,11 +60,30 @@ MaterialList::MaterialList()
   material_map["G10"]->AddElement(elC , 3);
   material_map["G10"]->AddElement(elH , 3);
 
+  // Etane Gas
+  material_map["EthaneGas"] = new G4Material("EthanGas", 1.342*mg/cm3, 2, kStateGas);
+  material_map["EthaneGas"]->AddElement(elH, 6);
+  material_map["EthaneGas"]->AddElement(elC, 2);
+
+  // IsoButane Gas
+  material_map["IsoButaneGas"] = new G4Material("IsobutaneGas",2.594*mg/cm3, 2, kStateGas );
+  material_map["IsoButaneGas"]->AddElement(elH, 10);
+  material_map["IsoButaneGas"]->AddElement(elC, 4);
+
+  ///// Ar:IsoButane=80:20 for SDC1,2
+  material_map["Ar80IsoButane20Gas"] = new G4Material("Ar:IsoButane=80:20",
+                                                      1.9455*mg/cm3, 2, kStateGas);
+  material_map["Ar80IsoButane20Gas"]->AddMaterial(material_map["ArGas"],        0.7333);
+  material_map["Ar80IsoButane20Gas"]->AddMaterial(material_map["IsoButaneGas"], 0.2667);
+  ///// for SDC3,4,5
+  material_map["Ar50Ethane50Gas"] = new G4Material("Ar:Ethane=50:50", 1.5627*mg/cm3, 2, kStateGas);
+  material_map["Ar50Ethane50Gas"]->AddMaterial(material_map["ArGas"],     0.5706);
+  material_map["Ar50Ethane50Gas"]->AddMaterial(material_map["EthaneGas"], 0.4294);
+
   HeLiq = new G4Material( "HeLiq", 2.,  4.002602*g/mole, 0.1249* g/cm3 );
   Li    = new G4Material( "Li",    3.,  7.0     *g/mole, 0.534 * g/cm3 );
   B10   = new G4Material( "B10",   5., 10.0     *g/mole, 1.42  * g/cm3 );
   B11   = new G4Material( "B11",   5., 11.0     *g/mole, 2.38  * g/cm3 );
-  ArGas = new G4Material( "ArGas",18., 39.948   *g/mole, 1.7834*mg/cm3 );
   Ti    = new G4Material( "Ti",   22., 47.867   *g/mole, 4.54  * g/cm3 );
   Ni    = new G4Material( "Ni",   28., 58.69    *g/mole, 8.902 * g/cm3 );
   Cu    = new G4Material( "Cu",   29., 63.546   *g/mole, 8.96  * g/cm3 );
@@ -165,15 +185,6 @@ MaterialList::MaterialList()
   MethaneGas->AddElement(elH,4);
   MethaneGas->AddElement(elC,1);
 
-  // Etane Gas
-  EthaneGas = new G4Material("EThanGas", 1.342*mg/cm3, 2, kStateGas  );
-  EthaneGas->AddElement(elH,6);
-  EthaneGas->AddElement(elC,2);
-
-  // IsoButane Gas
-  IsoButaneGas = new G4Material("IsobutaneGas",2.594*mg/cm3, 2, kStateGas );
-  IsoButaneGas->AddElement(elH,10);
-  IsoButaneGas->AddElement(elC,4);
   /*
   // P10 Gas
   // Ar (90) Methane (10) by volume
@@ -181,16 +192,8 @@ MaterialList::MaterialList()
   P10Gas->AddMaterial(ArGas,      0.9573);
   P10Gas->AddMaterial(MethaneGas, 0.0427);
   */
-  // Ar:Ethane=50:50
-  Ar50Ethane50Gas = new G4Material("Ar:Ethane=50:50", 1.5627*mg/cm3, 2, kStateGas );
-  Ar50Ethane50Gas->AddMaterial(ArGas,     0.5706);
-  Ar50Ethane50Gas->AddMaterial(EthaneGas, 0.4294);
 
   // Ar::IsoButhane=80:20
-  Ar80IsoButane20Gas = new G4Material("Ar:IsoButane=80:20",
-				      1.9455*mg/cm3, 2, kStateGas );
-  Ar80IsoButane20Gas->AddMaterial(ArGas,        0.7333);
-  Ar80IsoButane20Gas->AddMaterial(IsoButaneGas, 0.2667);
 
 }
 
@@ -211,7 +214,6 @@ MaterialList::~MaterialList()
   delete Li;
   delete B10;
   delete B11;
-  delete ArGas;
   delete Ti;
   delete Ni;
   delete Cu;
@@ -239,11 +241,7 @@ MaterialList::~MaterialList()
 
   delete MethaneGas;
   delete EthaneGas;
-  delete IsoButaneGas;
   delete P10Gas;
-
-  delete Ar50Ethane50Gas;
-  delete Ar80IsoButane20Gas;
 
   delete elH;
   delete elHe;

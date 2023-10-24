@@ -46,35 +46,39 @@ Event event;
 std::map<TString, TH1*> hmap;
 }
 
+//_____________________________________________________________________________
 S2SAnaManager::S2SAnaManager()
-  : filename_("tmp.root"),
+  : m_file_name("tmp.root"),
     fActive_(true),
     fTriggered(false),
-    DataFile_(),
+    m_file(),
     m_tree(new TTree("g4s2s", "S-2S simulation"))
 {
-
 }
 
+//_____________________________________________________________________________
 S2SAnaManager::~S2SAnaManager()
 {
 }
 
+//_____________________________________________________________________________
 void
 S2SAnaManager::BeginOfRun( const G4Run *aRun )
 {
   fActive_=true;
-  m_file = new TFile(filename_, "recreate");
+  m_file = new TFile(m_file_name, "recreate");
   static auto obj = new TNamed("conf", confMan.ConfBuf());
   obj->Write();
   static auto git = new TNamed
     ("git", ("\n"+gSystem->GetFromPipe("git log -1")).Data());
   git->Write();
   m_tree->Reset();
+  event.hits.clear();
   DefineTree();
   for(const auto& sd_name : std::vector<G4String>{
-    "TOF" }// S2SDetectorConstruction::GetSDList()
-      ){
+      "SDC", "TOF", "VP" }
+        // S2SDetectorConstruction::GetSDList()
+    ){
     G4cout << "   make branch : " << sd_name << G4endl;
     MakeBranch(sd_name);
     MakeHistogram(sd_name);
@@ -84,7 +88,9 @@ S2SAnaManager::BeginOfRun( const G4Run *aRun )
   }
 }
 
-void S2SAnaManager::EndOfRun( const G4Run *aRun )
+//_____________________________________________________________________________
+void
+S2SAnaManager::EndOfRun(const G4Run* aRun)
 {
   m_file->cd();
   m_tree->Write();
@@ -94,7 +100,9 @@ void S2SAnaManager::EndOfRun( const G4Run *aRun )
   m_file->Close();
 }
 
-void S2SAnaManager::BeginOfPrimaryAction()
+//_____________________________________________________________________________
+void
+S2SAnaManager::BeginOfPrimaryAction()
 {
   event.x0In = qnan;
   event.y0In = qnan;
@@ -141,10 +149,12 @@ S2SAnaManager::MakeHistogram(const G4String& sd_name)
   }
 }
 
-
-void S2SAnaManager::SetPrimaryData(double x0, double y0, double z0,
-				 double u0, double v0, double phi, double theta,
-				 double p0,double t0,int ParIdNb){
+//_____________________________________________________________________________
+void
+S2SAnaManager::SetPrimaryData(double x0, double y0, double z0,
+                              double u0, double v0, double phi, double theta,
+                              double p0,double t0,int ParIdNb)
+{
   event.x0In = x0; // generated position (x)
   event.y0In = y0; // generated position (y)
   event.z0In = z0; // generated position (z)
@@ -163,11 +173,13 @@ void S2SAnaManager::SetPrimaryData(double x0, double y0, double z0,
   //  G4cout<<"setPrimaryData"<<G4endl;
 }
 
+//_____________________________________________________________________________
 void S2SAnaManager::SetProcessData(G4int nP, G4int nN, G4int nL,
 				 G4int nSm, G4int nSz, G4int nSp,
 				 G4int nXm, G4int nXz, G4int nXsm,
 				 G4int nXsz,G4int nPim,G4int nPiz,
-				 G4int nPip,G4int nKm,G4int nKp){
+				 G4int nPip,G4int nKm,G4int nKp)
+{
   event.nP = nP;
   event.nN = nN;
   event.nL = nL;
@@ -187,16 +199,27 @@ void S2SAnaManager::SetProcessData(G4int nP, G4int nN, G4int nL,
 
 void S2SAnaManager::BeginOfEvent( const G4Event *anEvent )
 {
-  //  G4cout<<"BeginOfEvent"<<G4endl;
+  InitializeEvent();
+  for(auto& pair: event.hits){
+    pair.second.clear();
+  }
 }
 
 void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
 {
-  InitializeEvent();
-
+  return;
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
-
+  for(G4int k=1; k<=5; ++k){
+    G4String name = "SDC"+std::to_string(k);
+    static const auto id = SDMan->GetCollectionID(name);
+    G4cout << id << G4endl;
+    auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
+    for(G4int i=0, n=HC->entries(); i<n; ++i){
+      SetHitData((*HC)[i]);
+    }
+    SetNhits(name, HC->entries());
+  }
   {
     static const auto id = SDMan->GetCollectionID("TOF");
     auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
@@ -205,74 +228,29 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
     }
     SetNhits("TOF", HC->entries());
   }
+  {
+    static const auto id = SDMan->GetCollectionID("VP");
+    auto HC = dynamic_cast<VPHitsCollection*>(HCE->GetHC(id));
+    for(G4int i=0, n=HC->entries(); i<n; ++i){
+      SetHitData((*HC)[i]);
+    }
+    SetNhits("VP", HC->entries());
+  }
 
   //   G4int nhAc=0;
   G4int nhWC=0;
-  G4int nhVP=0;
 
-  static const G4int colIdDC = SDMan->GetCollectionID("SDC");
   // static const G4int colIdAC = SDMan->GetCollectionID("AC");
   static const G4int colIdWC = SDMan->GetCollectionID("WC");
-  static const G4int colIdVP = SDMan->GetCollectionID("VP");
 
-  auto DCHC = dynamic_cast<DCHitsCollection*>(HCE->GetHC(colIdDC));
   // auto ACHC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(colIdAC));
   auto WCHC = dynamic_cast<WCHitsCollection*>(HCE->GetHC(colIdWC));
-  auto VPHC = dynamic_cast<VPHitsCollection*>(HCE->GetHC(colIdVP));
 
   // if(ACHC) nhAc = ACHC ->entries();
   if(WCHC) nhWC = WCHC ->entries();
-  if(VPHC) nhVP = VPHC ->entries();
 
   G4double pos_res = 0.0*mm; // 0 um
   // G4double pos_res = 0.2*mm; // 200 um
-  if(DCHC){
-    event.DCNhits = DCHC->entries();
-    for(int i=0; i<event.DCNhits; ++i){
-      DCHit *aHit = (*DCHC)[i];
-      G4int dclayer = aHit->GetLayerID() - 101;
-      G4int nh = event.DCNh[dclayer];
-      double lx = aHit->GetXLocal()/mm;
-      double ly = aHit->GetYLocal()/mm;
-      double time = aHit->GetTime()/ns;
-      double de = aHit->GetEdep();
-      G4ThreeVector gPos = aHit->GetPos();
-      G4ThreeVector pVec = aHit->GetMom();
-      double mom = pVec.mag();
-      event.DCXObs[dclayer] = CLHEP::RandGauss::shoot(lx, pos_res);
-      event.DCYObs[dclayer] = CLHEP::RandGauss::shoot(ly, pos_res);
-      event.DCX[dclayer] = lx;
-      event.DCY[dclayer] = ly;
-      event.DCt[dclayer] = time;
-      event.DCp[dclayer] = mom;
-      event.DCgPosx[dclayer][nh] = gPos.getY();
-      event.DCgPosy[dclayer][nh] = gPos.getZ();
-      event.DCgPosz[dclayer][nh] = gPos.getX();
-      event.DCde[dclayer][nh] = de;
-      event.DCNh[dclayer]++;
-    }
-  }
-
-  for(int i=0;i<6;i++)
-    if(event.DCt[i]>0) event.DC1Hit += 1;
-  for(int i=6;i<12;i++)
-    if(event.DCt[i]>0) event.DC2Hit += 1;
-  for(int i=12;i<16;i++)
-    if(event.DCt[i]>0) event.DC3Hit += 1;
-  for(int i=16;i<22;i++)
-    if(event.DCt[i]>0) event.DC4Hit += 1;
-  for(int i=22;i<28;i++)
-    if(event.DCt[i]>0) event.DC5Hit += 1;
-
-  for(int i=0;i<4;i++){
-    for(int j=0;j<6;j++){
-      if(i==0 && event.DCt[i*6+j]>-999) event.DC1Hit = 1;
-      if(i==1 && event.DCt[i*6+j]>-999) event.DC2Hit = 1;
-      if(i==2 && event.DCt[i*6+j]>-999) event.DC3Hit = 1;
-      if(i==3 && event.DCt[i*6+j]>-999) event.DC4Hit = 1;
-    }
-  }
-
   // ~~~~~~~~~ Q1Flag (T.Gogami, 23Mar2015) ~~~~~~~~~~~~~~~
   G4bool Q1Flag1 = false; // Q1 entrance
   G4bool Q1Flag2 = false; // Q1 exit
@@ -349,194 +327,6 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
   event.Q1Trig = Q1Flag;
   event.Q2Trig = Q2Flag;
 
-  //G4cout<<"nhitSl1 = "<<nhitSl1<<G4endl;
-  /*
-    if(event.Slitp[0]<100) {
-    G4cout<<"this event is wrong !!! Slitt[0]="<<event.Slitt[0]<<" Slitp[0]"<<event.Slitp[0]<<G4endl;
-    }
-  */
-
-  // event.TOFNhits = (int)nhTof;
-  // G4double t_res = 0.090*ns; // Sigma = 90 ps (From cosmic-ray test)
-  // G4bool TOFTrig = false;
-  // if( TOFHC ){
-  //   for( int i=0; i<nhTof; ++i ){
-  //     TOFHit *aHit = (*TOFHC)[i];
-  //     G4int TOFHitSeg = aHit->GetLayerID(); // Hit Segment
-  //     double TOFtime = aHit->GetTime()/ns;  // Hit timing
-  //     double TOFdE   = aHit->GetEdep()/MeV; // Energy deposite
-  //     event.toftime[TOFHitSeg] = event.toftime[TOFHitSeg] + TOFtime;
-  //     event.toftime_reso[TOFHitSeg] = event.toftime_reso[TOFHitSeg] + CLHEP::RandGauss::shoot(TOFtime, t_res);
-  //     event.tofdE[TOFHitSeg]   = event.tofdE[TOFHitSeg] + TOFdE;
-  //     event.tofn[TOFHitSeg]++;
-  //     //G4cout<<"TofSeg"<<TOFHitSeg<<" event.TOFC["<<TOFHitSeg<<"]"<<event.TOFt[TOFHitSeg]<<G4endl;
-  //   }
-
-  //   for(int i=0 ; i<18 ; i++){
-  //     if(event.toftime[i]>0.0){
-  //       // ----- Mean value of the timing -----
-  //       event.toftime[i] = event.toftime[i] / event.tofn[i];  // w/o resolution
-  //       event.toftime_reso[i] = event.toftime_reso[i] / event.tofn[i]; // w/ resolution
-
-  //       //if(event.toftime[i]>10.0 && event.tofdE[i]>0.0){
-  //       if( event.toftime[i]>10.0 ){
-  //         TOFTrig = true;
-  //       }
-  //       else TOFTrig = false;
-
-  //     }
-  //     else{
-  //       event.toftime[i] = qnan;
-  //       event.tofdE[i]   = qnan;
-  //     }
-  //   }
-  // }
-
-  // event.TOFTrig = TOFTrig;
-
-
-  // event.VDTrig  = SlitFlag;
-
-  //for(int j=0;j<NumTOFSeg;j++){
-  //  if(event.TOFt[j]>0) event.TOFHit = 1;
-  //}
-
-  //   //AC
-  //   event.ACNhits = nhAc;
-  //   if( ACHC ){
-  //     for( int i=0;i<nhAc;++i){
-  //       ACHit *aHit = (*ACHC)[i];
-  //       double actime = aHit->GetTime()/ns;
-  //       double lx = aHit->GetXLocal()/mm;
-  //       double ly = aHit->GetYLocal()/mm;
-  //       G4ThreeVector pVec = aHit->GetMom();
-  //       G4int mom = pVec.mag();
-  //       event.ACX = lx;
-  //       event.ACY = ly;
-  //       event.ACt = actime;
-  //       event.ACp = mom;
-  //     }
-  //   }
-  //   if(event.ACt>0) event.ACHit = 1;
-
-  // // ~~~~~~~~~~~~~~ Water Cherenkov detecctor  ~~~~~~~~~~~~~~~~~~~~~~~~~
-  // event.WCNhits = (int)nhWC;
-  // //G4double t_res = 0.090*ns; // Sigma = 90 ps (From cosmic-ray test)
-  // G4bool WCTrig = false;
-  // //TRandom3* randtemp = new TRandom3();
-  // //double aaatemp=0.0;
-  // //aaatemp = randtemp->Uniform(1.0,65539.0);
-  // //rrr = rrr%65539;
-  // //TRandom3* nperand = new TRandom3(aaatemp);
-  // double wcnpe1, wcnpe2;
-  // if( WCHC ){
-  //   for( int i=0; i<nhWC; i++ ){
-  //     WCHit *aHit = (*WCHC)[i];
-  //     G4int WCHitSeg = aHit->GetLayerID(); // Hit Segment
-  //     double WCtime = aHit->GetTime()/ns;  // Hit timing
-  //     double WCdE   = aHit->GetEdep()/MeV; // Energy deposite
-  //     double WCNPE  = aHit->GetNPE();  // N.P.E.
-  //     event.wctime[WCHitSeg] = event.wctime[WCHitSeg] + WCtime;
-  //     //event.wctime_reso[WCHitSeg] = event.wctime_reso[WCHitSeg] + CLHEP::RandGauss::shoot(WCtime, t_res);
-  //     event.wcdE[WCHitSeg]   = event.wcdE[WCHitSeg] + WCdE;
-  //     event.wcnpe[WCHitSeg]  = event.wcnpe[WCHitSeg] + WCNPE;
-  //     //event.wcnpe[WCHitSeg]  = event.wcnpe[WCHitSeg] + nperand->PoissonD(WCNPE);
-  //     event.wcn[WCHitSeg]++;
-  //     //G4cout<<"TofSeg"<<TOFHitSeg<<" event.TOFC["<<TOFHitSeg<<"]"<<event.TOFt[TOFHitSeg]<<G4endl;
-  //   }
-  //   for(int i=0 ; i<12 ; i++){
-  //     if(event.wctime[i]>0.0){
-  //       // ----- Mean value of the timing -----
-  //       event.wctime[i] = event.wctime[i] / event.wcn[i];  // w/o resolution
-  //       //event.wctime_reso[i] = event.wctime_reso[i] / event.wcn[i]; // w/ resolution
-  //       ///event.wcnpe[i] = G4Poisson(event.wcnpe[i]) * 2.0; // up and down PMT --> * 2
-  //       /*
-  //         event.wcnpe[i] = nperand->PoissonD(event.wcnpe[i]) * 2.0;
-  //       */
-  //       //event.wcnpe[i] = nperand->PoissonD(event.wcnpe[i]);
-  //       wcnpe1 = nperand->PoissonD(event.wcnpe[i]);
-  //       wcnpe2 = nperand->PoissonD(event.wcnpe[i]);
-  //       event.wcnpe[i] = wcnpe1+wcnpe2;
-  //       //event.wcnpe[i] = nperand->Gaus(event.wcnpe[i],10.0); // 10:width from cosmic-ray data
-  //       //event.wcnpe[i] = event.wcnpe[i] * 2.0;
-  //       //if(event.wctime[i]>10.0 && event.wcdE[i]>0.0){
-  //       if(event.wctime[i]>10.0 &&
-  //          event.wcnpe[i]>0.0){// &&
-  //         //event.wcnpe[i]>30.0){
-  //         //event.wcnpe[i] = nperand->PoissonD(event.wcnpe[i]);
-  //         WCTrig = true;
-  //         if(i<6){
-  //           event.wctime1[i] = event.wctime[i];
-  //           event.wcnpe1[i]  = event.wcnpe[i];
-  //           event.wcdE1[i]   = event.wcdE[i];
-  //           event.wcnpe1[i] =  CLHEP::RandGauss::shoot(event.wcnpe1[i], event.wcnpe1[i]*0.06); // +/-6% (Gogami)
-  //           //event.wcnpe1[i] = event.wcnpe1[i]
-  //           //+ (event.wcnpe1[i] * (G4UniformRand()-0.5)*2.0 * 0.14);  // +/- 14% (Takenaka value)
-  //           //+ (event.wcnpe1[i] * (G4UniformRand()-0.5)*2.0 * 0.2);  // +/- 20%
-  //           //+ (event.wcnpe1[i] * (G4UniformRand()-0.5)*2.0 * 1.0);  // +/- 100%
-  //           //if (i==5)G4cout << event.wcnpe1[i] << G4endl; // for check
-  //         }
-  //         else{
-  //           event.wctime2[i-6] = event.wctime[i];
-  //           event.wcnpe2[i-6]  = event.wcnpe[i];
-  //           event.wcdE2[i-6]   = event.wcdE[i];
-  //           event.wcnpe2[i-6] =  CLHEP::RandGauss::shoot(event.wcnpe2[i-6], event.wcnpe2[i-6]*0.06); // +/-6% (Gogami)
-  //           //event.wcnpe2[i-6] = event.wcnpe2[i-6]
-  //           //+ (event.wcnpe2[i-6] * (G4UniformRand()-0.5)*2.0 * 0.14); // +/- 14% (Takenaka value)
-  //           //+ (event.wcnpe2[i-6] * (G4UniformRand()-0.5)*2.0 * 0.2); // +/- 20%
-  //           //+ (event.wcnpe2[i-6] * (G4UniformRand()-0.5)*2.0 * 1.0); // +/- 100%
-  //         }
-  //       }
-  //       else WCTrig = false;
-  //     }
-  //     else{
-  //       event.wctime[i] = qnan;
-  //       event.wcdE[i]   = qnan;
-  //       event.wcnpe[i]  = qnan;
-  //     }
-  //   }
-  // }
-  // event.WCTrig = WCTrig;
-
-  //   event.WCNhits = nhWc;
-  //   if( WCHC ){
-  //     for( int i=0; i<nhWc; ++i ){
-  //       WCHit *aHit = (*WCHC)[i];
-  //       G4int WCHitSeg = aHit->GetLayerID();
-  //       double wctime = aHit->GetTime()/ns;
-  //       G4ThreeVector pVec = aHit->GetMom();
-  //       G4int mom = pVec.mag();
-  //       event.WCt[WCHitSeg] = wctime;
-  //       event.WCp[WCHitSeg] = mom;
-  //       //G4cout<<"TofSeg"<<TOFHitSeg<<" event.TOFC["<<TOFHitSeg<<"]"<<event.TOFt[TOFHitSeg]<<G4endl;
-  //     }
-  //   }
-  //   for(int j=0;j<NumWCSeg;j++){
-  //     if(event.WCt[j]>0) event.WCHit = 1;
-  //   }
-
-  //   if( DataFile_.is_open() ){
-  //     PrintHitsInformation( anEvent, DataFile_ );
-  //   }
-
-  //  //if(event.DC3Hit>0){
-  //  if(1){
-  //    //    m_tree->Fill();
-  //    //if( DataFile_.is_open() ){
-  //    if(0){
-  //      PrintHitsInformation( anEvent, DataFile_ );
-  //    }
-  //  }
-
-  //  G4cout<<"EndOf S2SAnaManager EndOfEvent"<<G4endl;
-  //if(m_tree->GetEntries()>1&&m_tree->GetEntries()%100==0)
-  //if(1)
-  // m_file->Write();
-  //if(TOFTrig==true){
-
-  // if(SlitFlag==true){
-  //   //m_tree->Fill();
-  // }
   m_tree->Fill();
 }
 
@@ -568,67 +358,8 @@ S2SAnaManager::SetHitData(const VHitInfo* hit)
   }
 }
 
-
-void S2SAnaManager::SaveFile() const
-{
-  if( fActive_ ){
-    gFile->Write();
-  }
-}
-
-void S2SAnaManager::Terminate() const
-{
-  if( fActive_ ){
-    m_file->Write();
-    m_file->Close();
-    G4cout << "[S2SAnaManager] Terminate() done" << G4endl;
-  }
-}
-
-void S2SAnaManager::ShowStatus() const
-{
-  G4cout << "Analyzer Status\n"
-	 << "  File : " << filename_ << "\n"
-	 << "  S2SAnaManager : " << fActive_ << "\n"
-	 << G4endl;
-}
-
 void S2SAnaManager::InitializeEvent()
 {
-  for(int i=0;i<NumDC;i++){
-    event.DCXObs[i] = qnan;
-    event.DCYObs[i] = qnan;
-    event.DCX[i] = qnan;
-    event.DCY[i] = qnan;
-    event.DCt[i] = qnan;
-    event.DCp[i] = qnan;
-    event.DCNh[i] = 0;
-    for( int ihit = 0; ihit < MaxHits; ihit++ ){
-      event.DCgPosx[i][ihit] = qnan;
-      event.DCgPosy[i][ihit] = qnan;
-      event.DCgPosz[i][ihit] = qnan;
-      event.DCde[i][ihit] = qnan;
-    }
-  }
-  //   for(int i=0;i<NumTOFSeg;i++){
-  //     event.TOFt[i] = qnan;
-  //     event.TOFtObs[i] = qnan;
-  //   }
-  // event.TOFAll = qnan;
-  //  for(int i=0;i<8;i++){
-  //    event.SlitX[i]    = qnan;
-  //    event.SlitY[i]    = qnan;
-  //    event.SlituDeg[i] = qnan;
-  //    event.SlitvDeg[i] = qnan;
-  //    event.Slitt[i]    = qnan;
-  //    event.SlitMom[i]  = qnan;
-  //    event.Slitp[i]    = qnan;
-  //    event.SlitNh[i]   = 0;
-  //    event.SlitNP[i]   = 0;
-  //    event.SlitNK[i]   = 0;
-  //    event.SlitNPi[i]  = 0;
-  //    event.SlitF[i]    = 0;
-  //  }
   for(int i=0 ; i<18 ; i++){
     // ------- Virtual detectors (slits) ------
     if(i<11){
@@ -672,12 +403,6 @@ void S2SAnaManager::InitializeEvent()
     }
   }
 
-  event.DCNhits = 0;
-  event.DC1Hit = 0;
-  event.DC2Hit = 0;
-  event.DC3Hit = 0;
-  event.DC4Hit = 0;
-  event.DC5Hit = 0;
   // event.TOFNhits = -999;
   // event.ACNhits = -999;
   // event.WCNhits = -999;
@@ -694,7 +419,6 @@ void S2SAnaManager::InitializeEvent()
   //  G4cout<<"S2SAnaManager InitializeEvent"<<G4endl;
 }
 
-//void S2SAnaManager::DefineHistograms()
 void S2SAnaManager::DefineTree()
 {
   m_tree->Branch("x0",&event.x0In, "x0/D");
@@ -726,23 +450,6 @@ void S2SAnaManager::DefineTree()
   //   m_tree->Branch("nKm",&event.nKm,"nKm/I");
   //   m_tree->Branch("nKp",&event.nKp,"nKp/I");
 
-  m_tree->Branch("DCXObs",event.DCXObs, "DCXObs[26]/D");
-  m_tree->Branch("DCYObs",event.DCYObs, "DCYObs[26]/D");
-  m_tree->Branch("DCX",event.DCX, "DCX[26]/D");
-  m_tree->Branch("DCY",event.DCY, "DCY[26]/D");
-  m_tree->Branch("DCt",event.DCt, "DCt[26]/D");
-  m_tree->Branch("DCp",event.DCp, "DCp[26]/D");
-  m_tree->Branch("DCNh",event.DCNh, "DCNh[26]/I");
-  m_tree->Branch("DCgPosx",event.DCgPosx, Form("DCgPosx[26][%d]/D", MaxHits));
-  m_tree->Branch("DCgPosy",event.DCgPosy, Form("DCgPosy[26][%d]/D", MaxHits));
-  m_tree->Branch("DCgPosz",event.DCgPosz, Form("DCgPosz[26][%d]/D", MaxHits));
-  m_tree->Branch("DCde",   event.DCde, Form("DCde[26][%d]/D", MaxHits));
-  m_tree->Branch("DCNhits",&event.DCNhits, "DCNhits/I");
-  m_tree->Branch("DC1Hit", &event.DC1Hit, "DC1Hit/I");
-  m_tree->Branch("DC2Hit", &event.DC2Hit, "DC2Hit/I");
-  m_tree->Branch("DC3Hit", &event.DC3Hit, "DC3Hit/I");
-  m_tree->Branch("DC4Hit", &event.DC4Hit, "DC4Hit/I");
-  m_tree->Branch("DC5Hit", &event.DC5Hit, "DC5Hit/I");
   m_tree->Branch("vdxp", event.SlituDeg, "vdxp[11]/D");
   m_tree->Branch("vdyp", event.SlitvDeg, "vdyp[11]/D");
   /*
@@ -822,12 +529,6 @@ PrintHitsInformation( const G4Event *anEvent,
   G4HCofThisEvent *HCE = anEvent->GetHCofThisEvent();
   G4SDManager *SDMan = G4SDManager::GetSDMpointer();
 
-  G4int nhDc=0;
-  DCHitsCollection    *DCHC;
-  G4int colIdDC = SDMan->GetCollectionID( "BcSD"/*"DCCollection"*/ );
-  DCHC =  dynamic_cast<DCHitsCollection *>(  HCE->GetHC( colIdDC ) );
-  if( DCHC )     nhDc     = DCHC ->entries();
-
   std::ios::fmtflags oldFlags = ost.flags();
   std::size_t preSiz = ost.precision();
   ost.setf( std::ios::fixed );
@@ -847,16 +548,6 @@ PrintHitsInformation( const G4Event *anEvent,
   ost << 0   <<std::setw(10);
   ost << 0   <<std::setw(10);
 
-  /*
-    ost << event.DCXObs[2] << std::setw(15)
-    << event.DCYObs[2] << std::setw(15)
-    << event.DCXObs[8] << std::setw(15)
-    << event.DCYObs[8] << std::setw(15)
-    << event.DCXObs[14] << std::setw(15)
-    << event.DCYObs[14] << std::setw(15)
-    << event.DCXObs[20] << std::setw(15)
-    << event.DCYObs[20] << std::setw(15);
-  */
   ost.precision(5);
 
   //G4cout<<"Printed"<<G4endl;
@@ -864,23 +555,6 @@ PrintHitsInformation( const G4Event *anEvent,
   //G4cout<<"x0="<<event.x0In<<" y0="<<event.y0In<<G4endl;
 
   const DCGeomMan & geomMan=DCGeomMan::GetInstance();
-
-  //DC information
-  for( int i=0; i<nhDc; ++i ){
-    DCHit *aHit = (*DCHC)[i];
-    int layer = aHit->GetLayerID();
-    double lx = aHit->GetXLocal()/mm;
-    double ly = aHit->GetYLocal()/mm;
-
-    double tilt  = geomMan.GetTiltAngle(layer-100);
-    double reso  = geomMan.GetResolution(layer-100);
-
-    double lp = lx*cos(tilt*TMath::DegToRad()) + ly*sin(tilt*TMath::DegToRad());
-    lp += CLHEP::RandGauss::shoot(0., reso);
-
-    ost << std::setw(12) << layer-100
-  	<< std::setw(12) << lp;
-  }
 
   // G4double nhTOF=0;
   // TOFHitsCollection    *TOFHC;
@@ -908,9 +582,4 @@ PrintHitsInformation( const G4Event *anEvent,
 
   ost << std::endl;
 
-}
-
-void S2SAnaManager::SetDataFile( const char *datafile )
-{
-  DataFile_.open( datafile );
 }

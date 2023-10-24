@@ -189,30 +189,20 @@ public:
 		      G4int nPip,G4int nKm,G4int nKp);
   void BeginOfEvent( const G4Event *anEvent );
   void EndOfEvent( const G4Event *anEvent );
-
-  void SetFileName( const G4String &filename ) { filename_=filename; }
+  void SetFileName(const G4String& name){ m_file_name = name; }
   //void DefineHistograms();
   void DefineTree();
   G4bool GetTriggerStatus() const { return fTriggered; }
-  void SaveFile() const;
-  void Terminate() const;
-  const G4String &GetFileName() const { return filename_; }
   void SetActive() { fActive_=true; }
   void SetInActive() { fActive_=false; }
-  void ShowStatus() const;
-
-  void SetDataFile( const char *datafile );
 
 private:
-  G4String filename_;
+  G4String m_file_name;
   G4bool fActive_;
   G4bool fTriggered;
   TRandom3* nperand;
 
   G4int trigNum;
-  std::ofstream DataFile_;
-  //   G4String datafile_;
-
   TFile *m_file;
   TTree *m_tree;
 
