@@ -7,6 +7,7 @@
 *.root
 *.wrl
 *.pcm
+.build/
 build/
 bin/
 lib/
@@ -16,7 +17,6 @@ CMakeLists.txt
 fieldmap
 G4History.macro
 run
-obj
 c1.pdf
 rootfile
 

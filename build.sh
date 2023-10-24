@@ -6,7 +6,7 @@ type cmake3 >/dev/null 2>&1 && alias cmake=cmake3
 main_dir=$(dirname `readlink -f $0`)
 src_dir=$main_dir/src
 linkdef_dir=$main_dir/linkdef
-obj_dir=$main_dir/obj
+build_dir=$main_dir/.build
 bin_dir=$main_dir/bin
 
 ##### macOS
@@ -15,8 +15,8 @@ if [ "$(uname)" == 'Darwin' -a ! -e "$src_dir/Dict_rdict.pcm" ]; then
 	      $linkdef_dir/LinkDef.h
 fi
 
-mkdir -pv $obj_dir
-cd $obj_dir
+mkdir -pv $build_dir
+cd $build_dir
 cmake .. -DCMAKE_INSTALL_PREFIX=$main_dir \
       -DCMAKE_INSTALL_RPATH_USE_LINK_PATH="ON"
 cmake --build . -- -j4
