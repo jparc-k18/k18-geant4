@@ -197,6 +197,15 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
 
+  {
+    static const auto id = SDMan->GetCollectionID("TOF");
+    auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
+    for(G4int i=0, n=HC->entries(); i<n; ++i){
+      SetHitData((*HC)[i]);
+    }
+    SetNhits("TOF", HC->entries());
+  }
+
   //   G4int nhAc=0;
   G4int nhWC=0;
   G4int nhVP=0;
@@ -346,15 +355,6 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
     G4cout<<"this event is wrong !!! Slitt[0]="<<event.Slitt[0]<<" Slitp[0]"<<event.Slitp[0]<<G4endl;
     }
   */
-
-  {
-    static const auto id = SDMan->GetCollectionID("TOF");
-    auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
-    for(G4int i=0, n=HC->entries(); i<n; ++i){
-      SetHitData((*HC)[i]);
-    }
-    SetNhits("TOF", HC->entries());
-  }
 
   // event.TOFNhits = (int)nhTof;
   // G4double t_res = 0.090*ns; // Sigma = 90 ps (From cosmic-ray test)

@@ -89,11 +89,11 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
      nullptr, false, 0, check_overlaps);
   logicWorld->SetVisAttributes(G4VisAttributes::GetInvisible());
 
-#if 0
+#if 1
   ConstructTarget();
 #endif
 
-#if 0
+#if 1
   ConstructQ1();
   ConstructQ2();
   ConstructD1();
@@ -112,13 +112,13 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   ConstructSDC2();
 #endif
 
-#if 0
+#if 1
   ConstructSDC3();
   ConstructSDC4();
   ConstructSDC5();
 #endif
 
-#if 0
+#if 1
   ConstructTOF();
   ConstructAC1();
   ConstructWC();
@@ -511,57 +511,71 @@ S2SDetectorConstruction::ConstructSDC2()
                               drift_size.y(), drift_size.z());
   G4String layer_name[] = { "Sdc2V1", "Sdc2V2",
                             "Sdc2U1", "Sdc2U2" };
-  G4double zoffset[] = { (-0.3-12.4)*mm, (-0.3-7.6)*mm,
-                         (-0.3+7.6)*mm, (-0.3+12.4)*mm };
-  for(G4int i=0; i<NumOfLayersSDC2; ++i){
+  {
+    G4double zoffset[] = { -12.4*mm, -7.6*mm,
+                           7.6*mm, 12.4*mm };
+    for(G4int i=0; i<NumOfLayersSDC2; ++i){
+      G4ThreeVector pos(0, 0, zoffset[i]);
+      auto logicLayer = new G4LogicalVolume(solidLayer,
+                                            mlist.Ar80IsoButane20Gas,
+                                            "logic"+layer_name[i]);
+      logicLayer->SetSensitiveDetector(sdSDC2);
+      new G4PVPlacement(nullptr, pos, logicLayer, "phys"+layer_name[i],
+                        logicGas, false, 101+i, check_overlaps);
+    }
+  }
+  ///// Mylar
+  const G4double mylar_thickness = sizeMan.Get("Sdc2MylarThickness")*mm;
+  const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
+  const G4double cplate_thickness = sizeMan.Get("CathodePlateThickness")*mm;
+  auto solidMylar = new G4Box("solidMylar", frame_size.x(),
+                              frame_size.y(), mylar_thickness/2);
+  auto logicMylar = new G4LogicalVolume
+    (solidMylar, mlist.at("Mylar"), "logicMylar");
+  for(G4int i=0; i<2; ++i){
+    G4ThreeVector pos;
+    if(i==0) pos.setZ(-frame_size.z()+alplate_thickness+mylar_thickness/2);
+    if(i==1) pos.setZ(+frame_size.z()-alplate_thickness-mylar_thickness/2);
+    new G4PVPlacement(nullptr, pos, logicMylar, "physSdc2WindowMylar",
+                      logicGas, false, i, check_overlaps);
+  }
+  ///// Al plate
+  auto solidAlPlate = new G4Box("solidAlPlate", frame_size.x(),
+                                frame_size.y(), alplate_thickness/2);
+  auto logicAlPlate = new G4LogicalVolume
+    (solidAlPlate, mlist.at("Al"), "logicAlPlate");
+  for(G4int i=0; i<2; ++i){
+    G4ThreeVector pos;
+    if(i==0) pos.setZ(-frame_size.z()+alplate_thickness/2);
+    if(i==1) pos.setZ(+frame_size.z()-alplate_thickness/2);
+    new G4PVPlacement(nullptr, pos, logicAlPlate, "physSdc2WindowAlPlate",
+                      logicGas, false, i, check_overlaps);
+    if(i==0) pos.setZ(-frame_size.z()+alplate_thickness*3/2+mylar_thickness);
+    if(i==1) pos.setZ(+frame_size.z()-alplate_thickness*3/2-mylar_thickness);
+    new G4PVPlacement(nullptr, pos, logicAlPlate, "physSdc2WindowAlPlate",
+                      logicGas, false, i, check_overlaps);
+  }
+  ///// Cathode
+  auto solidCathodePlate = new G4Box("solidCathodePlate", frame_size.x(),
+                                     frame_size.y(), cplate_thickness/2);
+  auto logicCarbonPlate = new G4LogicalVolume
+    (solidAlPlate, mlist.at("C"), "logicCarbonPlate");
+  logicCarbonPlate->SetVisAttributes(G4Color::Gray());
+  const G4int NumOfCathode = 6;
+  G4double zoffset[NumOfCathode] = { -14.8*mm, -10*mm, -5.2*mm,
+                                     5.2*mm, 10*mm, 14.8*mm };
+  for(G4int i=0; i<NumOfCathode; ++i){
     G4ThreeVector pos(0, 0, zoffset[i]);
-    auto logicLayer = new G4LogicalVolume(solidLayer,
-                                          mlist.Ar80IsoButane20Gas,
-                                          "logic"+layer_name[i]);
-    logicLayer->SetSensitiveDetector(sdSDC2);
-    new G4PVPlacement(nullptr, pos, logicLayer, "phys"+layer_name[i],
-                      logicGas, false, 101+i, check_overlaps);
+    new G4PVPlacement(nullptr, pos, logicMylar, "physSdc2CathodeMylar",
+                      logicGas, false, i, check_overlaps);
+    new G4PVPlacement(nullptr, pos-G4ThreeVector(0, 0, mylar_thickness/2+cplate_thickness/2),
+                      logicCarbonPlate, "physSdc2CarbonPlate",
+                      logicGas, false, 2*i, check_overlaps);
+    new G4PVPlacement(nullptr, pos+G4ThreeVector(0, 0, mylar_thickness/2+cplate_thickness/2),
+                      logicCarbonPlate, "physSdc2CarbonPlate",
+                      logicGas, false, 2*i+1, check_overlaps);
   }
 
-  // ///// Mylar
-  // const G4double almylar_thickness = sizeMan.Get("AlMylarThickness")*mm;
-  // const G4double alplate_thickness = sizeMan.Get("AlPlateThickness")*mm;
-  // const G4double mylar_thickness = sizeMan.Get("Sdc2MylarThickness")*mm;
-  // auto solidMylar = new G4Box("solidMylar", frame_size.x(),
-  //                               frame_size.y(), mylar_thickness/2);
-  // auto logicMylar = new G4LogicalVolume
-  //   (solidMylar, mlist.at("Mylar"), "logicMylar");
-  // G4ThreeVector pos = sdc2_pos;
-  // pos.setZ(sdc2_pos.z()-frame_size.z()-mylar_thickness/2);
-  // new G4PVPlacement(nullptr, pos, "physMylar", logicMylar,
-  //                   physWorld, false, 0, check_overlaps);
-  // pos.setZ(sdc2_pos.z()+frame_size.z()+mylar_thickness/2);
-  // new G4PVPlacement(nullptr, pos, "physMylar", logicMylar,
-  //                   physWorld, false, 1, check_overlaps);
-  // ///// Al mylar
-  // auto solidAlMylar = new G4Box("solidAlMylar", frame_size.x(),
-  //                               frame_size.y(), almylar_thickness/2);
-  // auto logicAlMylar = new G4LogicalVolume
-  //   (solidAlMylar, mlist.at("Mylar"), "logicAlMylar");
-  // pos = sdc2_pos;
-  // pos.setZ(sdc2_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness/2);
-  // new G4PVPlacement(nullptr, pos, "physAlMylar", logicAlMylar,
-  //                   physWorld, false, 0, check_overlaps);
-  // pos.setZ(sdc2_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness/2);
-  // new G4PVPlacement(nullptr, pos, "physAlMylar", logicAlMylar,
-  //                   physWorld, false, 1, check_overlaps);
-  // ///// Al plate
-  // auto solidAlPlate = new G4Box("solidAlMylar", frame_size.x(),
-  //                               frame_size.y(), alplate_thickness/2);
-  // auto logicAlPlate = new G4LogicalVolume
-  //   (solidAlPlate, mlist.at("Al"), "logicAlPlate");
-  // pos = sdc2_pos;
-  // pos.setZ(sdc2_pos.z()-frame_size.z()-mylar_thickness-almylar_thickness-alplate_thickness/2);
-  // new G4PVPlacement(nullptr, pos, "physAlPlate", logicAlPlate,
-  //                   physWorld, false, 0, check_overlaps);
-  // pos.setZ(sdc2_pos.z()+frame_size.z()+mylar_thickness+almylar_thickness+alplate_thickness/2);
-  // new G4PVPlacement(nullptr, pos, "physAlPlate", logicAlPlate,
-  //                   physWorld, false, 1, check_overlaps);
 }
 
 //_____________________________________________________________________________
@@ -898,7 +912,7 @@ S2SDetectorConstruction::ConstructAC1()
 				       "Ac1FrameLV");
   pos.setMag(0.);
   new G4PVPlacement(nullptr, pos, frame_lv,
-		     "Ac1FramePV", mother_lv, false, 0);
+                    "Ac1FramePV", mother_lv, false, 0, check_overlaps);
   // Radiator
   auto radiator_solid = new G4Box("Ac1RadiatorSolid", radiator_size.x(),
 				   radiator_size.y(), radiator_size.z());
@@ -959,12 +973,9 @@ S2SDetectorConstruction::ConstructWC()
   G4SDManager::GetSDMpointer()->AddNewDetector(wcSD);
   // Mother
   auto mother_solid = new G4Box("WcMotherSolid",
-				 half_size_Out.x()*NumOfSegWC + 200.*mm,
-				 half_size_Out.y() + 200.*mm,
-				 half_size_Out.z()*2 + 200.*mm);
-				 // half_size_Out.x()*NumOfSegWC + 50.*mm,
-				 // half_size_Out.y() + 50.*mm,
-				 // half_size_Out.z()*2 + 50.*mm);
+				 half_size_Out.x()*NumOfSegWC+10.*mm,
+				 half_size_Out.y()+10.*mm,
+				 half_size_Out.z()*2+10.*mm);
 
   auto mother_lv = new G4LogicalVolume(mother_solid,
 					mlist.at("Air"),
