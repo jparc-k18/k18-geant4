@@ -57,8 +57,10 @@ public:
   { return m_vertex_position; }
   const G4ThreeVector& GetVertexMomentum() const
   { return m_vertex_momentum; }
-  G4double      GetVertexKineticEnergy() const
+  G4double GetVertexKineticEnergy() const
   { return m_vertex_kinetic_energy; }
+  G4bool   Is(const G4String& particle_name) const;
+  G4bool   Is(G4int pdg_encoding) const;
   void          Print() const;
   TParticle* GetParticle() const { return m_particle; }
 };

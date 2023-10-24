@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <globals.hh>
+#include <G4LorentzVector.hh>
 #include <G4ThreeVector.hh>
 #include <G4String.hh>
 
@@ -57,6 +58,7 @@ using namespace root;
 
 struct Event
 {
+  Int_t evnum;
   std::map<TString, std::vector<TParticle>> hits;
 
   double x0In;
@@ -178,6 +180,10 @@ public:
   void MakeHistogram(const G4String& sd_name);
   void SetNhits(const G4String& sd_name, G4int nhits);
   void SetHitData(const VHitInfo* hit);
+  void SetPrimaryParticle(G4int id, G4int pdg,
+                          const G4LorentzVector& p,
+                          const G4LorentzVector& v,
+                          G4bool is_virtual_beam=false);
   void SetPrimaryData(G4double x0, G4double y0, G4double z0,
 		      G4double u0, G4double v0, G4double phi,
 		      G4double theta, G4double p0, G4double t0,

@@ -53,15 +53,16 @@ namespace
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
 const auto& sizeMan = DetSizeMan::GetInstance();
-const G4bool check_overlaps = true;
 const G4bool use_hebag = true;
 const MaterialList mlist;
 G4PVPlacement* physWorld;
+G4bool check_overlaps = false;
 // G4Material* matlHeBag = mlist.at("HeGas");
 }
 
 //_____________________________________________________________________________
 S2SDetectorConstruction::S2SDetectorConstruction()
+  : G4VUserDetectorConstruction()
 {
 }
 
@@ -77,6 +78,8 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   G4PhysicalVolumeStore::GetInstance()->Clean();
   G4LogicalVolumeStore::GetInstance()->Clean();
   G4SolidStore::GetInstance()->Clean();
+
+  check_overlaps = confMan.Get<G4bool>("CheckOverlap");
 
   ///// World
   const auto& half_size = sizeMan.GetSize("World")*mm/2.;

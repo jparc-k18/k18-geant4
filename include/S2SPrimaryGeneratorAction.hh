@@ -1,37 +1,21 @@
-/*
-  "S2SPrimaryGeneratorAction.hh"
-
-  Modified by Toshi Gogami , 10Nov2014
-*/
-
+// -*- C++ -*-
 
 #ifndef PRIMARY_GENERATOR_ACTION_H
 #define PRIMARY_GENERATOR_ACTION_H
 
-#include "G4VUserPrimaryGeneratorAction.hh"
-#include "globals.hh"
+#include <G4VUserPrimaryGeneratorAction.hh>
+#include <globals.hh>
 
 class G4ParticleGun;
 class G4ParticleDefinition;
 class G4Event;
 
-
-// ====================================================================
-//
-// class definition
-//
-// ====================================================================
-
+//_____________________________________________________________________________
 class S2SPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
 public:
   static G4String ClassName();
   S2SPrimaryGeneratorAction();
   ~S2SPrimaryGeneratorAction();
-
-  void GeneratePrimaries(G4Event* anEvent);
-  void GenerateUniform0(G4Event* anEvent);
-  void GenerateFocusCheck(G4Event* anEvent);
-  void GenerateMonoBeam(G4Event* anEvent);
 
 private:
   G4ParticleGun* particleGun;
@@ -44,6 +28,15 @@ private:
   G4int GenPID;
   G4int generator;
   G4double beamx, beamy, beamz;
+
+public:
+  void GeneratePrimaries(G4Event* anEvent);
+
+private:
+  void GenerateUniform0(G4Event* anEvent);
+  void GenerateFocusCheck(G4Event* anEvent);
+  void GenerateMonoBeam(G4Event* anEvent);
+  void GenerateAcceptance(G4Event* anEvent);
 };
 
 inline G4String

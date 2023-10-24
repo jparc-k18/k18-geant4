@@ -2,6 +2,7 @@
 
 #include "VHitInfo.hh"
 
+#include <G4ParticleTable.hh>
 #include <G4Step.hh>
 #include <G4Track.hh>
 
@@ -10,6 +11,11 @@
 
 #include "FuncName.hh"
 #include "PrintHelper.hh"
+
+namespace
+{
+const auto particleTable = G4ParticleTable::GetParticleTable();
+}
 
 //_____________________________________________________________________________
 VHitInfo::VHitInfo(const G4String& name, G4Step* step,
@@ -76,6 +82,20 @@ VHitInfo::VHitInfo(const G4String& name, G4Step* step,
 VHitInfo::~VHitInfo()
 {
   if (m_particle) delete m_particle;
+}
+
+//_____________________________________________________________________________
+G4bool
+VHitInfo::Is(const G4String& particle_name) const
+{
+  return Is(particleTable->FindParticle(particle_name)->GetPDGEncoding());
+}
+
+//_____________________________________________________________________________
+G4bool
+VHitInfo::Is(G4int pdg_encoding) const
+{
+  return pdg_encoding == m_pdg_encoding;
 }
 
 //_____________________________________________________________________________

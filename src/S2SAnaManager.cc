@@ -52,7 +52,7 @@ S2SAnaManager::S2SAnaManager()
     fActive_(true),
     fTriggered(false),
     m_file(),
-    m_tree(new TTree("g4s2s", "S-2S simulation"))
+    m_tree()
 {
 }
 
@@ -72,11 +72,12 @@ S2SAnaManager::BeginOfRun( const G4Run *aRun )
   static auto git = new TNamed
     ("git", ("\n"+gSystem->GetFromPipe("git log -1")).Data());
   git->Write();
-  m_tree->Reset();
+  m_tree = new TTree("g4s2s", "S-2S simulation");
   event.hits.clear();
+  event.evnum = 0;
   DefineTree();
   for(const auto& sd_name : std::vector<G4String>{
-      "SDC", "TOF", "VP" }
+      "PRM", "SDC", "TOF", "VP" }
         // S2SDetectorConstruction::GetSDList()
     ){
     G4cout << "   make branch : " << sd_name << G4endl;
@@ -92,6 +93,7 @@ S2SAnaManager::BeginOfRun( const G4Run *aRun )
 void
 S2SAnaManager::EndOfRun(const G4Run* aRun)
 {
+  G4cout << FUNC_NAME << " " << event.evnum << G4endl;
   m_file->cd();
   m_tree->Write();
   for(auto& h: hmap){
@@ -132,19 +134,31 @@ S2SAnaManager::MakeBranch(const G4String& sd_name)
 void
 S2SAnaManager::MakeHistogram(const G4String& sd_name)
 {
-  for(const auto& suffix: std::vector<G4String>
-        { "Nhits", "HitPat", "X", "Y", "Z", "U", "V",
-          "Y%X", "V%U", "U%X", "V%Y" }){
-    TString key = sd_name + suffix;
-    TString title = sd_name + " " + suffix;
-    const auto& params = histMan.Get(key);
-    if(G4StrUtil::contains(suffix, "%")){
-      hmap[key] = new TH2D(key, title,
-                           params.at(0), params.at(1), params.at(2),
-                           params.at(3), params.at(4), params.at(5));
-    }else{
-      hmap[key] = new TH1D(key, title,
-                           params.at(0), params.at(1), params.at(2));
+  if(sd_name == "PRM"){
+    TString key = sd_name + "PThetaGen";
+    TString title = sd_name + " P%Theta (Generate); [deg.]; [GeV/c]";
+    hmap[key] = new TH2D(key, title,
+                         200, 0, 30, 200, 1, 1.8);
+    key = sd_name + "PThetaAcc";
+    title = sd_name + " P%Theta (Accept); [deg.]; [GeV/c]";
+    hmap[key] = new TH2D(key, title,
+                         200, 0, 30, 200, 1, 1.8);
+  }else{
+    for(const auto& suffix: std::vector<G4String>
+          { "Nhits", "HitPat", "X", "Y", "Z", "U", "V",
+            "Y%X", "V%U", "U%X", "V%Y" }){
+      TString key = sd_name + suffix;
+      const auto& params = histMan.Get(key);
+      TString title = sd_name + " " + suffix;
+      key.ReplaceAll("%", "");
+      if(G4StrUtil::contains(suffix, "%")){
+        hmap[key] = new TH2D(key, title,
+                             params.at(0), params.at(1), params.at(2),
+                             params.at(3), params.at(4), params.at(5));
+      }else{
+        hmap[key] = new TH1D(key, title,
+                             params.at(0), params.at(1), params.at(2));
+      }
     }
   }
 }
@@ -199,47 +213,53 @@ void S2SAnaManager::SetProcessData(G4int nP, G4int nN, G4int nL,
 
 void S2SAnaManager::BeginOfEvent( const G4Event *anEvent )
 {
-  InitializeEvent();
-  for(auto& pair: event.hits){
-    pair.second.clear();
+  if(event.evnum%1000 == 0){
+    G4cout << FUNC_NAME << " " << event.evnum << G4endl;
   }
 }
 
 void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
 {
-  return;
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
-  for(G4int k=1; k<=5; ++k){
-    G4String name = "SDC"+std::to_string(k);
-    static const auto id = SDMan->GetCollectionID(name);
-    G4cout << id << G4endl;
-    auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
-    for(G4int i=0, n=HC->entries(); i<n; ++i){
-      SetHitData((*HC)[i]);
-    }
-    SetNhits(name, HC->entries());
-  }
+  std::bitset<16> trigger_flag;
+  // for(G4int k=1; k<=5; ++k){
+  //   G4String name = "SDC"+std::to_string(k);
+  //   static const auto id = SDMan->GetCollectionID(name);
+  //   if(id > 0){
+  //     auto HC = dynamic_cast<SDCHitsCollection*>(HCE->GetHC(id));
+  //     for(G4int i=0, n=HC->entries(); i<n; ++i){
+  //       SetHitData((*HC)[i]);
+  //     }
+  //     SetNhits(name, HC->entries());
+  //   }
+  // }
   {
     static const auto id = SDMan->GetCollectionID("TOF");
-    auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
-    for(G4int i=0, n=HC->entries(); i<n; ++i){
-      SetHitData((*HC)[i]);
+    if(id > 0){
+      auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
+      for(G4int i=0, n=HC->entries(); i<n; ++i){
+        auto hit = (*HC)[i];
+        if(hit->Is("kaon+")) trigger_flag.set(0);
+        SetHitData(hit);
+      }
+      SetNhits("TOF", HC->entries());
     }
-    SetNhits("TOF", HC->entries());
   }
   {
     static const auto id = SDMan->GetCollectionID("VP");
-    auto HC = dynamic_cast<VPHitsCollection*>(HCE->GetHC(id));
-    for(G4int i=0, n=HC->entries(); i<n; ++i){
-      SetHitData((*HC)[i]);
+    if(id > 0){
+      auto HC = dynamic_cast<VPHitsCollection*>(HCE->GetHC(id));
+      for(G4int i=0, n=HC->entries(); i<n; ++i){
+        SetHitData((*HC)[i]);
+      }
+      SetNhits("VP", HC->entries());
     }
-    SetNhits("VP", HC->entries());
   }
 
+#if 0
   //   G4int nhAc=0;
   G4int nhWC=0;
-
   // static const G4int colIdAC = SDMan->GetCollectionID("AC");
   static const G4int colIdWC = SDMan->GetCollectionID("WC");
 
@@ -326,8 +346,16 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
 
   event.Q1Trig = Q1Flag;
   event.Q2Trig = Q2Flag;
+#endif
+
+  if(trigger_flag[0]){
+    auto particle = event.hits.at("PRM").at(0);
+    hmap.at("PRMPThetaGen")->Fill(particle.Theta()/CLHEP::degree,
+                                  particle.P()/CLHEP::GeV);
+  }
 
   m_tree->Fill();
+  InitializeEvent();
 }
 
 //_____________________________________________________________________________
@@ -351,76 +379,25 @@ S2SAnaManager::SetHitData(const VHitInfo* hit)
     hmap[name + "Z"]->Fill(p->Vz());
     hmap[name + "U"]->Fill(p->Px()/p->Pz());
     hmap[name + "V"]->Fill(p->Py()/p->Pz());
-    hmap[name + "Y%X"]->Fill(p->Vx(), p->Vy());
-    hmap[name + "V%U"]->Fill(p->Px()/p->Pz(), p->Py()/p->Pz());
-    hmap[name + "U%X"]->Fill(p->Vx(), p->Px()/p->Pz());
-    hmap[name + "V%Y"]->Fill(p->Vy(), p->Py()/p->Pz());
+    hmap[name + "YX"]->Fill(p->Vx(), p->Vy());
+    hmap[name + "VU"]->Fill(p->Px()/p->Pz(), p->Py()/p->Pz());
+    hmap[name + "UX"]->Fill(p->Vx(), p->Px()/p->Pz());
+    hmap[name + "VY"]->Fill(p->Vy(), p->Py()/p->Pz());
   }
 }
 
 void S2SAnaManager::InitializeEvent()
 {
-  for(int i=0 ; i<18 ; i++){
-    // ------- Virtual detectors (slits) ------
-    if(i<11){
-      for( int ihit = 0; ihit < MaxHits; ihit++ ) event.SlitX[i][ihit]    = qnan;
-      event.SlitY[i]    = qnan;
-      event.SlituDeg[i] = qnan;
-      event.SlitvDeg[i] = qnan;
-      event.Slitt[i]    = qnan;
-      event.SlitMom[i]  = qnan;
-      event.Slitp[i]    = qnan;
-      event.SlitNh[i]   = 0;
-      event.SlitNP[i]   = 0;
-      event.SlitNK[i]   = 0;
-      event.SlitNPi[i]  = 0;
-      event.SlitF[i]    = 0;
-    }
-
-    // ------- TOF detector ------
-    //event.tofco[i]        = qnan;
-    event.toftime[i]      = 0.0;
-    event.toftime_reso[i] = 0.0;
-    event.tofdE[i]        = 0.0;
-    event.tofn[i]         = 0.0;
-
-    // ------- Water Cherenkov detector ------
-    if(i<12){
-      event.wctime[i] = 0.0;
-      event.wcdE[i]   = 0.0;
-      event.wcn[i]    = 0.0;
-      event.wcnpe[i]  = 0.0;
-    }
-    if(i<6){
-      event.wctime1[i] = 0.0;
-      event.wcdE1[i]   = 0.0;
-      event.wcn1[i]    = 0.0;
-      event.wcnpe1[i]  = 0.0;
-      event.wctime2[i] = 0.0;
-      event.wcdE2[i]   = 0.0;
-      event.wcn2[i]    = 0.0;
-      event.wcnpe2[i]  = 0.0;
-    }
+  ++event.evnum;
+  for(auto& pair: event.hits){
+    pair.second.clear();
   }
-
-  // event.TOFNhits = -999;
-  // event.ACNhits = -999;
-  // event.WCNhits = -999;
-  // event.TOFHit = -999;
-  // event.ACHit = -999;
-  // event.WCHit = -999;
-  // event.ACX = qnan;
-  // event.ACY = qnan;
-  // event.ACt = qnan;
-  // for(int i=0;i<NumWCSeg;i++){
-  //   event.WCt[i] = qnan;
-  //   event.WCp[i] = qnan;
-  // }
-  //  G4cout<<"S2SAnaManager InitializeEvent"<<G4endl;
 }
 
 void S2SAnaManager::DefineTree()
 {
+  m_tree->Branch("evnum", &event.evnum, "evnum/I");
+  return;
   m_tree->Branch("x0",&event.x0In, "x0/D");
   m_tree->Branch("y0",&event.y0In, "y0/D");
   m_tree->Branch("z0",&event.z0In, "z0/D");
@@ -518,9 +495,40 @@ void S2SAnaManager::DefineTree()
 
 }
 
-void S2SAnaManager::
-PrintHitsInformation( const G4Event *anEvent,
-		      std::ostream &ost ) const
+//_____________________________________________________________________________
+void
+S2SAnaManager::SetPrimaryParticle(G4int id, G4int pdg,
+                                  const G4LorentzVector& p,
+                                  const G4LorentzVector& v,
+                                  G4bool is_virtual_beam)
+{
+  G4int id1 = is_virtual_beam ? -1 : 1;
+  G4int id2 = id;
+  for (const auto& ptcl: event.hits.at("PRM")) {
+    if (ptcl.GetMother(0) == id1 && ptcl.GetMother(1) == id2) {
+      G4cerr << FUNC_NAME << " id1=" << id1 << ", id2=" << id2
+             << " is already set" << G4endl;
+    }
+  }
+  TParticle particle(pdg,
+                     0, // fStatus
+                     id1, // fMother[0]
+                     id2, // fMother[1]
+                     0, // fDaughter[0]
+                     0, // fDaughter[1]
+                     TLorentzVector(p.px(), p.py(), p.pz(), p.e()),
+                     TLorentzVector(v.x(), v.y(), v.z(), v.t()));
+  event.hits.at("PRM").push_back(particle);
+
+  if(id == 0){
+    hmap.at("PRMPThetaGen")->Fill(p.theta()/CLHEP::degree,
+                                  p.v().mag()/CLHEP::GeV);
+  }
+}
+
+//_____________________________________________________________________________
+void S2SAnaManager::PrintHitsInformation(const G4Event *anEvent,
+                                         std::ostream &ost) const
 {
   //   G4cout<<"PrintHits is called"<<G4endl;
 

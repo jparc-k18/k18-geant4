@@ -10,7 +10,7 @@ obj_dir=$main_dir/obj
 bin_dir=$main_dir/bin
 
 ##### macOS
-if [ "$(uname)" == 'Darwin' -a ! -e "$src_dir/Dict.cc" ]; then
+if [ "$(uname)" == 'Darwin' -a ! -e "$src_dir/Dict_rdict.pcm" ]; then
     rootcling -f $src_dir/Dict.cc -c TVector3.h TParticle.h \
 	      $linkdef_dir/LinkDef.h
 fi
@@ -22,6 +22,6 @@ cmake .. -DCMAKE_INSTALL_PREFIX=$main_dir \
 cmake --build . -- -j4
 cmake --install .
 
-if [ "$(uname)" == 'Darwin' -a ! -e "$obj_dir/Dict_rdict.pcm" ]; then
-    cp $src_dir/Dict_rdict.pcm $obj_dir
+if [ "$(uname)" == 'Darwin' -a ! -e "$bin_dir/Dict_rdict.pcm" ]; then
+    cp $src_dir/Dict_rdict.pcm $bin_dir
 fi
