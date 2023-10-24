@@ -1,6 +1,13 @@
 #----------------------------------------------------------------------------
 # Setup the project
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.17)
+cmake_host_system_information(RESULT host QUERY HOSTNAME)
+cmake_host_system_information(RESULT ncpu QUERY NUMBER_OF_PHYSICAL_CORES)
+if(host MATCHES ".kek\.jp")
+  message(STATUS "The hostname is ${host}")
+  set(CMAKE_C_COMPILER /opt/gcc-8.3.0/bin/gcc)
+  set(CMAKE_CXX_COMPILER /opt/gcc-8.3.0/bin/g++)
+endif()
 project(S2S)
 
 #----------------------------------------------------------------------------
@@ -46,11 +53,13 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 add_executable(G4S2S main.cc ${sources} ${headers})
 target_link_libraries(G4S2S ${Geant4_LIBRARIES} ${ROOT_LIBRARIES})
 
-# root_generate_dictionary(G4S2S_dict TParticle.h TVector3.h
-# 		LINKDEF ${PROJECT_SOURCE_DIR}/linkdef/LinkDef.h
-# 		MODULE G4S2S)
-# add_library(G4S2S_lib SHARED G4S2S_dict)
-# target_link_libraries(G4S2S G4S2S_lib)
+if(UNIX AND NOT APPLE)
+  root_generate_dictionary(G4S2S_dict TParticle.h TVector3.h
+		LINKDEF ${PROJECT_SOURCE_DIR}/linkdef/LinkDef.h
+		MODULE G4S2S)
+  add_library(G4S2S_lib SHARED G4S2S_dict)
+  target_link_libraries(G4S2S G4S2S_lib)
+endif()
 
 #----------------------------------------------------------------------------
 install(TARGETS G4S2S RUNTIME DESTINATION bin)

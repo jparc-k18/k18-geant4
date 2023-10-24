@@ -17,7 +17,7 @@ fi
 
 mkdir -pv $obj_dir
 cd $obj_dir
-cmake .. -DCMAKE_INSTALL_PREFIX=$main_dir \
+cmake .. -DCMAKE_INSTALL_PREFIX=$G4WORKDIR \
       -DCMAKE_INSTALL_RPATH_USE_LINK_PATH="ON"
 cmake --build . -- -j4
 cmake --install .

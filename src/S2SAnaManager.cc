@@ -2,6 +2,8 @@
 
 #include "S2SAnaManager.hh"
 
+#include <deque>
+
 #include "G4Run.hh"
 #include "G4Event.hh"
 #include "G4Step.hh"
@@ -222,7 +224,7 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
 {
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
-  std::bitset<16> trigger_flag;
+  std::deque<G4bool> trigger_flag(32);
   // for(G4int k=1; k<=5; ++k){
   //   G4String name = "SDC"+std::to_string(k);
   //   static const auto id = SDMan->GetCollectionID(name);
@@ -240,7 +242,7 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
       auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         auto hit = (*HC)[i];
-        if(hit->Is("kaon+")) trigger_flag.set(0);
+        if(hit->Is("kaon+")) trigger_flag[0] = true;
         SetHitData(hit);
       }
       SetNhits("TOF", HC->entries());
