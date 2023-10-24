@@ -352,7 +352,7 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
 
   if(trigger_flag[0]){
     auto particle = event.hits.at("PRM").at(0);
-    hmap.at("PRMPThetaGen")->Fill(particle.Theta()/CLHEP::degree,
+    hmap.at("PRMPThetaAcc")->Fill(particle.Theta()/CLHEP::degree,
                                   particle.P()/CLHEP::GeV);
   }
 
