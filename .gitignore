@@ -11,20 +11,11 @@
 build/
 bin/
 lib/
+old/
+backup/
 !.gitkeep
 
 CMakeLists.txt
 fieldmap
 G4History.macro
-run
 c1.pdf
-rootfile
-
-/run/conf/*
-!/run/conf/param.conf
-!/run/conf/Gene1_E70Tgt.conf
-
-/run/macro/*
-!/run/macro/dawn.mac
-!/run/macro/run.mac
-!/run/macro/vrml.mac
