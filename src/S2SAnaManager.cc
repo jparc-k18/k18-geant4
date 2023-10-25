@@ -76,7 +76,7 @@ S2SAnaManager::BeginOfRun( const G4Run *aRun )
   git->Write();
   m_tree = new TTree("g4s2s", "S-2S simulation");
   event.hits.clear();
-  event.evnum = 0;
+  event.evnum = -1;
   DefineTree();
   for(const auto& sd_name : std::vector<G4String>{
       "PRM", "SDC", "TOF", "AC1", "WC", "VP" }
@@ -95,7 +95,6 @@ S2SAnaManager::BeginOfRun( const G4Run *aRun )
 void
 S2SAnaManager::EndOfRun(const G4Run* aRun)
 {
-  G4cout << FUNC_NAME << " " << event.evnum << G4endl;
   m_file->cd();
   m_tree->Write();
   for(auto& h: hmap){
@@ -213,14 +212,12 @@ void S2SAnaManager::SetProcessData(G4int nP, G4int nN, G4int nL,
   event.nKp = nKp;
 }
 
-void S2SAnaManager::BeginOfEvent( const G4Event *anEvent )
+void S2SAnaManager::BeginOfEvent(const G4Event *anEvent)
 {
-  if(event.evnum%1000 == 0){
-    G4cout << FUNC_NAME << " " << event.evnum << G4endl;
-  }
+  event.evnum = anEvent->GetEventID();
 }
 
-void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
+void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
 {
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
@@ -415,7 +412,6 @@ S2SAnaManager::SetHitData(const VHitInfo* hit)
 
 void S2SAnaManager::InitializeEvent()
 {
-  ++event.evnum;
   for(auto& pair: event.hits){
     pair.second.clear();
   }

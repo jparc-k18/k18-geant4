@@ -1,32 +1,30 @@
-/*
-  "S2SEventAction.hh"
+// -*- C++ -*-
 
-  Modified by Toshiyuki Gogami on 20Nov2014.
-*/
+#ifndef S2S_EVENT_ACTION_HH
+#define S2S_EVENT_ACTION_HH
 
-#ifndef S2SEventAction_h
-#define S2SEventAction_h 1
+#include <G4UserEventAction.hh>
+#include <globals.hh>
 
-#include "G4UserEventAction.hh"
-#include "globals.hh"
-
+//_____________________________________________________________________________
 class S2SEventAction : public G4UserEventAction
 {
 public:
+  static G4String ClassName();
   S2SEventAction();
   ~S2SEventAction();
 
 public:
-  void  BeginOfEventAction(const G4Event*);
-  void  EndOfEventAction(const G4Event*);
-  void SetDrawFlag   (G4String val)  {drawFlag = val;};
-  void SetPrintModulo(G4int    val)  {printModulo = val;};
-
-private:
-  G4String  drawFlag;
-  G4int printModulo;
-  G4int DCcolID;
-  time_t start,end;
+  virtual void BeginOfEventAction(const G4Event*);
+  virtual void EndOfEventAction(const G4Event*);
 };
+
+//_____________________________________________________________________________
+inline G4String
+S2SEventAction::ClassName()
+{
+  static G4String s_name("S2SEventAction");
+  return s_name;
+}
 
 #endif

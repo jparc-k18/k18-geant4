@@ -15,10 +15,14 @@
 #include <G4StoppingPhysics.hh>
 #include <G4HadronElasticPhysics.hh>
 #include <G4NeutronTrackingCut.hh>
-
 #include <G4HadronPhysicsQGSP_BERT.hh>
+#include <G4VPhysicsConstructor.hh>
 
 #include "ConfMan.hh"
+#include "FuncName.hh"
+
+#define G4MT_physicsVector                                                    \
+  ((G4VMPLsubInstanceManager.offset[g4vmplInstanceID]).physicsVector)
 
 namespace
 {
@@ -26,40 +30,74 @@ const auto& confMan = ConfMan::GetInstance();
 }
 
 //_____________________________________________________________________________
-S2SPhysicsList::S2SPhysicsList(G4int verbose_level)
+S2SPhysicsList::S2SPhysicsList(G4int ver)
   : G4VModularPhysicsList()
 {
-  if(verbose_level > 0){
-    G4cout << "<<< Geant4 Physics List simulation engine: S2SPhysicsList"<<G4endl;
-    G4cout <<G4endl;
-  }
   defaultCutValue = 0.7*CLHEP::mm;
-  SetVerboseLevel(verbose_level);
+  verboseLevel = ver;
 
-  if(confMan.Get<G4bool>("EM")){
-    // EM Physics
-    RegisterPhysics(new G4EmStandardPhysics(verbose_level));
-    // Synchroton Radiation & GN Physics
-    RegisterPhysics(new G4EmExtraPhysics(verbose_level));
-  }
+  // EM Physics
+  RegisterPhysics(new G4EmStandardPhysics(ver));
+  // Synchroton Radiation & GN Physics
+  RegisterPhysics(new G4EmExtraPhysics(ver));
 
-  if(confMan.Get<G4bool>("DECAY")){
-    // Decays
-    RegisterPhysics(new G4DecayPhysics(verbose_level));
-  }
+  // Decays
+  RegisterPhysics(new G4DecayPhysics(ver));
 
-  if(confMan.Get<G4bool>("HADRON")){
-    // Hadron Elastic scattering
-    RegisterPhysics(new G4HadronElasticPhysics(verbose_level));
-    // Hadron Physics
-    RegisterPhysics(new G4HadronPhysicsQGSP_BERT(verbose_level));
-  }
+  // Hadron Elastic scattering
+  RegisterPhysics(new G4HadronElasticPhysics(ver));
+  // Hadron Physics
+  RegisterPhysics(new G4HadronPhysicsQGSP_BERT(ver));
 
   ///// Others
   // Stopping Physics
-  RegisterPhysics(new G4StoppingPhysics(verbose_level));
+  RegisterPhysics(new G4StoppingPhysics(ver));
   // Ion Physics
-  RegisterPhysics(new G4IonPhysics(verbose_level));
+  RegisterPhysics(new G4IonPhysics(ver));
   // Neutron tracking cut
-  RegisterPhysics(new G4NeutronTrackingCut(verbose_level));
+  RegisterPhysics(new G4NeutronTrackingCut(ver));
+}
+
+//_____________________________________________________________________________
+void
+S2SPhysicsList::ConstructParticle()
+{
+  for(auto itr = G4MT_physicsVector->cbegin();
+      itr != G4MT_physicsVector->cend(); ++itr)
+  {
+    (*itr)->ConstructParticle();
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SPhysicsList::ConstructProcess()
+{
+  // G4AutoLock l(&constructProcessMutex);
+  AddTransportation();
+
+  for(auto itr = G4MT_physicsVector->cbegin();
+      itr != G4MT_physicsVector->cend(); ++itr)
+  {
+    auto name = (*itr)->GetPhysicsName();
+    if(name == "G4EmStandard" || name == "G4GammaLeptoNuclearPhys"){
+      if(!confMan.Get<G4bool>("EM")) continue;
+    }else if(name == "Decay"){
+      if(!confMan.Get<G4bool>("DECAY")) continue;
+    }else{
+      if(!confMan.Get<G4bool>("HADRON")) continue;
+    }
+
+    if(verboseLevel > 0)
+      G4cout << FUNC_NAME << " Construct " << name << G4endl;
+
+    (*itr)->ConstructProcess();
+  }
+}
+
+//_____________________________________________________________________________
+void
+S2SPhysicsList::SetCuts()
+{
+  SetCutsWithDefault();
 }

@@ -5,15 +5,16 @@
 #include <iomanip>
 #include <time.h>
 
-#include "G4Event.hh"
-#include "G4TrajectoryContainer.hh"
-#include "G4VTrajectory.hh"
-#include "G4VVisManager.hh"
-#include "G4UnitsTable.hh"
-#include "G4SDManager.hh"
-#include "Randomize.hh"
+#include <G4Event.hh>
+#include <G4SDManager.hh>
+#include <G4Trajectory.hh>
+#include <G4TrajectoryContainer.hh>
+#include <G4UnitsTable.hh>
+#include <G4VTrajectory.hh>
+#include <G4VVisManager.hh>
+#include <Randomize.hh>
 
-#include "DCHit.hh"
+#include "FuncName.hh"
 #include "S2SAnaManager.hh"
 
 namespace
@@ -21,66 +22,41 @@ namespace
 auto& anaMan = S2SAnaManager::GetInstance();
 }
 
+//_____________________________________________________________________________
 S2SEventAction::S2SEventAction()
-  : drawFlag("all"), printModulo(100), DCcolID(-1)
 {
-  start = time(NULL);
-  time(&start);
 }
 
+//_____________________________________________________________________________
 S2SEventAction::~S2SEventAction()
 {
 }
 
-void S2SEventAction::BeginOfEventAction(const G4Event* evt)
+//_____________________________________________________________________________
+void
+S2SEventAction::BeginOfEventAction(const G4Event* evt)
 {
-  anaMan.BeginOfEvent( evt );
+  anaMan.BeginOfEvent(evt);
 }
 
-void S2SEventAction::EndOfEventAction(const G4Event* evt)
+//_____________________________________________________________________________
+void
+S2SEventAction::EndOfEventAction(const G4Event* evt)
 {
-  // ~~~~~~~~ Periodic printing ~~~~~~~~~
   G4int event_id = evt->GetEventID();
-  char anatime[100];
-  if((int)event_id % 10000 == 0 ){
-    end = time(NULL);
-    time(&end);
-    sprintf( anatime,"%.0f Sec",difftime(end,start) );
-    G4cout << "Event ID : " << evt->GetEventID()
-	   << " ( " << anatime << " ) " << G4endl;
+  if(event_id % 1000 == 0){
+    G4cout << FUNC_NAME << " " << event_id << G4endl;
   }
-
   anaMan.EndOfEvent( evt );
 
-  // extract the trajectories and draw them
-
-  // You can get a default drawing without this code by using, e.g.,
-  // /vis/scene/add/trajectories 1000
-  // The code here adds sophistication under control of drawFlag.
-
-  // See comments in G4VTrajectory::DrawTrajectory for the
-  // interpretation of the argument, 1000.
-
-  //
-  //  G4VVisManager* pVisManager = G4VVisManager::GetConcreteInstance();
-  //  if (pVisManager)
-  //    {
-  //      G4TrajectoryContainer* trajectoryContainer = evt->GetTrajectoryContainer();
-  //      G4int n_trajectories = 0;
-  //      if (trajectoryContainer) n_trajectories = trajectoryContainer->entries();
-  //
-  //      for (G4int i=0; i<n_trajectories; i++)
-  //        { G4VTrajectory* trj = ((*(evt->GetTrajectoryContainer()))[i]);
-  //	  //trj->DrawTrajectory(1);
-  //	  /*
-  //	    if (drawFlag == "all") pVisManager->Draw(*trj,1000);
-  //	    else if ((drawFlag == "charged")&&(trj->GetCharge() != 0.))
-  //	    pVisManager->Draw(*trj,1000);
-  //	    else if ((drawFlag == "neutral")&&(trj->GetCharge() == 0.))
-  //	    pVisManager->Draw(*trj,1000);
-  //	  */
-  //        }
-  //    }
+  // auto trajectoryContainer = evt->GetTrajectoryContainer();
+  // if(trajectoryContainer && G4VVisManager::GetConcreteInstance()){
+  //   G4int n_trajectories = trajectoryContainer->entries();
+  //   for(G4int i=0; i<n_trajectories; ++i){
+  //     auto trj = (G4Trajectory*)((*(evt->GetTrajectoryContainer()))[i]);
+  //     trj->DrawTrajectory();
+  //   }
+  // }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

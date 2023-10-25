@@ -1,6 +1,6 @@
 /*
   "S2SSteppingAction.cc"
-  
+
   Modified by Toshiyuki Gogami on 20Nov2014
 */
 
@@ -34,5 +34,3 @@ void S2SSteppingAction::UserSteppingAction(const G4Step * theStep)
     theTrack->SetTrackStatus(fKillTrackAndSecondaries);
   }
 }
-
-

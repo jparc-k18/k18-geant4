@@ -1,35 +1,34 @@
-/*
-  "S2SRunAction.hh"
+// -*- C++ -*-
 
-  T.Gogami, 10 Nov 2014
-*/
+#ifndef S2S_RUN_ACTION_HH
+#define S2S_RUN_ACTION_HH 1
 
-#ifndef S2SRunAction_h
-#define S2SRunAction_h 1
+#include <G4UserRunAction.hh>
 
-//#include "S2SParamManager.hh"
-
-#include "G4UserRunAction.hh"
-#include "ConfMan.hh"
-#include "S2SAnaManager.hh"
-#include "globals.hh"
-
-#include <TFile.h>
-#include <TTree.h>
-#include <TObjArray.h>
-#include <TH1F.h>
+#include <G4String.hh>
+#include <globals.hh>
 
 class G4Run;
 
+//_____________________________________________________________________________
 class S2SRunAction : public G4UserRunAction
 {
 public:
+  static G4String ClassName();
   S2SRunAction();
   virtual ~S2SRunAction();
 
-  void BeginOfRunAction(const G4Run*);
-  void EndOfRunAction(const G4Run*);
-
+public:
+  virtual void BeginOfRunAction(const G4Run*);
+  virtual void EndOfRunAction(const G4Run*);
 };
+
+//_____________________________________________________________________________
+inline G4String
+S2SRunAction::ClassName()
+{
+  static G4String s_name("S2SRunAction");
+  return s_name;
+}
 
 #endif
