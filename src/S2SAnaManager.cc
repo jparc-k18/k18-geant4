@@ -65,7 +65,7 @@ S2SAnaManager::~S2SAnaManager()
 
 //_____________________________________________________________________________
 void
-S2SAnaManager::BeginOfRun( const G4Run *aRun )
+S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
 {
   fActive_=true;
   m_file = new TFile(m_file_name, "recreate");
@@ -93,10 +93,11 @@ S2SAnaManager::BeginOfRun( const G4Run *aRun )
 
 //_____________________________________________________________________________
 void
-S2SAnaManager::EndOfRun(const G4Run* aRun)
+S2SAnaManager::EndOfRun(const G4Run* /* aRun */)
 {
   m_file->cd();
-  m_tree->Write();
+  if(confMan.Get<G4bool>("TREE"))
+    m_tree->Write();
   for(auto& h: hmap){
     h.second->Write();
   }
@@ -168,7 +169,7 @@ S2SAnaManager::MakeHistogram(const G4String& sd_name)
 void
 S2SAnaManager::SetPrimaryData(double x0, double y0, double z0,
                               double u0, double v0, double phi, double theta,
-                              double p0,double t0,int ParIdNb)
+                              double p0,double t0, int /* ParIdNb */)
 {
   event.x0In = x0; // generated position (x)
   event.y0In = y0; // generated position (y)
@@ -378,7 +379,9 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
                                   particle.P()/CLHEP::GeV);
   }
 
-  m_tree->Fill();
+  if(confMan.Get<G4bool>("TREE"))
+    m_tree->Fill();
+
   InitializeEvent();
 }
 
@@ -550,15 +553,15 @@ S2SAnaManager::SetPrimaryParticle(G4int id, G4int pdg,
 }
 
 //_____________________________________________________________________________
-void S2SAnaManager::PrintHitsInformation(const G4Event *anEvent,
+void S2SAnaManager::PrintHitsInformation(const G4Event* /* anEvent */,
                                          std::ostream &ost) const
 {
   //   G4cout<<"PrintHits is called"<<G4endl;
 
   //  int GeomFlag = confMan->GeomFlag();
 
-  G4HCofThisEvent *HCE = anEvent->GetHCofThisEvent();
-  G4SDManager *SDMan = G4SDManager::GetSDMpointer();
+  // G4HCofThisEvent *HCE = anEvent->GetHCofThisEvent();
+  // G4SDManager *SDMan = G4SDManager::GetSDMpointer();
 
   std::ios::fmtflags oldFlags = ost.flags();
   std::size_t preSiz = ost.precision();
@@ -585,7 +588,7 @@ void S2SAnaManager::PrintHitsInformation(const G4Event *anEvent,
   //G4cout<<"osf="<<ost<<G4endl;
   //G4cout<<"x0="<<event.x0In<<" y0="<<event.y0In<<G4endl;
 
-  const DCGeomMan & geomMan=DCGeomMan::GetInstance();
+  // const DCGeomMan & geomMan=DCGeomMan::GetInstance();
 
   // G4double nhTOF=0;
   // TOFHitsCollection    *TOFHC;
