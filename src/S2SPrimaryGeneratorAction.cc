@@ -6,7 +6,6 @@
 #include <G4ParticleGun.hh>
 #include <G4ParticleTable.hh>
 #include <G4ParticleDefinition.hh>
-#include <G4SystemOfUnits.hh>
 #include <G4LorentzVector.hh>
 #include <G4ThreeVector.hh>
 #include <Randomize.hh>
@@ -16,12 +15,15 @@
 #include "ConfMan.hh"
 #include "DCGeomMan.hh"
 #include "FuncName.hh"
-#include "MagnetConstant.hh"
 #include "S2SAnaManager.hh"
 #include "DetSizeMan.hh"
 
 namespace
 {
+using CLHEP::mm;
+using CLHEP::deg;
+using CLHEP::radian;
+using CLHEP::GeV;
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
 const auto& sizeMan = DetSizeMan::GetInstance();
@@ -108,8 +110,8 @@ S2SPrimaryGeneratorAction::GenerateUniform0(G4Event* anEvent)
   //G4double xlim = 10*cm;
   //G4double ylim = 2.5*cm;
   //G4double zlim = 1.5*cm;
-  G4double xorg = -rhoD*tan(bendAngleD*TMath::DegToRad()/2.)-driftL2-Q2z-driftL1-Q1z;
-  G4double x0 = xorg-T2Distance; // Beam direction
+  G4double xorg = 0;//-rhoD*tan(bendAngleD*TMath::DegToRad()/2.)-driftL2-Q2z-driftL1-Q1z;
+  G4double x0 = 0;//xorg-T2Distance; // Beam direction
   G4double y0 = 0.0; // Horizontal direction
   G4double z0 = 0.0; // Vertical direction
   x0 = x0 + beamz*( G4UniformRand()-0.5 ); // Beam direction
@@ -131,7 +133,7 @@ S2SPrimaryGeneratorAction::GenerateUniform0(G4Event* anEvent)
   particleGun->SetParticlePosition(vertex);
 
   // ~~~~~~~~~~~ Particle Direction ~~~~~~~~~~~~~~~~~~
-  G4double limitTheta = thetamax*TMath::DegToRad(); // [deg] --> [rad]
+  G4double limitTheta = thetamax*deg; // [deg] --> [rad]
   //G4double limitTheta = 25*TMath::DegToRad(); //degree
   //G4double limituAng = 10*TMath::DegToRad();
   //G4double limitvAng = 20*TMath::DegToRad();
@@ -240,8 +242,8 @@ S2SPrimaryGeneratorAction::GenerateFocusCheck(G4Event* anEvent)
   //G4double xlim = 10*cm;
   //G4double ylim = 2.5*cm;
   //G4double zlim = 1.5*cm;
-  G4double xorg = -rhoD*tan(bendAngleD*TMath::DegToRad()/2.)-driftL2-Q2z-driftL1-Q1z;
-  G4double x0 = xorg-T2Distance; // Beam direction
+  G4double xorg = 0;//-rhoD*tan(bendAngleD*TMath::DegToRad()/2.)-driftL2-Q2z-driftL1-Q1z;
+  G4double x0 = 0;//xorg-T2Distance; // Beam direction
   G4double y0 = 0.0; // Horizontal direction
   G4double z0 = 0.0; // Vertical direction
   x0 = x0 + beamz*( G4UniformRand()-0.5 ); // Beam direction
@@ -333,7 +335,7 @@ S2SPrimaryGeneratorAction::GenerateMonoBeam(G4Event* anEvent)
   m_particle = particleTable->FindParticle(name);
   static const auto pdg = m_particle->GetPDGEncoding();
   const G4double m0 = m_particle->GetPDGMass();
-  const G4double p0 = 1.37*CLHEP::GeV;
+  const G4double p0 = 1.37*GeV;
   const auto& target_pos = geomMan.GetGlobalPosition("Target");
   G4LorentzVector p(0, 0, p0, TMath::Sqrt(p0*p0 + m0*m0));
   G4LorentzVector v(target_pos, 0);
@@ -355,12 +357,13 @@ S2SPrimaryGeneratorAction::GenerateAcceptance(G4Event* anEvent)
   // static const G4String name = "proton";
   m_particle = particleTable->FindParticle(name);
   static const auto pdg = m_particle->GetPDGEncoding();
-  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*CLHEP::mm;
-  static const auto& target_size = sizeMan.GetSize("Target")*CLHEP::mm/2;
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
   static const G4double m0 = m_particle->GetPDGMass();
-  G4double p0 = G4RandFlat::shoot(1.0, 1.8)*CLHEP::GeV;
-  G4double theta = std::acos(G4RandFlat::shoot(std::sqrt(3.)/2., 1.))*CLHEP::radian;
-  G4double phi = G4RandFlat::shoot(0., 180.)*CLHEP::deg;
+  G4double p0 = G4RandFlat::shoot(1.0, 1.8)*GeV;
+  G4double theta =
+    std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(30*deg)))*radian;
+  G4double phi = G4RandFlat::shoot(0., 360.)*deg;
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
   G4double x0 =  G4RandFlat::shoot(-target_size.x(), target_size.x());
@@ -369,8 +372,8 @@ S2SPrimaryGeneratorAction::GenerateAcceptance(G4Event* anEvent)
   G4LorentzVector v(target_pos + G4ThreeVector(x0, y0, z0), 0);
 #if 0
   G4cout << FUNC_NAME << G4endl
-         << " " << p0 << " " << theta/CLHEP::deg << " " << phi/CLHEP::deg << G4endl
-         << " " << p << " " << p.theta()/CLHEP::deg << " " << v << G4endl;
+         << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
+         << " " << p << " " << p.theta()/deg << " " << v << G4endl;
 #endif
   particleGun->SetParticleDefinition(m_particle);
   particleGun->SetParticleMomentumDirection(p.v());
