@@ -79,7 +79,7 @@ S2SAnaManager::BeginOfRun( const G4Run *aRun )
   event.evnum = 0;
   DefineTree();
   for(const auto& sd_name : std::vector<G4String>{
-      "PRM", "SDC", "TOF", "VP" }
+      "PRM", "SDC", "TOF", "AC1", "WC", "VP" }
         // S2SDetectorConstruction::GetSDList()
     ){
     G4cout << "   make branch : " << sd_name << G4endl;
@@ -225,6 +225,7 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
   std::deque<G4bool> trigger_flag(32);
+  G4int index = 0;
   // for(G4int k=1; k<=5; ++k){
   //   G4String name = "SDC"+std::to_string(k);
   //   static const auto id = SDMan->GetCollectionID(name);
@@ -242,10 +243,34 @@ void S2SAnaManager::EndOfEvent( const G4Event *anEvent )
       auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         auto hit = (*HC)[i];
-        if(hit->Is("kaon+")) trigger_flag[0] = true;
+        if(hit->Is("kaon+")) trigger_flag[index++] = true;
         SetHitData(hit);
       }
       SetNhits("TOF", HC->entries());
+    }
+  }
+  {
+    static const auto id = SDMan->GetCollectionID("AC1");
+    if(id > 0){
+      auto HC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(id));
+      for(G4int i=0, n=HC->entries(); i<n; ++i){
+        auto hit = (*HC)[i];
+        if(hit->Is("kaon+")) trigger_flag[index++] = true;
+        SetHitData(hit);
+      }
+      SetNhits("AC1", HC->entries());
+    }
+  }
+  {
+    static const auto id = SDMan->GetCollectionID("WC");
+    if(id > 0){
+      auto HC = dynamic_cast<WCHitsCollection*>(HCE->GetHC(id));
+      for(G4int i=0, n=HC->entries(); i<n; ++i){
+        auto hit = (*HC)[i];
+        if(hit->Is("kaon+")) trigger_flag[index++] = true;
+        SetHitData(hit);
+      }
+      SetNhits("WC", HC->entries());
     }
   }
   {

@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
-#ifndef DCSD_h
-#define DCSD_h 1
+#ifndef DC_SD_HH
+#define DC_SD_HH 1
 
 #include <G4VSensitiveDetector.hh>
 
@@ -22,9 +22,9 @@ private:
   DCHitsCollection *DCCollection;
 
 public:
-  void EndOfEvent(G4HCofThisEvent *HCE);
-  void Initialize(G4HCofThisEvent *HCE);
-  G4bool ProcessHits(G4Step *aStep, G4TouchableHistory *ROhist);
+  void EndOfEvent(G4HCofThisEvent* HCE);
+  void Initialize(G4HCofThisEvent* HCE);
+  G4bool ProcessHits(G4Step* aStep, G4TouchableHistory* ROhist);
 };
 
 #endif

@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
-#ifndef DCHit_h
-#define DCHit_h 1
+#ifndef DC_HIT_HH
+#define DC_HIT_HH 1
 
 #include <G4VHit.hh>
 #include <G4THitsCollection.hh>
@@ -45,6 +45,5 @@ DCHit::operator delete(void* aHit)
 {
   DCHitAllocator.FreeSingle(static_cast<DCHit*>(aHit));
 }
-
 
 #endif

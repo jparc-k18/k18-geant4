@@ -1,25 +1,22 @@
-/*
-  "WCSD.cc"
-
-  Toshiyuki Gogami , 25Nov2015
-*/
+// -*- C++ -*-
 
 #include "WCSD.hh"
 
-#include "G4HCofThisEvent.hh"
-#include "G4VPhysicalVolume.hh"
-#include "G4TouchableHistory.hh"
-#include "G4Step.hh"
-#include "G4Track.hh"
-#include "G4VVisManager.hh"
-#include "G4TouchableHandle.hh"
-#include "G4SystemOfUnits.hh"
-#include "Randomize.hh"
-#include "TGraph2D.h"
+#include <G4HCofThisEvent.hh>
+#include <G4VPhysicalVolume.hh>
+#include <G4TouchableHistory.hh>
+#include <G4Step.hh>
+#include <G4Track.hh>
+#include <G4VVisManager.hh>
+#include <G4TouchableHandle.hh>
+#include <G4SystemOfUnits.hh>
+#include <Randomize.hh>
+
+#include <TF1.h>
+#include <TGraph2D.h>
+#include <TMath.h>
 
 #include "ConfMan.hh"
-#include "TMath.h"
-#include "TF1.h"
 
 namespace
 {
@@ -47,28 +44,30 @@ const G4double npefactor = 0.0349 * 2.0; // to be ~100 NPE for each PMT (T.Gogam
 //const G4double spl = 2.99792458; // m/s
 }
 
-WCSD::WCSD( G4String name )
-  : G4VSensitiveDetector(name), EMFlag(0)
+//_____________________________________________________________________________
+WCSD::WCSD(const G4String& name)
+  : G4VSensitiveDetector(name)
 {
-  collectionName.insert( name/*G4String( "WCCollection" )*/ );
-
+  collectionName.insert(name);
   // ==== Define X vs. Y vs. NPE table which was ===== //
   // ==== obtained in ELPH experiment in 2014    ===== //
   DefineXYTable();                  // =============== //
   // ================================================= //
-
   // ==== Define Y vs. NPE table which was   ========= //
   // ==== obtained in cosmic-ray test in 2015    ===== //
   DefineYTable();                   // =============== //
   // ================================================= //
-
 }
 
+//_____________________________________________________________________________
 WCSD::~WCSD()
 {
 }
 
-void WCSD::DefineXYTable(){
+//_____________________________________________________________________________
+void
+WCSD::DefineXYTable()
+{
   //const int n_wcdat=21;
   const int n_wcdat=20;
   double x_wcdat[n_wcdat]={0, 4, 0, 0, 0,
@@ -92,32 +91,31 @@ void WCSD::DefineXYTable(){
   xyTable = new TGraph2D(n_wcdat,x_wcdat,y_wcdat,z_wcdat);
 }
 
-void WCSD::DefineYTable(){
+//_____________________________________________________________________________
+void
+WCSD::DefineYTable()
+{
   yTable = new TF1("func1","[0]+[1]*x+[2]*x*x",-40.0,40.0);
   //yTable = new TF1("func1","[0]+[1]*x+[2]*x*x");
 
   // ====== These parameters were obtained by cosmic-ray test =====
   yTable->SetParameters(1.0,-1.22502e-4,1.42488e-4);
-
 }
 
-
-
-void WCSD::Initialize( G4HCofThisEvent *HCE )
+//_____________________________________________________________________________
+void
+WCSD::Initialize(G4HCofThisEvent* HCE)
 {
-  static int HCID = -1;
-  WCCollection =
-    new WCHitsCollection( SensitiveDetectorName,
-			     collectionName[0] );
-  if( HCID<0 )
-    HCID = GetCollectionID(0);
-
-  HCE->AddHitsCollection( HCID, WCCollection );
+  WCCollection = new WCHitsCollection(SensitiveDetectorName,
+                                      collectionName[0]);
+  HCE->AddHitsCollection(GetCollectionID(0), WCCollection);
 }
 
-G4bool WCSD::ProcessHits( G4Step *aStep,
-			  G4TouchableHistory *ROhist )
+//_____________________________________________________________________________
+G4bool
+WCSD::ProcessHits(G4Step* aStep, G4TouchableHistory* /* ROhist */)
 {
+#if 0
   //  ConfMan *confMan = ConfMan::GetConfManager();
   G4double edep = aStep->GetTotalEnergyDeposit();
 
@@ -207,34 +205,22 @@ G4bool WCSD::ProcessHits( G4Step *aStep,
 	 <<" P: "<< hitmom << G4endl;
 #endif
 
+#endif
+
+  const auto preStepPoint = aStep->GetPreStepPoint();
+  const auto aTrack = aStep->GetTrack();
+  const auto Definition = aTrack->GetDefinition();
+  const G4String particleName = Definition->GetParticleName();
+  const G4String particleType = Definition->GetParticleType();
+  if(preStepPoint->GetStepStatus() != fGeomBoundary)
+    return false;
+  if(Definition->GetPDGCharge() == 0.)
+    return false;
+  WCCollection->insert(new WCHit(SensitiveDetectorName, aStep));
   return true;
 }
 
-void WCSD::EndOfEvent( G4HCofThisEvent *HCE )
+//_____________________________________________________________________________
+void WCSD::EndOfEvent(G4HCofThisEvent* /* HCE */)
 {
 }
-
-void WCSD::clear()
-{
-  G4int nHits = WCCollection->entries();
-  for( G4int i=nHits-1; i>=0; --i )
-    delete (*WCCollection)[i];
-}
-
-// void WCSD::DrawAll() const
-// {
-//   G4VVisManager *pVisManager = G4VVisManager::GetConcreteInstance();
-
-//   if( pVisManager ){
-//     G4int nHits = WCCollection->entries();
-//     for( G4int i=0; i<nHits; ++i )
-//       (*WCCollection)[i]->Draw();
-//   }
-// }
-
-// void WCSD::PrintAll() const
-// {
-//   G4int nHits = WCCollection->entries();
-//   for( G4int i=0; i<nHits; ++i)
-//     (*WCCollection)[i]->Print();
-// }

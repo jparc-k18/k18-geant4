@@ -1,32 +1,32 @@
-/*
-  WCHit.hh
-  2007/4  K.Shirotori
-*/
+// -*- C++ -*-
 
-#ifndef WCHit_h
-#define WCHit_h 1
+#ifndef WC_HIT_HH
+#define WC_HIT_HH 1
 
-#include "G4VHit.hh"
-#include "G4THitsCollection.hh"
-#include "G4ThreeVector.hh"
-#include "G4Allocator.hh"
+#include <G4VHit.hh>
+#include <G4THitsCollection.hh>
+#include <G4ThreeVector.hh>
+#include <G4Allocator.hh>
 
-class WCHit : public G4VHit
+#include "VHitInfo.hh"
+
+class G4Step;
+
+//_____________________________________________________________________________
+class WCHit : public G4VHit, public VHitInfo
 {
 public:
-  WCHit();
-  ~WCHit() { }
+  WCHit(const G4String& name, G4Step* step);
+  virtual ~WCHit();
+
 private:
-  WCHit( const WCHit & );
-  WCHit & operator = ( const WCHit & );
+  WCHit(const WCHit&);
+  WCHit& operator =(const WCHit&);
 public:
-  int operator == ( const WCHit & ) const { return 0; }
-
-  inline void * operator new ( size_t size );
-  inline void operator delete( void * aHit );
-
-//   void Draw() const;
-//   void Print() const;
+  void* operator new(size_t size);
+  void operator delete(void* aHit);
+  virtual void Draw();
+  virtual void Print();
 
 private:
   G4int pass_;
@@ -72,19 +72,22 @@ public:
   G4String GetDecayParticleName( int id ) const { return decayname_[id]; }
 };
 
-typedef G4THitsCollection<WCHit> WCHitsCollection;
+//_____________________________________________________________________________
+using WCHitsCollection = G4THitsCollection<WCHit>;
 extern G4Allocator<WCHit> WCHitAllocator;
 
-inline void * WCHit::operator new( size_t )
+//_____________________________________________________________________________
+inline void*
+WCHit::operator new(size_t)
 {
-  return static_cast<void *>( WCHitAllocator.MallocSingle() );
+  return static_cast<void*>(WCHitAllocator.MallocSingle());
 }
 
-inline void WCHit::operator delete( void *aHit )
+//_____________________________________________________________________________
+inline void
+WCHit::operator delete(void* aHit)
 {
-  WCHitAllocator.
-    FreeSingle( static_cast<WCHit *>( aHit ) );
+  WCHitAllocator.FreeSingle(static_cast<WCHit*>(aHit));
 }
-		       
 
 #endif
