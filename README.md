@@ -19,6 +19,7 @@ Set environment variables.
 ```shell
 module load git/2260
 export G4WORKDIR=$HOME/work/geant4
+export MAKEFLAGS="-j40"
 . /group/had/sks/software/root/6.22.08/bin/thisroot.sh
 . /sw/packages/geant4/11.0.2/bin/geant4.sh
 . /sw/packages/geant4/11.0.2/share/Geant4-11.0.2/geant4make/geant4make.sh

@@ -19,7 +19,7 @@ mkdir -pv $build_dir
 cd $build_dir
 cmake .. -DCMAKE_INSTALL_PREFIX=$main_dir \
       -DCMAKE_INSTALL_RPATH_USE_LINK_PATH="ON"
-cmake --build . -- -j4
+cmake --build .
 cmake --install .
 
 if [ "$(uname)" == 'Darwin' -a ! -e "$bin_dir/Dict_rdict.pcm" ]; then
