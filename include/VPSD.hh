@@ -20,7 +20,6 @@ public:
 
 private:
   VPHitsCollection* VPCollection;
-  int EMFlag;
 
 public:
   void EndOfEvent(G4HCofThisEvent *HCE);

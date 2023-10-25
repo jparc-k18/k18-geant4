@@ -22,12 +22,11 @@ const double PositionSeparationThreshold = 2.0*cm;
 const double TimeSeparationThreshold     = 5.0*ns;
 
 ACSD::ACSD( G4String name )
-  : G4VSensitiveDetector(name), EMFlag(0)
+  : G4VSensitiveDetector(name)
 {
   collectionName.insert( name/*G4String( "ACCollection" )*/ );
 
   const auto& confMan = ConfMan::GetInstance();
-  EMFlag = confMan.GetEMFlag();
 }
 
 ACSD::~ACSD()

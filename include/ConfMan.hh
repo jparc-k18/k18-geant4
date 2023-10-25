@@ -28,7 +28,6 @@ private:
   using DoubleList = std::map<G4String, G4double>;
   using IntList = std::map<G4String, G4int>;
   using BoolList = std::map<G4String, G4bool>;
-  std::string ConfFileName_;
   G4String   m_conf_key;
   G4String   m_conf_dir;
   G4String   m_conf_buf;
@@ -38,59 +37,11 @@ private:
   IntList    m_int;
   BoolList   m_bool;
 
-  //std::string LogFileName;
-  //EvDisp *evDisp_;
-  //bool FlagEvDisp_;
-  //double K18Momentum_;
-  Int_t EMFlag_;
-  Int_t DecayFlag_;
-  Int_t HadronFlag_;
-  Int_t GenPID;
-  Int_t TargetID;
-  Int_t generator;
-  double tposz;
-  double tthickness;
-  double momcent, mombite;
-  double thetamax;
-  double tof_overlap;
-  double tof_distance;
-  double mag_scale, mag_scale_Q1, mag_scale_Q2;
-  double target_pos;
-  double beamx, beamy, beamz;
-
 public:
   G4bool Initialize(const G4String& file_name);
   const G4String& ConfBuf() const { return m_conf_buf; }
   template <typename T>
   static const T& Get(const G4String& key);
-  Int_t GetEMFlag(void)     const  { return EMFlag_;    };
-  Int_t GetDecayFlag(void)  const  { return DecayFlag_; };
-  Int_t GetHadronFlag(void)  const { return HadronFlag_;};
-  double GetGenMomCent() const     { return momcent;    };
-  double GetGenMomBite() const     { return mombite;    };
-  double GetGenTheta()   const     { return thetamax;   };
-  Int_t  GetGenPID()     const     { return GenPID;     };
-  double GetTOFDistance()const     { return tof_distance;};
-  double GetTOFOverlap() const     { return tof_overlap; };
-  double GetMagScale()   const     { return mag_scale;   };
-  double GetMagScaleQ1()   const   { return mag_scale_Q1;   };
-  double GetMagScaleQ2()   const   { return mag_scale_Q2;   };
-  double GetTargetPositionZ() const { return tposz;       };
-  Int_t  GetTargetID() const       { return TargetID;    };
-  Int_t  GetGenerator() const      { return generator;    };
-  double GetTThickness() const     { return tthickness;  };
-  double GetBeamX() const          { return beamx;  };
-  double GetBeamY() const          { return beamy;  };
-  double GetBeamZ() const          { return beamz;  };
-  void ShowParam();
-  void OutputLog();
-  void SetTargetPositionZ(double tpos_z) { target_pos = tpos_z; };
-  double GetTargetPosizionZ(){ return target_pos; };
-
-  //bool GetEvDispFlag( void ) const { return FlagEvDisp_; }
-  //EvDisp *GetEvDisp( void ) { return evDisp_; }
-  //bool InitializeEvDisp( void );
-
 
 private:
   G4String FilePath(const G4String& src) const;

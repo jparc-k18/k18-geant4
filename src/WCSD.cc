@@ -52,8 +52,6 @@ WCSD::WCSD( G4String name )
 {
   collectionName.insert( name/*G4String( "WCCollection" )*/ );
 
-  EMFlag = confMan.GetEMFlag();
-
   // ==== Define X vs. Y vs. NPE table which was ===== //
   // ==== obtained in ELPH experiment in 2014    ===== //
   DefineXYTable();                  // =============== //

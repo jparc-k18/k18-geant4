@@ -36,7 +36,7 @@ S2SPrimaryGeneratorAction::S2SPrimaryGeneratorAction()
     momcent(),
     mombite(),
     GenPID(1),
-    generator(confMan.GetGenerator())
+    generator(confMan.Get<G4int>("Generator"))
 {
 }
 

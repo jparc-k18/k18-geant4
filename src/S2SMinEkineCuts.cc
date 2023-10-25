@@ -52,7 +52,7 @@ S2SMinEkineCuts::S2SMinEkineCuts(const G4String& aName)
    }
   SetProcessType(fUserDefined);
   const auto& confMan = ConfMan::GetInstance();
-  EMFlag = confMan.GetEMFlag();
+  // EMFlag = confMan.GetEMFlag();
 }
 
 S2SMinEkineCuts::~S2SMinEkineCuts()

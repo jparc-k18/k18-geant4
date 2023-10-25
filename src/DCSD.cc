@@ -20,11 +20,9 @@ const auto& confMan = ConfMan::GetInstance();
 
 //_____________________________________________________________________________
 DCSD::DCSD(const G4String& name)
-  : G4VSensitiveDetector(name),
-    EMFlag(0)
+  : G4VSensitiveDetector(name)
 {
   collectionName.insert(name);
-  EMFlag = confMan.GetEMFlag();
 }
 
 //_____________________________________________________________________________

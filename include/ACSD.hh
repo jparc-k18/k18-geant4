@@ -28,7 +28,6 @@ public:
   void clear();
 
 private:
-  int EMFlag;
   ACHitsCollection *ACCollection;
 };
 

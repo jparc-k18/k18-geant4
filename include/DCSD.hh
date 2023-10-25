@@ -20,7 +20,6 @@ public:
 
 private:
   DCHitsCollection *DCCollection;
-  int EMFlag;
 
 public:
   void EndOfEvent(G4HCofThisEvent *HCE);

@@ -20,7 +20,6 @@ public:
 
 private:
   TOFHitsCollection* TOFCollection;
-  int EMFlag;
 
 public:
   void   EndOfEvent(G4HCofThisEvent *HCE);

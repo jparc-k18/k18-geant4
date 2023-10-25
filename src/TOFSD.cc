@@ -26,11 +26,9 @@ const G4double DEThreshold = 10.0*keV;
 
 //_____________________________________________________________________________
 TOFSD::TOFSD(const G4String& name)
-  : G4VSensitiveDetector(name),
-    EMFlag(0)
+  : G4VSensitiveDetector(name)
 {
   collectionName.insert(name);
-  EMFlag = confMan.GetEMFlag();
 }
 
 //_____________________________________________________________________________
