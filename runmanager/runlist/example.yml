@@ -1,0 +1,33 @@
+#
+# RUN LIST (YAML format)
+#
+#   queue   : bsub queue (eg. s, l, etc...)
+#   qmerge  : bsub queue for merging job to command "hadd"
+#   nevent  : number of events
+#   unit    : dividing event unit
+#   nproc   : number of process for merging (up to 18)
+#   buff    : intermediate root files will be placed here
+#             if not set, use the same "root" directory
+#   bin     : path to executable binary
+#   conf    : path to conf directory/file from the work directory
+#   root    : path to the output ROOT output directory/file
+#
+#______________________________________________________________________________
+DEFAULT:
+  queue: s
+  qmerge: s
+  nevent: 1000000
+  unit:  10000
+  nproc: 18
+  buff:  root/buf
+  bin:   bin/G4S2S
+  conf:  param/conf/e10.conf
+  root:  root/e10
+
+#______________________________________________________________________________
+RUN:
+  beam:
+    conf: ./param/conf/e10_beam.conf
+
+  acc:
+    conf: ./param/conf/e10_acc.conf
