@@ -353,6 +353,7 @@ void
 S2SPrimaryGeneratorAction::GenerateAcceptance(G4Event* anEvent)
 {
   const G4int n_particle = 1;
+  if(particleGun) delete particleGun;
   particleGun = new G4ParticleGun(n_particle);
   static const G4String name = "kaon+";
   // static const G4String name = "proton";

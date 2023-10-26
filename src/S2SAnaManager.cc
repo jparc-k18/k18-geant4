@@ -140,11 +140,11 @@ S2SAnaManager::MakeHistogram(const G4String& sd_name)
     TString key = sd_name + "PThetaGen";
     TString title = sd_name + " P%Theta (Generate); [deg.]; [GeV/c]";
     hmap[key] = new TH2D(key, title,
-                         100, 0, 30, 100, 1, 1.8);
+                         100, 0, 30, 100, 0.2, 1.2);
     key = sd_name + "PThetaAcc";
     title = sd_name + " P%Theta (Accept); [deg.]; [GeV/c]";
     hmap[key] = new TH2D(key, title,
-                         100, 0, 30, 100, 1, 1.8);
+                         100, 0, 30, 100, 0.2, 1.2);
   }else{
     for(const auto& suffix: std::vector<G4String>
           { "Nhits", "HitPat", "X", "Y", "Z", "U", "V",
