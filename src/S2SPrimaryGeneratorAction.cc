@@ -335,7 +335,8 @@ S2SPrimaryGeneratorAction::GenerateMonoBeam(G4Event* anEvent)
   m_particle = particleTable->FindParticle(name);
   static const auto pdg = m_particle->GetPDGEncoding();
   const G4double m0 = m_particle->GetPDGMass();
-  const G4double p0 = 1.37*GeV;
+  // const G4double p0 = 1.37*GeV;
+  const G4double p0 = 0.7*GeV;
   const auto& target_pos = geomMan.GetGlobalPosition("Target");
   G4LorentzVector p(0, 0, p0, TMath::Sqrt(p0*p0 + m0*m0));
   G4LorentzVector v(target_pos, 0);
@@ -360,7 +361,8 @@ S2SPrimaryGeneratorAction::GenerateAcceptance(G4Event* anEvent)
   static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
   static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
   static const G4double m0 = m_particle->GetPDGMass();
-  G4double p0 = G4RandFlat::shoot(1.0, 1.8)*GeV;
+  // G4double p0 = G4RandFlat::shoot(1.0, 1.8)*GeV;
+  G4double p0 = G4RandFlat::shoot(0.2, 1.2)*GeV;
   G4double theta =
     std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(30*deg)))*radian;
   G4double phi = G4RandFlat::shoot(0., 360.)*deg;

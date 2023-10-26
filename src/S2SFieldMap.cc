@@ -12,6 +12,7 @@
 #include <CLHEP/Units/SystemOfUnits.h>
 
 #include "ConfMan.hh"
+#include "DCGeomMan.hh"
 #include "FuncName.hh"
 
 #define DebugDisp 1
@@ -97,10 +98,17 @@ S2SFieldMap::Initialize()
      m_value_nmr == 0. || !std::isfinite(m_value_nmr)){
     return true;
   }
-  const G4double factor = m_value_nmr / m_value_calc;
-  G4cout << "   Calc = " << m_value_calc
-	 << ", NMR = " << m_value_nmr
-	 << ", factor = " << factor << G4endl;
+  // const G4double factor = m_value_nmr / m_value_calc;
+  // G4cout << "   Calc = " << m_value_calc
+  //        << ", NMR = " << m_value_nmr
+  //        << ", factor = " << factor << G4endl;
+  const auto& confMan = ConfMan::GetInstance();
+  const auto Q1scale = confMan.Get<G4double>("Q1SCALE");
+  const auto Q2scale = confMan.Get<G4double>("Q2SCALE");
+  const auto D1scale = confMan.Get<G4double>("D1SCALE");
+  const auto& geomMan = DCGeomMan::GetInstance();
+  const auto Q1Q2Boundary = geomMan.GetGlobalPosition("S2SQ1Q2Boundary").z();
+  const auto Q2D1Boundary = geomMan.GetGlobalPosition("S2SQ2D1Boundary").z();
 
   G4double x, y, z, bx, by, bz;
 
@@ -122,9 +130,16 @@ S2SFieldMap::Initialize()
     G4int iy = G4int((y-m_ymin+0.1*m_dy)/m_dy);
     G4int iz = G4int((z-m_zmin+0.1*m_dz)/m_dz);
     if(ix>=0 && ix<m_nx && iy>=0 && iy<m_ny && iz>=0 && iz<m_nz){
+      G4double factor = 1.;
+      if(z < Q1Q2Boundary)
+        factor = Q1scale;
+      else if(z < Q2D1Boundary)
+        factor = Q2scale;
+      else
+        factor = D1scale;
       m_b[ix][iy][iz].set(bx*factor, by*factor, bz*factor);
 #if DebugDisp
-      if(std::abs(y) < 1.) h1->Fill(z, x, by);
+      if(std::abs(y) < 1.) h1->Fill(z, x, by*factor);
 #endif
     }
   }
