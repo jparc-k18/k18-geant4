@@ -99,6 +99,13 @@ VHitInfo::Is(G4int pdg_encoding) const
 }
 
 //_____________________________________________________________________________
+G4bool
+VHitInfo::IsPrimary() const
+{
+  return m_parent_id == 0;
+}
+
+//_____________________________________________________________________________
 void
 VHitInfo::Print() const
 {

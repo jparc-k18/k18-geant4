@@ -61,6 +61,7 @@ public:
   { return m_vertex_kinetic_energy; }
   G4bool   Is(const G4String& particle_name) const;
   G4bool   Is(G4int pdg_encoding) const;
+  G4bool   IsPrimary() const;
   void          Print() const;
   TParticle* GetParticle() const { return m_particle; }
 };

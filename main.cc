@@ -42,7 +42,7 @@ main(int argc, char** argv)
   auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Serial);
   runManager->SetUserInitialization(new S2SDetectorConstruction);
   // runManager->SetUserInitialization(new QGSP_BERT);
-  runManager-> SetUserInitialization(new S2SPhysicsList);
+  runManager->SetUserInitialization(new S2SPhysicsList);
   runManager->SetUserInitialization(new S2SActionInitialization);
   runManager->Initialize();
 

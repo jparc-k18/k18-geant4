@@ -28,6 +28,7 @@
 
 #include "ConfMan.hh"
 #include "DCGeomMan.hh"
+#include "DetectorID.hh"
 #include "FuncName.hh"
 #include "DCHit.hh"
 #include "TOFHit.hh"
@@ -145,6 +146,13 @@ S2SAnaManager::MakeHistogram(const G4String& sd_name)
     title = sd_name + " P%Theta (Accept); [deg.]; [GeV/c]";
     hmap[key] = new TH2D(key, title,
                          100, 0, 30, 100, 0.2, 1.2);
+    for(G4int i=0, n=TriggerFlag.size(); i<n; ++i){
+      key = sd_name + "PThetaAcc" + TriggerFlag.at(i);
+      title = sd_name + " P%Theta (Accept at " + TriggerFlag.at(i) + ");"
+        + " [deg.]; [GeV/c]";
+      hmap[key] = new TH2D(key, title,
+                           100, 0, 30, 100, 0.2, 1.2);
+    }
   }else{
     for(const auto& suffix: std::vector<G4String>
           { "Nhits", "HitPat", "X", "Y", "Z", "U", "V",
@@ -222,12 +230,11 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
 {
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
-  std::deque<G4bool> trigger_flag(32);
-  G4int index = 0;
+  std::deque<G4bool> trigger_flag(TriggerFlag.size());
   // for(G4int k=1; k<=5; ++k){
   //   G4String name = "SDC"+std::to_string(k);
   //   static const auto id = SDMan->GetCollectionID(name);
-  //   if(id > 0){
+  //   if(id >= 0){
   //     auto HC = dynamic_cast<SDCHitsCollection*>(HCE->GetHC(id));
   //     for(G4int i=0, n=HC->entries(); i<n; ++i){
   //       SetHitData((*HC)[i]);
@@ -237,11 +244,11 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   // }
   {
     static const auto id = SDMan->GetCollectionID("TOF");
-    if(id > 0){
+    if(id >= 0){
       auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         auto hit = (*HC)[i];
-        if(hit->Is("kaon+")) trigger_flag[index++] = true;
+        if(hit->Is("kaon+")) trigger_flag[kTOF] = true;
         SetHitData(hit);
       }
       SetNhits("TOF", HC->entries());
@@ -249,11 +256,11 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   }
   {
     static const auto id = SDMan->GetCollectionID("AC1");
-    if(id > 0){
+    if(id >= 0){
       auto HC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         auto hit = (*HC)[i];
-        if(hit->Is("kaon+")) trigger_flag[index++] = true;
+        if(hit->Is("kaon+")) trigger_flag[kAC1] = true;
         SetHitData(hit);
       }
       SetNhits("AC1", HC->entries());
@@ -261,11 +268,11 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   }
   {
     static const auto id = SDMan->GetCollectionID("WC");
-    if(id > 0){
+    if(id >= 0){
       auto HC = dynamic_cast<WCHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         auto hit = (*HC)[i];
-        if(hit->Is("kaon+")) trigger_flag[index++] = true;
+        if(hit->Is("kaon+")) trigger_flag[kWC] = true;
         SetHitData(hit);
       }
       SetNhits("WC", HC->entries());
@@ -273,7 +280,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   }
   {
     static const auto id = SDMan->GetCollectionID("VP");
-    if(id > 0){
+    if(id >= 0){
       auto HC = dynamic_cast<VPHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         SetHitData((*HC)[i]);
@@ -373,7 +380,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   event.Q2Trig = Q2Flag;
 #endif
 
-  if(trigger_flag[0] && trigger_flag[1] && trigger_flag[2]){
+  if(trigger_flag[kTOF] && trigger_flag[kWC]){
     auto particle = event.hits.at("PRM").at(0);
     hmap.at("PRMPThetaAcc")->Fill(particle.Theta()/CLHEP::degree,
                                   particle.P()/CLHEP::GeV);

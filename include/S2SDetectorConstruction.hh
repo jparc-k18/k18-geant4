@@ -44,13 +44,6 @@ private:
   void ConstructVP();
   void ConstructKLChamber(G4int i);
   void ConstructKLChamberMylar(G4int i);
-  void SetTarget();
-  void MakePositionDetector();
-  void MakeTOFCounter();
-  void MakeAerogelCounter();
-  void MakeWaterCounter();
-  G4bool IsVolumeStopper( G4VPhysicalVolume *physVol ) const ;
-
 };
 
 #endif

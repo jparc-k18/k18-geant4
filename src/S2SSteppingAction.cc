@@ -1,36 +1,36 @@
-/*
-  "S2SSteppingAction.cc"
-
-  Modified by Toshiyuki Gogami on 20Nov2014
-*/
+// -*- C++ -*-
 
 #include "S2SSteppingAction.hh"
-#include "G4SteppingManager.hh"
-#include "G4Track.hh"
-#include "G4Step.hh"
-#include "G4StepPoint.hh"
-#include "G4TrackStatus.hh"
-#include "G4VPhysicalVolume.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4ParticleTypes.hh"
 
+#include <G4SteppingManager.hh>
+#include <G4Track.hh>
+#include <G4Step.hh>
+#include <G4StepPoint.hh>
+#include <G4TrackStatus.hh>
+#include <G4VPhysicalVolume.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4ParticleTypes.hh>
+
+//_____________________________________________________________________________
 S2SSteppingAction::S2SSteppingAction()
-{}
-
-S2SSteppingAction::~S2SSteppingAction()
-{}
-
-void S2SSteppingAction::UserSteppingAction(const G4Step * theStep)
 {
-  G4Track * theTrack = theStep->GetTrack();
+}
 
-  G4StepPoint * thePrePoint = theStep->GetPreStepPoint();
-  G4String thePrePVname = thePrePoint->GetPhysicalVolume()->GetName();
-  G4String partName = theTrack->GetDefinition()->GetParticleName();
+//_____________________________________________________________________________
+S2SSteppingAction::~S2SSteppingAction()
+{
+}
 
-  //  std::cout<<"physVolume="<<thePrePVname<<"  particleName="<<partName<<std::endl;
-
-  if(thePrePVname=="physQ1Pole" || thePrePVname=="physQ2Pole" || thePrePVname=="physD1Pole" || thePrePVname=="physEnd"){
+//_____________________________________________________________________________
+void
+S2SSteppingAction::UserSteppingAction(const G4Step* theStep)
+{
+  auto theTrack = theStep->GetTrack();
+  auto thePrePoint = theStep->GetPreStepPoint();
+  auto thePrePVname = thePrePoint->GetPhysicalVolume()->GetName();
+  auto partName = theTrack->GetDefinition()->GetParticleName();
+  auto thePreMaterial = thePrePoint->GetMaterial();
+  if(thePreMaterial->GetName() == "Fe"){
     theTrack->SetTrackStatus(fKillTrackAndSecondaries);
   }
 }
