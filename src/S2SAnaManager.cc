@@ -138,7 +138,7 @@ void
 S2SAnaManager::MakeHistogram(const G4String& sd_name)
 {
   if(sd_name == "PRM"){
-    const auto& params = histMan.Get("PRMPTheta");
+    const auto& params = histMan.Get("PTheta");
     TString key = sd_name + "PThetaGen";
     TString title = sd_name + " P%Theta (Generate); [deg.]; [GeV/c]";
     hmap[key] = new TH2D(key, title,
@@ -387,8 +387,6 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   event.Q1Trig = Q1Flag;
   event.Q2Trig = Q2Flag;
 #endif
-
-  G4cout << "Trigger flag : " << trigger_flag << G4endl;
 
   {
     auto particle = event.hits.at("PRM").at(0);

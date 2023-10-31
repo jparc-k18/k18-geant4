@@ -45,9 +45,10 @@ S2SEventAction::EndOfEventAction(const G4Event* evt)
 {
   G4int event_id = evt->GetEventID();
   if(event_id % 1000 == 0){
-    G4cout << FUNC_NAME << " " << event_id << G4endl;
+    G4cout << FUNC_NAME << G4endl
+           << "   (event id) " << event_id << G4endl;
   }
-  anaMan.EndOfEvent( evt );
+  anaMan.EndOfEvent(evt);
 
   // auto trajectoryContainer = evt->GetTrajectoryContainer();
   // if(trajectoryContainer && G4VVisManager::GetConcreteInstance()){
@@ -58,5 +59,3 @@ S2SEventAction::EndOfEventAction(const G4Event* evt)
   //   }
   // }
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
