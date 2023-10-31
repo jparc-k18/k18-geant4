@@ -230,7 +230,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
 {
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
-  std::deque<G4bool> trigger_flag(TriggerFlag.size());
+  std::bitset<kTriggerFlagSize> trigger_flag;
   // for(G4int k=1; k<=5; ++k){
   //   G4String name = "SDC"+std::to_string(k);
   //   static const auto id = SDMan->GetCollectionID(name);
@@ -283,7 +283,11 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
     if(id >= 0){
       auto HC = dynamic_cast<VPHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
-        SetHitData((*HC)[i]);
+        auto hit = (*HC)[i];
+        if(hit->Is("kaon+")){
+          trigger_flag[kVP1-1+hit->GetCopyNumber()] = true;
+        }
+        SetHitData(hit);
       }
       SetNhits("VP", HC->entries());
     }
@@ -380,10 +384,34 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   event.Q2Trig = Q2Flag;
 #endif
 
-  if(trigger_flag[kTOF] && trigger_flag[kWC]){
+  G4cout << "Trigger flag : " << trigger_flag << G4endl;
+
+  {
     auto particle = event.hits.at("PRM").at(0);
-    hmap.at("PRMPThetaAcc")->Fill(particle.Theta()/CLHEP::degree,
-                                  particle.P()/CLHEP::GeV);
+    for(G4int i=0, n=TriggerFlag.size(); i<n; ++i){
+      if(trigger_flag[i]){
+        hmap.at("PRMPThetaAcc"+TriggerFlag.at(i))->
+          Fill(particle.Theta()/CLHEP::deg, particle.P()/CLHEP::GeV);
+      }
+    }
+
+    if(true
+       && trigger_flag[kVP1]
+       && trigger_flag[kVP2]
+       && trigger_flag[kVP3]
+       && trigger_flag[kVP4]
+       && trigger_flag[kVP5]
+       && trigger_flag[kVP6]
+       && trigger_flag[kVP7]
+       && trigger_flag[kVP8]
+       && trigger_flag[kVP9]
+       && trigger_flag[kVP10]
+       && trigger_flag[kTOF]
+       && trigger_flag[kWC]
+       ){
+      hmap.at("PRMPThetaAcc")->
+        Fill(particle.Theta()/CLHEP::deg, particle.P()/CLHEP::GeV);
+    }
   }
 
   if(confMan.Get<G4bool>("TREE"))

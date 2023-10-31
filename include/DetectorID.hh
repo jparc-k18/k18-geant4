@@ -34,13 +34,14 @@ enum ETriggerFlag
     kVP8,
     kVP9,
     kVP10,
+    kVP11,
     kSDC3,
     kSDC4,
     kSDC5,
     kTOF,
     kAC1,
     kWC,
-    kVP11,
+    kTriggerFlagSize
   };
 
 const std::vector<G4String> TriggerFlag =
@@ -59,13 +60,13 @@ const std::vector<G4String> TriggerFlag =
     "VP8",
     "VP9",
     "VP10",
+    "VP11",
     "SDC3",
     "SDC4",
     "SDC5",
     "TOF",
     "AC1",
     "WC",
-    "VP11"
   };
 
 #endif
