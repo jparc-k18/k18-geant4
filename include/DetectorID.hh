@@ -5,7 +5,7 @@
 
 #include <vector>
 
-#include <G4types.hh>
+#include <G4String.hh>
 
 const G4int NumOfSegTOF = 18;
 const G4int NumOfSegWC = 12;
