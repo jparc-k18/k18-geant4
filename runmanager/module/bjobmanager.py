@@ -51,12 +51,15 @@ class BJobManager(metaclass=classimpl.Singleton):
   #____________________________________________________________________________
   def get_job_status(self, job_id):
     ''' Get job status. '''
-    if (self.__updater_status == 'RUNNING'
-        and job_id in self.__status_list
-        and len(self.__status_list[job_id]) == 2):
-      logger.debug(f'jobid = {self.__status_list[job_id][0]}')
-      return self.__status_list[job_id][0]
-    return 'INIT'
+    try:
+      if (self.__updater_status == 'RUNNING'
+          and job_id in self.__status_list
+          and len(self.__status_list[job_id]) == 2):
+        logger.debug(f'jobid = {self.__status_list[job_id][0]}')
+        return self.__status_list[job_id][0]
+      return 'INIT'
+    except KeyError:
+      return 'ERROR'
 
   #____________________________________________________________________________
   def isrunning(self):

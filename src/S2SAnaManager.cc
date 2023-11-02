@@ -297,104 +297,18 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
     }
   }
 
-#if 0
-  //   G4int nhAc=0;
-  G4int nhWC=0;
-  // static const G4int colIdAC = SDMan->GetCollectionID("AC");
-  static const G4int colIdWC = SDMan->GetCollectionID("WC");
-
-  // auto ACHC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(colIdAC));
-  auto WCHC = dynamic_cast<WCHitsCollection*>(HCE->GetHC(colIdWC));
-
-  // if(ACHC) nhAc = ACHC ->entries();
-  if(WCHC) nhWC = WCHC ->entries();
-
-  G4double pos_res = 0.0*mm; // 0 um
-  // G4double pos_res = 0.2*mm; // 200 um
-  // ~~~~~~~~~ Q1Flag (T.Gogami, 23Mar2015) ~~~~~~~~~~~~~~~
-  G4bool Q1Flag1 = false; // Q1 entrance
-  G4bool Q1Flag2 = false; // Q1 exit
-  G4bool Q1Flag  = false;
-  G4double qx = event.SlitX[0][0]; // at Q1 entrance
-  G4double qy = event.SlitY[0]; // at Q1 entrance
-  G4double a,b,c;
-  a = 8.5;
-  b = 10429.0;
-  c = 109261.0;
-  if( ( qy<a+b/qx+c/qx/qx && qx>56.0 && qy>56.0 )     ||
-      ( qy<a-b/qx+c/qx/qx && qx<-56.0 && qy>56.0 )    ||
-      ( qy>-a-b/qx-c/qx/qx && qx>56.0 && qy<-56.0 )   ||
-      ( qy>-a+b/qx-c/qx/qx && qx<-56.0 && qy<-56.0 )  ||
-      ( -56.0<=qx && qx<=56.0 && -293.0<=qy && qy<=293.0 )||
-      ( -56.0<=qy && qy<=56.0 && -293.0<=qx && qx<=293.0 )
-      ){
-    Q1Flag1=true;
-  }
-  else Q1Flag1=false;
-
-  qx = event.SlitX[1][0]; // at Q1 exit
-  qy = event.SlitY[1]; // at Q1 exit
-  if( ( qy<a+b/qx+c/qx/qx && qx>56.0 && qy>56.0 )     ||
-      ( qy<a-b/qx+c/qx/qx && qx<-56.0 && qy>56.0 )    ||
-      ( qy>-a-b/qx-c/qx/qx && qx>56.0 && qy<-56.0 )   ||
-      ( qy>-a+b/qx-c/qx/qx && qx<-56.0 && qy<-56.0 )  ||
-      ( -56.0<=qx && qx<=56.0 && -293.0<=qy && qy<=293.0 )||
-      ( -56.0<=qy && qy<=56.0 && -293.0<=qx && qx<=293.0 )
-      ){
-    Q1Flag2=true;
-  }
-  else Q1Flag2=false;
-
-  if(Q1Flag1 && Q1Flag2) Q1Flag=true;
-  else Q1Flag=false;
-
-  // ~~~~~~~~~ Q2Flag (T.Gogami, 23Mar2015) ~~~~~~~~~~~~~~~
-  G4bool Q2Flag1 = false;
-  G4bool Q2Flag2 = false;
-  G4bool Q2Flag  = false;
-  qx = event.SlitX[2][0]; // at Q2 entrance
-  qy = event.SlitY[2]; // at Q2 entrance
-  a = 0.7;
-  b = 16073.4;
-  c = 5202.96;
-  if( ( qy<a+b/qx+c/qx/qx && qx>60.0 && qy>32.4 )     ||
-      ( qy<a-b/qx+c/qx/qx && qx<-60.0 && qy>32.4 )    ||
-      ( qy>-a-b/qx-c/qx/qx && qx>60.0 && qy<-32.4 )   ||
-      ( qy>-a+b/qx-c/qx/qx && qx<-60.0 && qy<-32.4 )  ||
-      ( -60.0<=qx && qx<=60.0 && -270.0<=qy && qy<=270.0 )||
-      ( -32.4<=qy && qy<=32.4 && -503.0<=qx && qx<=503.0 )
-      ){
-    Q2Flag1=true;
-  }
-  else Q2Flag1=false;
-
-  qx = event.SlitX[3][0]; // at Q2 exit
-  qy = event.SlitY[3]; // at Q2 exit
-  if( ( qy<a+b/qx+c/qx/qx && qx>60.0 && qy>32.4 )     ||
-      ( qy<a-b/qx+c/qx/qx && qx<-60.0 && qy>32.4 )    ||
-      ( qy>-a-b/qx-c/qx/qx && qx>60.0 && qy<-32.4 )   ||
-      ( qy>-a+b/qx-c/qx/qx && qx<-60.0 && qy<-32.4 )  ||
-      ( -60.0<=qx && qx<=60.0 && -270.0<=qy && qy<=270.0 )||
-      ( -32.4<=qy && qy<=32.4 && -503.0<=qx && qx<=503.0 )
-      ){
-    Q2Flag2=true;
-  }
-  else Q2Flag2=false;
-
-  if(Q2Flag1 && Q2Flag2) Q2Flag=true;
-  else Q2Flag=false;
-
-  event.Q1Trig = Q1Flag;
-  event.Q2Trig = Q2Flag;
-#endif
-
+  static std::vector<G4int> n_acc(kTriggerFlagSize, 0);
+  G4cout << "Acc eff." << G4endl;
   {
     auto particle = event.hits.at("PRM").at(0);
     for(G4int i=0, n=TriggerFlag.size(); i<n; ++i){
       if(trigger_flag[i]){
+        n_acc[i]++;
         hmap.at("PRMPThetaAcc"+TriggerFlag.at(i))->
           Fill(particle.Theta()/CLHEP::deg, particle.P()/CLHEP::GeV);
       }
+      G4cout << "   " << TriggerFlag.at(i) << "\t"
+             << (G4double)n_acc[i]/event.evnum << G4endl;
     }
 
     if(true
