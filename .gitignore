@@ -7,6 +7,9 @@
 *.root
 *.wrl
 *.pcm
+*.pdf
+*.ps
+
 .build/
 build/
 bin/
@@ -18,4 +21,3 @@ backup/
 CMakeLists.txt
 fieldmap
 G4History.macro
-c1.pdf

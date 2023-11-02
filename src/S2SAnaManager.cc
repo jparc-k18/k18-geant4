@@ -47,6 +47,7 @@ const auto& histMan = HistMan::GetInstance();
 const auto qnan = TMath::QuietNaN();
 Event event;
 std::map<TString, TH1*> hmap;
+std::vector<G4int> n_acc(kTriggerFlagSize, 0);
 }
 
 //_____________________________________________________________________________
@@ -90,6 +91,8 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
   for(auto& h: hmap){
     h.second->Reset();
   }
+  n_acc.clear();
+  n_acc.resize(kTriggerFlagSize);
 }
 
 //_____________________________________________________________________________
@@ -297,9 +300,8 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
     }
   }
 
-  static std::vector<G4int> n_acc(kTriggerFlagSize, 0);
-  G4cout << "Acc eff." << G4endl;
   {
+    // G4cout << "Acc eff." << G4endl;
     auto particle = event.hits.at("PRM").at(0);
     for(G4int i=0, n=TriggerFlag.size(); i<n; ++i){
       if(trigger_flag[i]){
@@ -307,8 +309,8 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
         hmap.at("PRMPThetaAcc"+TriggerFlag.at(i))->
           Fill(particle.Theta()/CLHEP::deg, particle.P()/CLHEP::GeV);
       }
-      G4cout << "   " << TriggerFlag.at(i) << "\t"
-             << (G4double)n_acc[i]/event.evnum << G4endl;
+      // G4cout << "   " << TriggerFlag.at(i) << "\t"
+      //        << (G4double)n_acc[i]/(event.evnum+1) << G4endl;
     }
 
     if(true

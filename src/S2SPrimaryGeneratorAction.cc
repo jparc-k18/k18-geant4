@@ -352,7 +352,7 @@ S2SPrimaryGeneratorAction::GenerateMonoBeam(G4Event* anEvent)
 void
 S2SPrimaryGeneratorAction::GenerateAcceptance(G4Event* anEvent)
 {
-  const G4int n_particle = 1;
+  static const G4int n_particle = 1;
   if(particleGun) delete particleGun;
   particleGun = new G4ParticleGun(n_particle);
   static const G4String name = "kaon+";
@@ -362,17 +362,20 @@ S2SPrimaryGeneratorAction::GenerateAcceptance(G4Event* anEvent)
   static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
   static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
   static const G4double m0 = m_particle->GetPDGMass();
-  G4double p0 = 1.4*GeV; //G4RandFlat::shoot(1.0, 1.8)*GeV;
-  // G4double p0 = G4RandFlat::shoot(0.2, 1.2)*GeV;
-  G4double theta = 0;
-  //std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(2*deg)))*radian;
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  G4double p0 = (experiment == 10)
+    ? G4RandFlat::shoot(0.4, 1.0)*GeV
+    : G4RandFlat::shoot(1.0, 1.8)*GeV;
+  G4double theta =
+    std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(20*deg)))*radian;
   G4double phi = G4RandFlat::shoot(0., 360.)*deg;
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
   G4double x0 =  G4RandFlat::shoot(-target_size.x(), target_size.x());
   G4double y0 =  G4RandFlat::shoot(-target_size.y(), target_size.y());
   G4double z0 =  G4RandFlat::shoot(-target_size.z(), target_size.z());
-  G4LorentzVector v(target_pos + G4ThreeVector(x0, y0, z0), 0);
+  G4LorentzVector v(target_pos, 0);
+  // G4LorentzVector v(target_pos + G4ThreeVector(x0, y0, z0), 0);
 #if 0
   G4cout << FUNC_NAME << G4endl
          << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
