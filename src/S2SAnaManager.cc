@@ -143,19 +143,19 @@ S2SAnaManager::MakeHistogram(const G4String& sd_name)
   if(sd_name == "PRM"){
     const auto& params = histMan.Get("PTheta");
     TString key = sd_name + "PThetaGen";
-    TString title = sd_name + " P%Theta (Generate); [deg.]; [GeV/c]";
+    TString title = sd_name + " P%Theta (Generate); [deg]; [GeV/c]";
     hmap[key] = new TH2D(key, title,
                          params.at(0), params.at(1), params.at(2),
                          params.at(3), params.at(4), params.at(5));
     key = sd_name + "PThetaAcc";
-    title = sd_name + " P%Theta (Accept); [deg.]; [GeV/c]";
+    title = sd_name + " P%Theta (Accept); [deg]; [GeV/c]";
     hmap[key] = new TH2D(key, title,
                          params.at(0), params.at(1), params.at(2),
                          params.at(3), params.at(4), params.at(5));
     for(G4int i=0, n=TriggerFlag.size(); i<n; ++i){
       key = sd_name + "PThetaAcc" + TriggerFlag.at(i);
       title = sd_name + " P%Theta (Accept at " + TriggerFlag.at(i) + ");"
-        + " [deg.]; [GeV/c]";
+        + " [deg]; [GeV/c]";
       hmap[key] = new TH2D(key, title,
                            params.at(0), params.at(1), params.at(2),
                            params.at(3), params.at(4), params.at(5));
