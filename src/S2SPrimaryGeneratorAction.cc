@@ -364,7 +364,7 @@ S2SPrimaryGeneratorAction::GenerateAcceptance(G4Event* anEvent)
   static const G4double m0 = m_particle->GetPDGMass();
   static const G4int experiment = confMan.Get<G4int>("Experiment");
   G4double p0 = (experiment == 10)
-    ? G4RandFlat::shoot(0.4, 1.0)*GeV
+    ? G4RandFlat::shoot(0.6, 1.2)*GeV
     : G4RandFlat::shoot(1.0, 1.8)*GeV;
   G4double theta =
     std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(20*deg)))*radian;
