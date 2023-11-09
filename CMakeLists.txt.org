@@ -47,6 +47,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include
 file(GLOB sources ${PROJECT_SOURCE_DIR}/src/*.cc)
 file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${PROJECT_SOURCE_DIR}/.build")
+# add_compile_options(-D MemoryLeak)
 
 #----------------------------------------------------------------------------
 # Add the executables, and link it to the Geant4 libraries
@@ -55,6 +56,7 @@ target_link_libraries(G4S2S ${Geant4_LIBRARIES} ${ROOT_LIBRARIES})
 
 if(UNIX AND NOT APPLE)
   root_generate_dictionary(G4S2S_dict TParticle.h TVector3.h
+  			VHitInfo.hh
 		LINKDEF ${PROJECT_SOURCE_DIR}/linkdef/LinkDef.h
 		MODULE G4S2S)
   add_library(G4S2S_lib SHARED G4S2S_dict)
