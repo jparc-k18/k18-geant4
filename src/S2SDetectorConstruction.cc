@@ -285,7 +285,7 @@ S2SDetectorConstruction::ConstructQ1()
 void
 S2SDetectorConstruction::ConstructQ2()
 {
-  const G4double a0 = 180*mm; // phi=360mm
+  const G4double a0 = 360*mm/2 * 2; // phi=360mm
   const G4ThreeVector pos(0, 0, -2776.5*mm);
   ///// Pole
   G4VSolid* solidQ2Pole = nullptr;

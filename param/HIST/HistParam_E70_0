@@ -59,7 +59,7 @@ VPV		100	-0.1	0.1
 # TH2
 #
 # key	nbinsx	xlow	xup	nbinsy	ylow	yup
-PTheta	100	0	30	100	1.0	1.8
+PTheta	100	0	20	100	1.0	1.8
 
 TGTY%X	100	-100	100	100	-100	100
 TGTV%U	100	-0.1	0.1	100	-0.1	0.1

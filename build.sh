@@ -15,7 +15,7 @@ if [ "$(uname)" == 'Darwin' -a ! -e "$src_dir/Dict_rdict.pcm" ]; then
 	      $linkdef_dir/LinkDef.h
 fi
 
-mkdir -pv $build_dir
+mkdir -p $build_dir
 cd $build_dir
 cmake .. -DCMAKE_INSTALL_PREFIX=$main_dir \
       -DCMAKE_INSTALL_RPATH_USE_LINK_PATH="ON"
