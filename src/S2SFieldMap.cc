@@ -15,7 +15,7 @@
 #include "DCGeomMan.hh"
 #include "FuncName.hh"
 
-#define DebugDisp 1
+#define DebugDisp 0
 #if DebugDisp
 #include <TCanvas.h>
 #include <TH1.h>
