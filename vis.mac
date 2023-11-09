@@ -9,11 +9,10 @@
 /vis/viewer/set/style wireframe
 # /vis/viewer/set/style cloud
 # /vis/viewer/set/style surface
-/vis/scene/add/trajectories smooth
-/vis/scene/add/hits
 /vis/modeling/trajectories/create/drawByCharge
 # /vis/modeling/trajectories/drawByCharge-0/default/setDrawStepPts true
 # /vis/modeling/trajectories/drawByCharge-0/default/setStepPtsSize 3
+/vis/scene/add/hits
 
 # To draw gammas only
 # /vis/filtering/trajectories/create/particleFilter
@@ -46,3 +45,4 @@
 
 # /vis/scene/add/scale   # Simple scale line
 # /vis/scene/add/axes    # Simple axes: x=red, y=green, z=blue.
+/vis/scene/add/trajectories smooth rich

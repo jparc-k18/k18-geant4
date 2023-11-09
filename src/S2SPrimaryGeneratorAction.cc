@@ -115,9 +115,9 @@ S2SPrimaryGeneratorAction::GenerateMonochromeBeam(G4Event* anEvent)
   // static const G4String name = "proton";
   static const auto particle = particleTable->FindParticle(name);
   static const auto pdg = particle->GetPDGEncoding();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
   const G4double m0 = particle->GetPDGMass();
-  // const G4double p0 = 1.37*GeV;
-  const G4double p0 = 0.7*GeV;
+  G4double p0 = (experiment == 10) ? 0.9*GeV : 1.3*GeV;
   const auto& target_pos = geomMan.GetGlobalPosition("Target");
   G4LorentzVector p(0, 0, p0, TMath::Sqrt(p0*p0 + m0*m0));
   G4LorentzVector v(target_pos, 0);
