@@ -38,7 +38,7 @@ S2SPhysicsList::S2SPhysicsList(G4int ver)
 
   // EM Physics
   RegisterPhysics(new G4EmStandardPhysics(ver));
-  // Synchroton Radiation & GN Physics
+  // Synchrotron Radiation & GN Physics
   RegisterPhysics(new G4EmExtraPhysics(ver));
 
   // Decays
