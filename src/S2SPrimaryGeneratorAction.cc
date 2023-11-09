@@ -34,334 +34,114 @@ const auto particleTable = G4ParticleTable::GetParticleTable();
 //_____________________________________________________________________________
 S2SPrimaryGeneratorAction::S2SPrimaryGeneratorAction()
   : G4VUserPrimaryGeneratorAction(),
-    T2Distance(),
-    momcent(),
-    mombite(),
-    GenPID(1),
-    generator(confMan.Get<G4int>("Generator"))
+    m_generator(confMan.Get<G4int>("Generator"))
 {
 }
 
 //_____________________________________________________________________________
 S2SPrimaryGeneratorAction::~S2SPrimaryGeneratorAction()
 {
-  if(particleGun) delete particleGun;
+  if(m_particleGun) delete m_particleGun;
 }
 
 //_____________________________________________________________________________
 void
 S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
-  switch(generator){
-  case 0: break;//no generation
-  case 1: GenerateUniform0(anEvent); break; //Uniform generation
-  case 2: GenerateFocusCheck(anEvent); break;//Mom=0, +-97.5MeV/c (0, 2, 4) KanatsukiM Fig.4.1
-  case 3: GenerateMonoBeam(anEvent); break;
-  case 4: GenerateAcceptance(anEvent); break;
+  if(m_particleGun) delete m_particleGun;
+  switch(m_generator){
+  case 0: GenerateDemo(anEvent); break;
+  case 1: GenerateMonochromeBeam(anEvent); break;
+  case 2: GenerateUniformSpherical(anEvent); break;
   default:
-    G4cerr << " * Generator number error : " << generator << G4endl;
+    G4cerr << " * Generator number error : " << m_generator << G4endl;
     break;
   }
 }
 
 //_____________________________________________________________________________
 void
-S2SPrimaryGeneratorAction::GenerateUniform0(G4Event* anEvent)
+S2SPrimaryGeneratorAction::GenerateDemo(G4Event* anEvent)
 {
-  G4int n_particle = 1;
-  particleGun = new G4ParticleGun(n_particle);
-  if(GenPID==1){
-    m_particle = particleTable->FindParticle("kaon+");
-  }
-  else if(GenPID==2){
-    m_particle = particleTable->FindParticle("kaon-");
-  }
-  else if(GenPID==3){
-    m_particle = particleTable->FindParticle("pi+");
-  }
-  else if(GenPID==4){
-    m_particle = particleTable->FindParticle("pi-");
-  }
-  else if(GenPID==5){
-    m_particle = particleTable->FindParticle("proton");
-  }
-  else if(GenPID==6){
-    m_particle = particleTable->FindParticle("e-");
-  }
-  else if(GenPID==7){
-    m_particle = particleTable->FindParticle("mu-");
-  }
-  else if(GenPID==8){
-    m_particle = particleTable->FindParticle("xi-");
-  }
-  else {
-    G4cout << " Sorry, I do not know GenPID=" << GenPID << G4endl;
-    G4cout << " --> Set particle type: kaon+" << G4endl;
-    m_particle = particleTable->FindParticle("kaon+");
-  }
-  particleGun -> SetParticleDefinition(m_particle);
-
-  // ~~~~~~~~~ Set Particle Momentum ~~~~~~~~~~~~~~~~
-  G4double parMom = 0.0;
-  parMom = (momcent+ mombite*(G4UniformRand()-0.5)*2.0 ) * GeV;
-  particleGun->SetParticleMomentum(parMom);
-
-  //~~~~~~~~~~ Set Particle Position ~~~~~~~~~~~~~~~
-  //G4double xlim = 10*cm;
-  //G4double ylim = 2.5*cm;
-  //G4double zlim = 1.5*cm;
-  G4double xorg = 0;//-rhoD*tan(bendAngleD*TMath::DegToRad()/2.)-driftL2-Q2z-driftL1-Q1z;
-  G4double x0 = 0;//xorg-T2Distance; // Beam direction
-  G4double y0 = 0.0; // Horizontal direction
-  G4double z0 = 0.0; // Vertical direction
-  x0 = x0 + beamz*( G4UniformRand()-0.5 ); // Beam direction
-  y0 = CLHEP::RandGauss::shoot(y0,beamx); // Horizontal direction
-  z0 = CLHEP::RandGauss::shoot(z0,beamy); // Vertical direction
-  //   x0 += xlim*int(G4UniformRand()*3);//mm From -T2Distance to -T2Distance+xlim
-  //   y0 = 2*ylim*(G4UniformRand()-0.5);//mm
-  //   z0 = 2*zlim*(G4UniformRand()-0.5);//mm
-  //   while(1){
-  //     y0 = 2*ylim*(G4UniformRand()-0.5);//mm
-  //     z0 = 2*zlim*(G4UniformRand()-0.5);//mm
-  //     //     y0 = CLHEP::RandGauss::shoot(0,2.0*cm);
-  //     //     z0 = CLHEP::RandGauss::shoot(0,0.5*cm);
-  //     if(fabs(y0)<ylim && fabs(z0)<zlim){
-  //       break;
-  //     }
-  //   }
-  G4ThreeVector vertex(x0,y0,z0);
-  particleGun->SetParticlePosition(vertex);
-
-  // ~~~~~~~~~~~ Particle Direction ~~~~~~~~~~~~~~~~~~
-  G4double limitTheta = thetamax*deg; // [deg] --> [rad]
-  //G4double limitTheta = 25*TMath::DegToRad(); //degree
-  //G4double limituAng = 10*TMath::DegToRad();
-  //G4double limitvAng = 20*TMath::DegToRad();
-  G4double limitcos = cos(limitTheta);
-  G4double phi   = 0.0;
-  G4double theta = 0.0;
-  G4double rand  = 0.0;
-  G4double u0    = 0.0;
-  G4double v0    = 0.0;
-  phi = 2.0 * TMath::Pi() * G4UniformRand();
-  rand = (1-limitcos)*G4UniformRand()+limitcos;
-  theta = acos(rand);
-  u0 = tan(theta)*cos(phi);
-  v0 = tan(theta)*sin(phi);
-  //  while(1){
-  //    phi = 2*TMath::Pi()*G4UniformRand();
-  //    rand = (1-limitcos)*G4UniformRand()+limitcos;
-  //    theta = acos(rand);
-  //    u0 = tan(theta)*cos(phi);
-  //    v0 = tan(theta)*sin(phi);
-  //    if(1){
-  //    //if(fabs(atan(u0))<limituAng && fabs(atan(v0))<limitvAng){
-  //      break;
-  //    }
-  //  }
-  //   if(anEvent->GetEventID()/3==0)
-  //     u0=-4*TMath::DegToRad();
-  //   if(anEvent->GetEventID()/3==1)
-  //     u0=-2*TMath::DegToRad();
-  //   if(anEvent->GetEventID()/3==2)
-  //     u0=-0*TMath::DegToRad();
-  //   if(anEvent->GetEventID()/3==3)
-  //     u0=1.8*TMath::DegToRad();
-  //   if(anEvent->GetEventID()/3==4)
-  //     u0=3.6*TMath::DegToRad();
-  //   //(((anEvent->GetEventID())/3) -2) *TMath::DegToRad();
-  //   v0=0;
-  G4ThreeVector direction(1., u0, v0);
-  particleGun->SetParticleMomentumDirection(direction);
-
-
-  //particleGun->SetParticleEnergy(parKinE*MeV);
-  //double parMom particleGun->GetParticleMomentum();
-  double parKinE = particleGun->GetParticleEnergy();
-  particleGun-> GeneratePrimaryVertex(anEvent);
-
-  anaMan.SetPrimaryData(y0/mm,z0/mm,-x0/mm+xorg,
-                        u0,v0,
-                        phi,theta,
-                        parMom/GeV,
-                        parKinE/GeV,
-                        9999);
-  G4cout << FUNC_NAME << " gun." << G4endl;
-}
-
-//_____________________________________________________________________________
-void
-S2SPrimaryGeneratorAction::GenerateFocusCheck(G4Event* anEvent)
-{
- G4int n_particle = 1;
-  particleGun = new G4ParticleGun(n_particle);
-  particleGun->SetParticleEnergy(0.0*GeV); // Reset Particle energy
-
-  // ~~~~~~~~~~~ Set Particle Type ~~~~~~~~~~~~~~~~
-  if(GenPID==1){
-    m_particle = particleTable->FindParticle("kaon+");
-  }
-  else if(GenPID==2){
-    m_particle = particleTable->FindParticle("kaon-");
-  }
-  else if(GenPID==3){
-    m_particle = particleTable->FindParticle("pi+");
-  }
-  else if(GenPID==4){
-    m_particle = particleTable->FindParticle("pi-");
-  }
-  else if(GenPID==5){
-    m_particle = particleTable->FindParticle("proton");
-  }
-  else if(GenPID==6){
-    m_particle = particleTable->FindParticle("e-");
-  }
-  else if(GenPID==7){
-    m_particle = particleTable->FindParticle("mu-");
-  }
-  else if(GenPID==8){
-    m_particle = particleTable->FindParticle("xi-");
-  }
-  else {
-    G4cout << " Sorry, I do not know GenPID=" << GenPID << G4endl;
-    G4cout << " --> Set particle type: kaon+" << G4endl;
-    m_particle = particleTable->FindParticle("kaon+");
-  }
-  particleGun -> SetParticleDefinition( m_particle );
-
-
-  // ~~~~~~~~~ Set Particle Momentum ~~~~~~~~~~~~~~~~
-  G4double parMom = 0.0;
-  //parMom = (momcent+ mombite*(G4UniformRand()-0.5)*2.0 ) * GeV;
-  parMom = (momcent + (double)((int)(G4UniformRand()*3.)-1)*mombite)*GeV;
-  std::cout<<"parMom="<<parMom<<std::endl;
-  particleGun->SetParticleMomentum(parMom);
-
-
-  //~~~~~~~~~~ Set Particle Position ~~~~~~~~~~~~~~~
-  //G4double xlim = 10*cm;
-  //G4double ylim = 2.5*cm;
-  //G4double zlim = 1.5*cm;
-  G4double xorg = 0;//-rhoD*tan(bendAngleD*TMath::DegToRad()/2.)-driftL2-Q2z-driftL1-Q1z;
-  G4double x0 = 0;//xorg-T2Distance; // Beam direction
-  G4double y0 = 0.0; // Horizontal direction
-  G4double z0 = 0.0; // Vertical direction
-  x0 = x0 + beamz*( G4UniformRand()-0.5 ); // Beam direction
-  y0 = CLHEP::RandGauss::shoot(y0,beamx); // Horizontal direction
-  z0 = CLHEP::RandGauss::shoot(z0,beamy); // Vertical direction
-  //   x0 += xlim*int(G4UniformRand()*3);//mm From -T2Distance to -T2Distance+xlim
-  //   y0 = 2*ylim*(G4UniformRand()-0.5);//mm
-  //   z0 = 2*zlim*(G4UniformRand()-0.5);//mm
-  //   while(1){
-  //     y0 = 2*ylim*(G4UniformRand()-0.5);//mm
-  //     z0 = 2*zlim*(G4UniformRand()-0.5);//mm
-  //     //     y0 = CLHEP::RandGauss::shoot(0,2.0*cm);
-  //     //     z0 = CLHEP::RandGauss::shoot(0,0.5*cm);
-  //     if(fabs(y0)<ylim && fabs(z0)<zlim){
-  //       break;
-  //     }
-  //   }
-  G4ThreeVector vertex(x0,y0,z0);
-  particleGun->SetParticlePosition(vertex);
-
-  // ~~~~~~~~~~~ Particle Direction ~~~~~~~~~~~~~~~~~~
-  //G4double limitTheta = thetamax*TMath::DegToRad(); // [deg] --> [rad]
-  //G4double limitTheta = 25*TMath::DegToRad(); //degree
-  //G4double limituAng = 10*TMath::DegToRad();
-  //G4double limitvAng = 20*TMath::DegToRad();
-  //G4double limitcos = cos(limitTheta);
-  G4double phi   = 0.0;
-  G4double theta = 0.0;
-  // G4double rand  = 0.0;
-  G4double u0    = 0.0;
-  G4double v0    = 0.0;
-  //  phi = 2.0 * TMath::Pi() * G4UniformRand();
-  phi = (double)((int)(G4UniformRand()*4.))*0.5*TMath::Pi();
-  //rand = (1-limitcos)*G4UniformRand()+limitcos;
-  //theta = acos(rand);
-  theta = (double)((int)(G4UniformRand()*3.)*2)*TMath::Pi()/180.;
-  std::cout<<"theta="<<theta<<"rad, "<<theta*180./TMath::Pi()<<"degree"<<std::endl;
-  std::cout<<"phi="<<phi<<"rad, "<<phi*180./TMath::Pi()<<"degree"<<std::endl;
-  u0 = tan(theta)*cos(phi);
-  v0 = tan(theta)*sin(phi);
-  //  while(1){
-  //    phi = 2*TMath::Pi()*G4UniformRand();
-  //    rand = (1-limitcos)*G4UniformRand()+limitcos;
-  //    theta = acos(rand);
-  //    u0 = tan(theta)*cos(phi);
-  //    v0 = tan(theta)*sin(phi);
-  //    if(1){
-  //    //if(fabs(atan(u0))<limituAng && fabs(atan(v0))<limitvAng){
-  //      break;
-  //    }
-  //  }
-  //   if(anEvent->GetEventID()/3==0)
-  //     u0=-4*TMath::DegToRad();
-  //   if(anEvent->GetEventID()/3==1)
-  //     u0=-2*TMath::DegToRad();
-  //   if(anEvent->GetEventID()/3==2)
-  //     u0=-0*TMath::DegToRad();
-  //   if(anEvent->GetEventID()/3==3)
-  //     u0=1.8*TMath::DegToRad();
-  //   if(anEvent->GetEventID()/3==4)
-  //     u0=3.6*TMath::DegToRad();
-  //   //(((anEvent->GetEventID())/3) -2) *TMath::DegToRad();
-  //   v0=0;
-  G4ThreeVector direction(1., u0, v0);
-  particleGun->SetParticleMomentumDirection(direction);
-
-
-  //particleGun->SetParticleEnergy(parKinE*MeV);
-  //double parMom particleGun->GetParticleMomentum();
-  double parKinE = particleGun->GetParticleEnergy();
-  particleGun-> GeneratePrimaryVertex(anEvent);
-
-  anaMan.SetPrimaryData(y0/mm,z0/mm,-x0/mm+xorg,
-                        u0,v0,
-                        phi,theta,
-                        parMom/GeV,
-                        parKinE/GeV,
-                        9999);
-}
-
-//_____________________________________________________________________________
-void
-S2SPrimaryGeneratorAction::GenerateMonoBeam(G4Event* anEvent)
-{
-  const G4int n_particle = 1;
-  particleGun = new G4ParticleGun(n_particle);
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
   static const G4String name = "kaon+";
   // static const G4String name = "proton";
-  m_particle = particleTable->FindParticle(name);
-  static const auto pdg = m_particle->GetPDGEncoding();
-  const G4double m0 = m_particle->GetPDGMass();
-  // const G4double p0 = 1.37*GeV;
-  const G4double p0 = 0.7*GeV;
-  const auto& target_pos = geomMan.GetGlobalPosition("Target");
-  G4LorentzVector p(0, 0, p0, TMath::Sqrt(p0*p0 + m0*m0));
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
+  static const G4double m0 = particle->GetPDGMass();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  const auto evnum = anEvent->GetEventID();
+  G4double p0 = (experiment == 10) ? 0.9*GeV : 1.3*GeV;
+  p0 = (evnum%3 == 0) ? p0
+    : (evnum%3 == 1) ? p0*1.075
+    : p0*0.925;
+  auto n = G4RandFlat::shootInt(5);
+  G4double theta = (n%5 == 0) ? 0*deg
+    : (n%5 == 1) ? 2*deg
+    : (n%5 == 2) ? 4*deg
+    : (n%5 == 3) ? -2*deg
+    : -4*deg;
+  G4double phi = 0*deg; // G4RandFlat::shoot(0., 360.)*deg;
+  G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
+  p.setRThetaPhi(p0, theta, phi);
+  G4double x0 =  G4RandFlat::shoot(-target_size.x(), target_size.x());
+  G4double y0 =  G4RandFlat::shoot(-target_size.y(), target_size.y());
+  G4double z0 =  G4RandFlat::shoot(-target_size.z(), target_size.z());
   G4LorentzVector v(target_pos, 0);
-  particleGun->SetParticleDefinition(m_particle);
-  particleGun->SetParticleMomentumDirection(p.v());
-  particleGun->SetParticleEnergy(p.e() - m0);
-  particleGun->SetParticlePosition(v.v());
-  particleGun->GeneratePrimaryVertex(anEvent);
+  // G4LorentzVector v(target_pos + G4ThreeVector(0, 0, 300*CLHEP::mm), 0);
+#if 0
+  G4cout << FUNC_NAME << G4endl
+         << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
+         << " " << p << " " << p.theta()/deg << " " << v << G4endl;
+#endif
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
   anaMan.SetPrimaryParticle(0, pdg, p, v);
 }
 
 //_____________________________________________________________________________
 void
-S2SPrimaryGeneratorAction::GenerateAcceptance(G4Event* anEvent)
+S2SPrimaryGeneratorAction::GenerateMonochromeBeam(G4Event* anEvent)
 {
-  static const G4int n_particle = 1;
-  if(particleGun) delete particleGun;
-  particleGun = new G4ParticleGun(n_particle);
+  const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
   static const G4String name = "kaon+";
   // static const G4String name = "proton";
-  m_particle = particleTable->FindParticle(name);
-  static const auto pdg = m_particle->GetPDGEncoding();
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  const G4double m0 = particle->GetPDGMass();
+  // const G4double p0 = 1.37*GeV;
+  const G4double p0 = 0.7*GeV;
+  const auto& target_pos = geomMan.GetGlobalPosition("Target");
+  G4LorentzVector p(0, 0, p0, TMath::Sqrt(p0*p0 + m0*m0));
+  G4LorentzVector v(target_pos, 0);
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+}
+
+//_____________________________________________________________________________
+void
+S2SPrimaryGeneratorAction::GenerateUniformSpherical(G4Event* anEvent)
+{
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const G4String name = "kaon+";
+  // static const G4String name = "proton";
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
   static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
   static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
-  static const G4double m0 = m_particle->GetPDGMass();
+  static const G4double m0 = particle->GetPDGMass();
   static const G4int experiment = confMan.Get<G4int>("Experiment");
   G4double p0 = (experiment == 10)
     ? G4RandFlat::shoot(0.6, 1.2)*GeV
@@ -381,10 +161,10 @@ S2SPrimaryGeneratorAction::GenerateAcceptance(G4Event* anEvent)
          << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
          << " " << p << " " << p.theta()/deg << " " << v << G4endl;
 #endif
-  particleGun->SetParticleDefinition(m_particle);
-  particleGun->SetParticleMomentumDirection(p.v());
-  particleGun->SetParticleEnergy(p.e() - m0);
-  particleGun->SetParticlePosition(v.v());
-  particleGun->GeneratePrimaryVertex(anEvent);
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
   anaMan.SetPrimaryParticle(0, pdg, p, v);
 }

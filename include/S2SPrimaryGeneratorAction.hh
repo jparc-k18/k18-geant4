@@ -18,25 +18,18 @@ public:
   ~S2SPrimaryGeneratorAction();
 
 private:
-  G4ParticleGun* particleGun;
-  G4ParticleDefinition* m_particle;
-  G4double T2Distance;
-  //void SetMom(G4ThreeVector gMom, G4ThreeVector gPos, G4Event* anEvent, G4int evID);
-  //void GenParUni(G4Event* anEvent);
-  G4double momcent, mombite;
-  G4double thetamax;
-  G4int GenPID;
-  G4int generator;
-  G4double beamx, beamy, beamz;
+  G4ParticleGun* m_particleGun;
+  G4int          m_generator;
 
 public:
   void GeneratePrimaries(G4Event* anEvent);
 
 private:
+  void GenerateDemo(G4Event* anEvent);
   void GenerateUniform0(G4Event* anEvent);
   void GenerateFocusCheck(G4Event* anEvent);
-  void GenerateMonoBeam(G4Event* anEvent);
-  void GenerateAcceptance(G4Event* anEvent);
+  void GenerateMonochromeBeam(G4Event* anEvent);
+  void GenerateUniformSpherical(G4Event* anEvent);
 };
 
 inline G4String

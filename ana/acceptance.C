@@ -18,7 +18,7 @@ void acceptance()
   const auto fig_path =
     fig_dir / fs::path(gFile->GetName()).stem().concat("_acc.pdf");
 
-  auto c1 = new TCanvas("c1", "c1", 1200, 800);
+  auto c1 = new TCanvas("c1", "c1", 1200, 400);
 
   auto h_gen = gFile->Get<TH2D>("PRMPThetaGen");
   auto h_acc = gFile->Get<TH2D>("PRMPThetaAcc");
@@ -32,7 +32,7 @@ void acceptance()
   const Double_t dt = (tmax - tmin)/h_eff->GetNbinsY();
   auto h_msr = new TH1D("h_msr", "Solid Angle; [GeV/c]; [msr]",
                         h_eff->GetNbinsY(), pmin, pmax);
-  auto h_ang = new TH1D("h_ang", "Anglar Acceptance at 0.7 GeV/c; [deg];",
+  auto h_ang = new TH1D("h_ang", "Anglar Acceptance at 0.9 GeV/c; [deg];",
                         h_eff->GetNbinsX(), tmin, tmax);
   h_eff->Divide(h_gen);
   h_eff->SetStats(0);
@@ -53,19 +53,19 @@ void acceptance()
         h_ang->Fill(t, eff);
       }
     }
-    std::cout << p << "\t" << srsum << std::endl;
+    // std::cout << p << "\t" << srsum << std::endl;
     h_msr->Fill(p, srsum*1e3);
   }
 
-  c1->Divide(2, 2);
+  c1->Divide(3, 1);
   c1->cd(1);
   // h_gen->Draw("colz");
-  h_acc->Draw("colz");
-  c1->cd(2);
+  // h_acc->Draw("colz");
   h_eff->Draw("colz");
-  c1->cd(3);
+  c1->cd(2);
   h_msr->Draw("hist");
-  c1->cd(4);
+  c1->cd(3);
   h_ang->Draw("hist");
+  // c1->cd(4);
   c1->Print(fig_path.c_str());
 }

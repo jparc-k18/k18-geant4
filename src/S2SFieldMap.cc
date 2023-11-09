@@ -107,8 +107,8 @@ S2SFieldMap::Initialize()
   const auto Q2scale = confMan.Get<G4double>("Q2SCALE");
   const auto D1scale = confMan.Get<G4double>("D1SCALE");
   const auto& geomMan = DCGeomMan::GetInstance();
-  const auto Q1Q2Boundary = geomMan.GetGlobalPosition("S2SQ1Q2Boundary").z()*CLHEP::mm;
-  const auto Q2D1Boundary = geomMan.GetGlobalPosition("S2SQ2D1Boundary").z()*CLHEP::mm;
+  const auto Q1Q2Boundary = geomMan.GetGlobalPosition("VP2").z()*CLHEP::mm;
+  const auto Q2D1Boundary = geomMan.GetGlobalPosition("VP4").z()*CLHEP::mm;
 
   G4double x, y, z, bx, by, bz;
 
