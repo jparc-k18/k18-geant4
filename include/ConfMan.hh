@@ -40,6 +40,7 @@ private:
 public:
   G4bool Initialize(const G4String& file_name);
   const G4String& ConfBuf() const { return m_conf_buf; }
+  const G4String& ConfPath() const { return m_file.at(m_conf_key); }
   template <typename T>
   static const T& Get(const G4String& key);
 

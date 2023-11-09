@@ -71,7 +71,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
 {
   fActive_=true;
   m_file = new TFile(m_file_name, "recreate");
-  static auto obj = new TNamed("conf", confMan.ConfBuf());
+  static auto obj = new TNamed("conf", confMan.ConfPath()+confMan.ConfBuf());
   obj->Write();
   static auto git = new TNamed
     ("git", ("\n"+gSystem->GetFromPipe("git log -1")).Data());
