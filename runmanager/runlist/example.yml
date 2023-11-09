@@ -3,8 +3,8 @@
 #
 #   queue   : bsub queue (eg. s, l, etc...)
 #   qmerge  : bsub queue for merging job to command "hadd"
-#   nevent  : number of events
-#   unit    : dividing event unit
+#   nruns   : number of runs
+#   unit    : number of events for each run
 #   nproc   : number of process for merging (up to 18)
 #   buff    : intermediate root files will be placed here
 #             if not set, use the same "root" directory
@@ -16,7 +16,7 @@
 DEFAULT:
   queue: s
   qmerge: s
-  nevent: 1000000
+  nruns: 100
   unit:  10000
   nproc: 18
   buff:  root/buf
@@ -27,7 +27,7 @@ DEFAULT:
 #______________________________________________________________________________
 RUN:
   beam:
-    conf: ./param/conf/e10_beam.conf
+    conf: param/conf/e10_beam.conf
 
   acc:
-    conf: ./param/conf/e10_acc.conf
+    conf: param/conf/e10_acc.conf
