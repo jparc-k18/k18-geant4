@@ -107,8 +107,8 @@ S2SFieldMap::Initialize()
   const auto Q2scale = confMan.Get<G4double>("Q2SCALE");
   const auto D1scale = confMan.Get<G4double>("D1SCALE");
   const auto& geomMan = DCGeomMan::GetInstance();
-  const auto Q1Q2Boundary = geomMan.GetGlobalPosition("S2SQ1Q2Boundary").z();
-  const auto Q2D1Boundary = geomMan.GetGlobalPosition("S2SQ2D1Boundary").z();
+  const auto Q1Q2Boundary = geomMan.GetGlobalPosition("S2SQ1Q2Boundary").z()*CLHEP::mm;
+  const auto Q2D1Boundary = geomMan.GetGlobalPosition("S2SQ2D1Boundary").z()*CLHEP::mm;
 
   G4double x, y, z, bx, by, bz;
 
@@ -131,12 +131,16 @@ S2SFieldMap::Initialize()
     G4int iz = G4int((z-m_zmin+0.1*m_dz)/m_dz);
     if(ix>=0 && ix<m_nx && iy>=0 && iy<m_ny && iz>=0 && iz<m_nz){
       G4double factor = 1.;
-      if(z < Q1Q2Boundary)
+      if(z*CLHEP::cm < Q1Q2Boundary)
         factor = Q1scale;
-      else if(z < Q2D1Boundary)
+      else if(z*CLHEP::cm < Q2D1Boundary)
         factor = Q2scale;
       else
         factor = D1scale;
+      // G4cout << "z : " << z
+      //        << "\tQ1Q2Baundary" << Q1Q2Boundary
+      //        << "\tQ2D1Baundary" << Q2D1Boundary
+      //        << "\tfactor : " << factor << G4endl;
       m_b[ix][iy][iz].set(bx*factor, by*factor, bz*factor);
 #if DebugDisp
       if(std::abs(y) < 1.) h1->Fill(z, x, by*factor);
