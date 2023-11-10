@@ -34,6 +34,7 @@ const auto particleTable = G4ParticleTable::GetParticleTable();
 //_____________________________________________________________________________
 S2SPrimaryGeneratorAction::S2SPrimaryGeneratorAction()
   : G4VUserPrimaryGeneratorAction(),
+    m_particleGun(nullptr),
     m_generator(confMan.Get<G4int>("Generator"))
 {
 }
@@ -87,9 +88,9 @@ S2SPrimaryGeneratorAction::GenerateDemo(G4Event* anEvent)
   G4double phi = 0*deg; // G4RandFlat::shoot(0., 360.)*deg;
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
-  G4double x0 =  G4RandFlat::shoot(-target_size.x(), target_size.x());
-  G4double y0 =  G4RandFlat::shoot(-target_size.y(), target_size.y());
-  G4double z0 =  G4RandFlat::shoot(-target_size.z(), target_size.z());
+  // G4double x0 =  G4RandFlat::shoot(-target_size.x(), target_size.x());
+  // G4double y0 =  G4RandFlat::shoot(-target_size.y(), target_size.y());
+  // G4double z0 =  G4RandFlat::shoot(-target_size.z(), target_size.z());
   G4LorentzVector v(target_pos, 0);
   // G4LorentzVector v(target_pos + G4ThreeVector(0, 0, 300*CLHEP::mm), 0);
 #if 0
@@ -151,9 +152,9 @@ S2SPrimaryGeneratorAction::GenerateUniformSpherical(G4Event* anEvent)
   G4double phi = G4RandFlat::shoot(0., 360.)*deg;
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
-  G4double x0 =  G4RandFlat::shoot(-target_size.x(), target_size.x());
-  G4double y0 =  G4RandFlat::shoot(-target_size.y(), target_size.y());
-  G4double z0 =  G4RandFlat::shoot(-target_size.z(), target_size.z());
+  // G4double x0 =  G4RandFlat::shoot(-target_size.x(), target_size.x());
+  // G4double y0 =  G4RandFlat::shoot(-target_size.y(), target_size.y());
+  // G4double z0 =  G4RandFlat::shoot(-target_size.z(), target_size.z());
   G4LorentzVector v(target_pos, 0);
   // G4LorentzVector v(target_pos + G4ThreeVector(x0, y0, z0), 0);
 #if 0

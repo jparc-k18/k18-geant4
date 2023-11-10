@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
-#ifndef PRIMARY_GENERATOR_ACTION_H
-#define PRIMARY_GENERATOR_ACTION_H
+#ifndef PRIMARY_GENERATOR_ACTION_HH
+#define PRIMARY_GENERATOR_ACTION_HH
 
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <globals.hh>
@@ -32,6 +32,7 @@ private:
   void GenerateUniformSpherical(G4Event* anEvent);
 };
 
+//_____________________________________________________________________________
 inline G4String
 S2SPrimaryGeneratorAction::ClassName()
 {
