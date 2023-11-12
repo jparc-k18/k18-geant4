@@ -76,6 +76,7 @@ VHitInfo::VHitInfo(const G4String& name, G4Step* step,
                              0, // fDaughter[0]
                              0, // fDaughter[1]
                              p, v);
+  m_particle->SetWeight(m_energy_deposit);
 }
 
 //_____________________________________________________________________________
