@@ -12,17 +12,44 @@ This tool is developed on the platform of KEKCC, CentOS 7.9.2009.
 - ROOT 6.22/08
 - Geant4 11.0.2
 
+## Anaconda setting
+
+To use Python,
+it is necessary to build the Anaconda local environment once using the `conda` command as follows.
+Note that it is recommended to use `conda install` instead of `pip install` in the anaconda environment.
+
+```sh
+$ conda create -n py37 python=3.7 # py37 is an example name
+$ conda activate py37
+$ conda install numpy psutil pyyaml rich
+```
+
+Add the following line in .bashrc to activate your environment.
+
+```sh
+conda activate py37
+```
+
+If the prompt header of conda is annoying, add the following line in .condarc.
+
+```yaml
+changeps1: False
+```
+
 ## How to install
 
 Set environment variables.
 
 ```shell
-module load git/2260
-export G4WORKDIR=$HOME/work/geant4
-export MAKEFLAGS="-j40"
+. /opt/python-3.7/etc/profile.d/conda.sh
 . /group/had/sks/software/root/6.22.08/bin/thisroot.sh
 . /sw/packages/geant4/11.0.2/bin/geant4.sh
 . /sw/packages/geant4/11.0.2/share/Geant4-11.0.2/geant4make/geant4make.sh
+export PATH=$PATH:/group/had/sks/software/unpacker/s2s/bin
+export MAKEFLAGS=-j40
+conda activate py37
+module load gcc/830
+module load git/2260
 ```
 
 then
