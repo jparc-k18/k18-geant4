@@ -5,18 +5,18 @@
 
 #include <vector>
 
-#include <G4String.hh>
+#include <TString.h>
 
-const G4int NumOfSegTOF = 18;
-const G4int NumOfSegWC = 12;
-const G4int NumOfLayersSDC1 = 6;
-const G4int NumOfLayersSDC2 = 4;
-const G4int NumOfLayersSDC3 = 4;
-const G4int NumOfLayersSDC4 = 4;
-const G4int NumOfLayersSDC5 = 4;
-const G4int NumOfLayersSSD1 = 4;
-const G4int NumOfLayersSSD2 = 4;
-const G4int NumOfLayersVP = 11;
+const Int_t NumOfSegTOF = 18;
+const Int_t NumOfSegWC = 12;
+const Int_t NumOfLayersSDC1 = 6;
+const Int_t NumOfLayersSDC2 = 4;
+const Int_t NumOfLayersSDC3 = 4;
+const Int_t NumOfLayersSDC4 = 4;
+const Int_t NumOfLayersSDC5 = 4;
+const Int_t NumOfLayersSSD1 = 4;
+const Int_t NumOfLayersSSD2 = 4;
+const Int_t NumOfLayersVP = 11;
 
 enum ETriggerFlag
   {
@@ -44,7 +44,7 @@ enum ETriggerFlag
     kTriggerFlagSize
   };
 
-const std::vector<G4String> TriggerFlag =
+const std::vector<TString> TriggerFlag =
   {
     "SSD1",
     "SSD2",
