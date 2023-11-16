@@ -13,7 +13,6 @@
 #include <G4Box.hh>
 #include <G4Trd.hh>
 #include <G4ExtrudedSolid.hh>
-#include <G4Hype.hh>
 #include <G4IntersectionSolid.hh>
 #include <G4SubtractionSolid.hh>
 #include <G4UnionSolid.hh>
@@ -48,6 +47,7 @@
 #include "TOFSD.hh"
 #include "ACSD.hh"
 #include "WCSD.hh"
+//#include "CalorimeterSD.hh"
 
 namespace
 {
@@ -196,14 +196,14 @@ S2SDetectorConstruction::ConstructQ1()
   G4VSolid* solidQ1Gap;
   auto solidQ1Box = new G4Box("solidQ1Gap", 540*mm/2, 540*mm/2, 1240*mm/2);
   const G4double rCorner = (540*mm*std::sqrt(2)-2*a0)/2.;
-  auto solidCorner = new G4Tubs("solidCorner",
-                                0*mm, rCorner, 900*mm,
-                                0*deg, 360*deg);
+  // auto solidCorner = new G4Tubs("solidCorner",
+  //                               0*mm, rCorner, 900*mm,
+  //                               phiStart, phiTotal);
   const G4double rInner[] = { 0., 0. };
   G4double zPlaneCorner[] = { -630*mm, 630*mm };
   G4double rOuterCorner[] = { rCorner, rCorner };
-  // auto solidCorner = new G4Polyhedra("solidCorner", 0*deg, 360*deg, 4, 2,
-  //                                    zPlaneCorner, rInner, rOuterCorner);
+  auto solidCorner = new G4Polyhedra("solidCorner", 0*deg, 360*deg, 4, 2,
+                                     zPlaneCorner, rInner, rOuterCorner);
   solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Box,
                                       solidCorner, nullptr, G4ThreeVector(270*mm, 270*mm, 0));
   solidQ1Gap = new G4SubtractionSolid("solidQ1Gap", solidQ1Gap,
@@ -251,11 +251,10 @@ S2SDetectorConstruction::ConstructQ1()
   new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos),
                     "physQ1HeBag", logicQ1HeBag, physWorld, false, 0, check_overlaps);
   const auto mylar_thickness = sizeMan.Get("HeBagMylarThickness")*mm;
-  G4VSolid* solidQ1Mylar;
-  solidQ1Mylar = new G4Box("solidQ1Mylar", 1*m/2, 1*m/2, mylar_thickness/2);
-  solidQ1Mylar = new G4IntersectionSolid("solidQ1Mylar", solidQ1Mylar, solidQ1Gap);
+  auto solidQ1Mylar = new G4Box("solidQ1Mylar", a0, a0, mylar_thickness/2);
   auto logicQ1Mylar = new G4LogicalVolume(solidQ1Mylar, mlist.at("Mylar"), "logicQ1Mylar");
   G4RotationMatrix rot;
+  rot.rotateZ(45*deg);
   new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, -620*mm+mylar_thickness/2)),
                     logicQ1Mylar, "physQ1Mylar", logicQ1HeBag, false, 0, check_overlaps);
   new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0,  620*mm-mylar_thickness/2)),
@@ -286,33 +285,16 @@ S2SDetectorConstruction::ConstructQ1()
 void
 S2SDetectorConstruction::ConstructQ2()
 {
-  const G4double a0 = 360*mm/2; // phi=360mm
+  const G4double a0 = 360*mm/2 * 2; // phi=360mm
   const G4ThreeVector pos(0, 0, -2776.5*mm);
   ///// Pole
   G4VSolid* solidQ2Pole = nullptr;
   solidQ2Pole = new G4Box("solidQ2Pole", 2100*mm/2, 1540*mm/2, 540*mm/2);
   const G4double zlength = 970*mm/2;
-
-  // auto solidQ2Gap = new G4Box("solidQ2Gap", a0, a0, zlength);
-  G4VSolid* solidQ2Gap;
-  solidQ2Gap = new G4Box("solidQ2Gap", 1186*mm/2, 606*mm/2, zlength);
-  auto solidCorner = new G4EllipticalTube("solidCorner",
-                                          383*mm, 210*mm, zlength+1*mm);
-  G4TwoVector cornerPos(450*mm, 245*mm);
-  solidQ2Gap = new G4SubtractionSolid("solidQ1Gap", solidQ2Gap,
-                                      solidCorner, nullptr,
-                                      G4ThreeVector(cornerPos.x(), cornerPos.y(), 0));
-  solidQ2Gap = new G4SubtractionSolid("solidQ1Gap", solidQ2Gap,
-                                      solidCorner, nullptr,
-                                      G4ThreeVector(-cornerPos.x(), cornerPos.y(), 0));
-  solidQ2Gap = new G4SubtractionSolid("solidQ1Gap", solidQ2Gap,
-                                      solidCorner, nullptr,
-                                      G4ThreeVector(cornerPos.x(), -cornerPos.y(), 0));
-  solidQ2Gap = new G4SubtractionSolid("solidQ1Gap", solidQ2Gap,
-                                      solidCorner, nullptr,
-                                      G4ThreeVector(-cornerPos.x(), -cornerPos.y(), 0));
+  auto solidQ2Gap = new G4Box("solidQ2Gap", a0, a0, zlength);
+  // 1200x600 mm2;
   G4RotationMatrix rot;
-  // rot.rotateZ(45*deg);
+  rot.rotateZ(45*deg);
   solidQ2Pole = new G4SubtractionSolid("solidQ2Pole", solidQ2Pole, solidQ2Gap,
                                        G4Transform3D(rot, G4ThreeVector()));
   auto logicQ2Pole = new G4LogicalVolume(solidQ2Pole, mlist.at("Fe"), "logicQ2Pole");
@@ -320,9 +302,9 @@ S2SDetectorConstruction::ConstructQ2()
                     "physQ2Pole", logicQ2Pole, physWorld, false, 0, check_overlaps);
   logicQ2Pole->SetVisAttributes(G4Color::Cyan());
   ///// Coil
-  G4VSolid* solidQ2Coil;
+  G4VSolid* solidQ2Coil = nullptr;
   solidQ2Coil = new G4Box("solidQ2Coil", 1320*mm/2, 880*mm/2, 130*mm/2);
-  auto solidQ2Box = new G4Box("solidQ2Gap", 1200*mm/2, 610*mm/2, 900*mm/2);
+  auto solidQ2Box = new G4Box("solidQ2Gap", 1200*mm/2, 600*mm/2, 900*mm/2);
   solidQ2Coil = new G4SubtractionSolid("solidQ2Coil", solidQ2Coil, solidQ2Box,
                                        nullptr, G4ThreeVector());
   auto logicQ2Coil = new G4LogicalVolume
@@ -338,10 +320,9 @@ S2SDetectorConstruction::ConstructQ2()
   new G4PVPlacement(G4Transform3D(G4RotationMatrix(rot), pos),
                     "physQ2HeBag", logicQ2HeBag, physWorld, false, 0, check_overlaps);
   const auto mylar_thickness = sizeMan.Get("HeBagMylarThickness")*mm;
-  G4VSolid* solidQ2Mylar;
-  solidQ2Mylar = new G4Box("solidQ2Mylar", 2*m/2, 2*m/2, mylar_thickness/2);
-  solidQ2Mylar = new G4IntersectionSolid("solidQ2Mylar", solidQ2Mylar, solidQ2Gap);
+  auto solidQ2Mylar = new G4Box("solidQ2Mylar", a0, a0, mylar_thickness/2);
   auto logicQ2Mylar = new G4LogicalVolume(solidQ2Mylar, mlist.at("Mylar"), "logicQ2Mylar");
+  rot.rotateZ(-45*deg);
   new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, -zlength+mylar_thickness/2)),
                     logicQ2Mylar, "physQ2Mylar", logicQ2HeBag, false, 0, check_overlaps);
   new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0,  zlength-mylar_thickness/2)),
