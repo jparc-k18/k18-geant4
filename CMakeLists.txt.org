@@ -77,11 +77,11 @@ if(UNIX AND NOT APPLE)
 		MODULE G4S2S)
   add_library(G4S2S_lib SHARED G4S2S_dict)
   target_link_libraries(G4S2S G4S2S_lib)
+  install(FILES
+    ${PROJECT_BINARY_DIR}/libG4S2S_lib.so
+    ${PROJECT_BINARY_DIR}/libG4S2S_rdict.pcm
+    DESTINATION bin)
 endif()
 
 #----------------------------------------------------------------------------
 install(TARGETS G4S2S RUNTIME DESTINATION bin)
-install(FILES
-  ${PROJECT_BINARY_DIR}/libG4S2S_lib.so
-  ${PROJECT_BINARY_DIR}/libG4S2S_rdict.pcm
-  DESTINATION bin)
