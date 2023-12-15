@@ -57,7 +57,7 @@ then
 ```shell
 git clone ssh://sks@www-online.kek.jp:8022/~/public_html/git/k18geant4.git
 cd k18geant4
-git checkout s2s-dev
+git checkout s2s
 ./build.sh
 ```
 
