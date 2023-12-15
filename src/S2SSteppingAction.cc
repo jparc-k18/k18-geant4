@@ -11,6 +11,13 @@
 #include <G4ParticleDefinition.hh>
 #include <G4ParticleTypes.hh>
 
+#include <ConfMan.hh>
+
+namespace
+{
+  const auto& confMan = ConfMan::GetInstance();
+}
+
 //_____________________________________________________________________________
 S2SSteppingAction::S2SSteppingAction()
 {
@@ -30,7 +37,8 @@ S2SSteppingAction::UserSteppingAction(const G4Step* theStep)
   auto thePrePVname = thePrePoint->GetPhysicalVolume()->GetName();
   auto partName = theTrack->GetDefinition()->GetParticleName();
   auto thePreMaterial = thePrePoint->GetMaterial();
-  if(thePreMaterial->GetName() == "Fe"){
+  if(confMan.Get<G4bool>("StopAtIron")
+     && thePreMaterial->GetName() == "Fe"){
     theTrack->SetTrackStatus(fKillTrackAndSecondaries);
   }
 }

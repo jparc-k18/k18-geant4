@@ -30,6 +30,7 @@ private:
   void GenerateFocusCheck(G4Event* anEvent);
   void GenerateMonochromeBeam(G4Event* anEvent);
   void GenerateUniformSpherical(G4Event* anEvent);
+  void GenerateBeam(G4Event* anEvent);
 };
 
 //_____________________________________________________________________________

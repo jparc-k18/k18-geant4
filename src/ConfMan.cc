@@ -13,6 +13,7 @@
 
 #include <TString.h>
 
+#include "BeamMan.hh"
 #include "DCGeomMan.hh"
 #include "DetSizeMan.hh"
 #include "FuncName.hh"
@@ -79,7 +80,7 @@ ConfMan::InitializeParameterFiles()
 {
   return (true
           && InitializeParameter<DCGeomMan>("DCGEO")
-          // && InitializeParameter<BeamMan>("BEAM")
+          && InitializeParameter<BeamMan>("BEAM")
           && InitializeParameter<DetSizeMan>("DSIZE")
           && InitializeParameter<HistMan>("HIST")
           // && InitializeParameter<JamMan>("JAM")

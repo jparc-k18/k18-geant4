@@ -1,6 +1,6 @@
 // -*- C++ -*-
 
-namespace fs = std::filesystem;
+// namespace fs = std::filesystem;
 
 void acceptance()
 {
@@ -14,9 +14,9 @@ void acceptance()
   gStyle->SetStatX(0.900);
   gStyle->SetStatY(0.940);
 
-  const auto fig_dir = fs::path(__FILE__).parent_path() / "fig";
-  const auto fig_path =
-    fig_dir / fs::path(gFile->GetName()).stem().concat("_acc.pdf");
+  TString fig_dir = TString(gSystem->DirName(__FILE__))+"/fig";
+  TString fig_path = fig_dir + "/" + gSystem->BaseName(gFile->GetName());
+  fig_path.ReplaceAll(".root", "_acc.pdf");
 
   auto c1 = new TCanvas("c1", "c1", 1200, 400);
 
@@ -67,5 +67,5 @@ void acceptance()
   c1->cd(3);
   h_ang->Draw("hist");
   // c1->cd(4);
-  c1->Print(fig_path.c_str());
+  c1->Print(fig_path);
 }

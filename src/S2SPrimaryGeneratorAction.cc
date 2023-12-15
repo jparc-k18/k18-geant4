@@ -12,6 +12,7 @@
 
 #include <TMath.h>
 
+#include "BeamMan.hh"
 #include "ConfMan.hh"
 #include "DCGeomMan.hh"
 #include "FuncName.hh"
@@ -24,11 +25,14 @@ using CLHEP::mm;
 using CLHEP::deg;
 using CLHEP::radian;
 using CLHEP::GeV;
+const auto& beamMan = BeamMan::GetInstance();
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
 const auto& sizeMan = DetSizeMan::GetInstance();
 auto& anaMan = S2SAnaManager::GetInstance();
 const auto particleTable = G4ParticleTable::GetParticleTable();
+const auto& zK18Target = geomMan.LocalZ("K18Target");
+BeamInfo beam;
 }
 
 //_____________________________________________________________________________
@@ -49,11 +53,14 @@ S2SPrimaryGeneratorAction::~S2SPrimaryGeneratorAction()
 void
 S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
+  beam = beamMan.Get();
+
   if(m_particleGun) delete m_particleGun;
   switch(m_generator){
   case 0: GenerateDemo(anEvent); break;
   case 1: GenerateMonochromeBeam(anEvent); break;
   case 2: GenerateUniformSpherical(anEvent); break;
+  case 3: GenerateBeam(anEvent); break;
   default:
     G4cerr << " * Generator number error : " << m_generator << G4endl;
     break;
@@ -61,7 +68,7 @@ S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 }
 
 //_____________________________________________________________________________
-void
+void // 0
 S2SPrimaryGeneratorAction::GenerateDemo(G4Event* anEvent)
 {
   static const G4int n_particle = 1;
@@ -107,7 +114,7 @@ S2SPrimaryGeneratorAction::GenerateDemo(G4Event* anEvent)
 }
 
 //_____________________________________________________________________________
-void
+void // 1
 S2SPrimaryGeneratorAction::GenerateMonochromeBeam(G4Event* anEvent)
 {
   const G4int n_particle = 1;
@@ -131,7 +138,7 @@ S2SPrimaryGeneratorAction::GenerateMonochromeBeam(G4Event* anEvent)
 }
 
 //_____________________________________________________________________________
-void
+void // 2
 S2SPrimaryGeneratorAction::GenerateUniformSpherical(G4Event* anEvent)
 {
   static const G4int n_particle = 1;
@@ -152,15 +159,50 @@ S2SPrimaryGeneratorAction::GenerateUniformSpherical(G4Event* anEvent)
   G4double phi = G4RandFlat::shoot(0., 360.)*deg;
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
-  // G4double x0 =  G4RandFlat::shoot(-target_size.x(), target_size.x());
-  // G4double y0 =  G4RandFlat::shoot(-target_size.y(), target_size.y());
-  // G4double z0 =  G4RandFlat::shoot(-target_size.z(), target_size.z());
-  G4LorentzVector v(target_pos, 0);
-  // G4LorentzVector v(target_pos + G4ThreeVector(x0, y0, z0), 0);
+  beam.VO(zK18Target);
+  beam.pos.setZ(0);
+  G4LorentzVector v(target_pos + beam.pos, 0);
 #if 0
+  beam.Print();
   G4cout << FUNC_NAME << G4endl
          << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
          << " " << p << " " << p.theta()/deg << " " << v << G4endl;
+#endif
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+}
+
+//_____________________________________________________________________________
+void // 3
+S2SPrimaryGeneratorAction::GenerateBeam(G4Event* anEvent)
+{
+  const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  G4String name;
+  const G4double p0 = confMan.Get<G4double>("PK18")*CLHEP::GeV;
+  if(experiment == 10){
+    name = "pi-";
+  }else{
+    name = "kaon-";
+  }
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  const G4double m0 = particle->GetPDGMass();
+  const auto& target_pos = geomMan.GetGlobalPosition("Target");
+  beam.VO(zK18Target);
+  beam.pos.setZ(0);
+  beam.mom.setMag(p0);
+  G4LorentzVector p(beam.mom, TMath::Sqrt(p0*p0 + m0*m0));
+  G4LorentzVector v(target_pos + beam.pos, 0);
+#if 0
+  beam.Print();
+  G4cout << FUNC_NAME << G4endl
+         << " " << p << " " << v << G4endl;
 #endif
   m_particleGun->SetParticleDefinition(particle);
   m_particleGun->SetParticleMomentumDirection(p.v());

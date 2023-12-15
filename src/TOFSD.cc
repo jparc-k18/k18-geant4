@@ -19,7 +19,7 @@ const auto& confMan = ConfMan::GetInstance();
 //const G4double DEThreshold = 0.001*keV;
 //const G4double DEThreshold = 0.00001*keV;
 //const G4double DEThreshold = 0.1*keV;
-const G4double DEThreshold = 10.0*keV;
+const G4double DEThreshold = 100.0*keV;
 // const double PositionSeparationThreshold = 2.0*cm;
 // const double TimeSeparationThreshold     = 5.0*ns;
 }
