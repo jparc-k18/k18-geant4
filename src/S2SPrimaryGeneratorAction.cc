@@ -186,9 +186,11 @@ S2SPrimaryGeneratorAction::GenerateBeam(G4Event* anEvent)
   G4String name;
   const G4double p0 = confMan.Get<G4double>("PK18")*CLHEP::GeV;
   if(experiment == 10){
-    name = "pi-";
+    if(p0 < 0) name = "pi-";
+    if(p0 > 0) name = "pi+";
   }else{
-    name = "kaon-";
+    if(p0 < 0) name = "kaon-";
+    if(p0 > 0) name = "kaon+";
   }
   static const auto particle = particleTable->FindParticle(name);
   static const auto pdg = particle->GetPDGEncoding();

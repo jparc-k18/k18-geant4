@@ -6,8 +6,7 @@ void acceptance()
 {
   if(!gFile || !gFile->IsOpen()){
     std::cout << "Usage: " << std::endl
-              << "   $ root foo.root" << std::endl
-              << "   root [0] .x " << __func__ << ".C" << std::endl;
+              << "   $ root foo.root " << __func__ << ".C" << std::endl;
     gSystem->Exit(EXIT_FAILURE);
   }
   gStyle->SetOptStat(0);
