@@ -37,7 +37,7 @@ class VHitInfo;
 #define NumWCSeg 16
 #endif
 #ifndef NumDC
-#define NumDC 4
+#define NumDC 5
 #endif
 #ifndef MaxHits1
 #define MaxHits1 10

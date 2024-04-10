@@ -503,7 +503,7 @@ S2SDetectorConstruction::ConstructD1()
 void
 S2SDetectorConstruction::ConstructSDC1()
 {
-  auto sdSDC1 = new DCSD("SDC");
+  auto sdSDC1 = new DCSD("SDC1");
   G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC1);
   const auto& sdc1_pos = (geomMan.GetGlobalPosition("SDC1-V1") +
                           geomMan.GetGlobalPosition("SDC1-U2"))/2;

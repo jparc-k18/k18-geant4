@@ -81,7 +81,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
   event.evnum = -1;
   DefineTree();
   for(const auto& sd_name : std::vector<G4String>{
-      "PRM", "SDC", "TOF", "AC1", "WC", "VP" }
+      "PRM", "SDC1","SDC2","SDC3","SDC4","SDC5", "TOF", "AC1", "WC", "VP" }
         // S2SDetectorConstruction::GetSDList()
     ){
     G4cout << "   make branch : " << sd_name << G4endl;
@@ -238,17 +238,76 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
   std::bitset<kTriggerFlagSize> trigger_flag;
-  // for(G4int k=1; k<=5; ++k){
-  //   G4String name = "SDC"+std::to_string(k);
-  //   static const auto id = SDMan->GetCollectionID(name);
-  //   if(id >= 0){
-  //     auto HC = dynamic_cast<SDCHitsCollection*>(HCE->GetHC(id));
-  //     for(G4int i=0, n=HC->entries(); i<n; ++i){
-  //       SetHitData((*HC)[i]);
-  //     }
-  //     SetNhits(name, HC->entries());
-  //   }
-  // }
+  {
+    //G4String name = "SDC"+std::to_string(k);
+    G4String name = "SDC1";
+    static const auto id = SDMan->GetCollectionID(name);
+    if(id >= 0){
+      //auto HC = dynamic_cast<SDCHitsCollection*>(HCE->GetHC(id));
+      auto HC = dynamic_cast<DCHitsCollection*>(HCE->GetHC(id));
+      for(G4int i=0, n=HC->entries(); i<n; ++i){
+        SetHitData((*HC)[i]);
+      }
+      SetNhits(name, HC->entries());
+    }
+  }
+  {
+    G4String name = "SDC2";
+    static const auto id = SDMan->GetCollectionID(name);
+    if(id >= 0){
+      //auto HC = dynamic_cast<SDCHitsCollection*>(HCE->GetHC(id));
+      auto HC = dynamic_cast<DCHitsCollection*>(HCE->GetHC(id));
+      for(G4int i=0, n=HC->entries(); i<n; ++i){
+        SetHitData((*HC)[i]);
+      }
+      SetNhits(name, HC->entries());
+    }
+  }
+  {
+    G4String name = "SDC3";
+    static const auto id = SDMan->GetCollectionID(name);
+    if(id >= 0){
+      //auto HC = dynamic_cast<SDCHitsCollection*>(HCE->GetHC(id));
+      auto HC = dynamic_cast<DCHitsCollection*>(HCE->GetHC(id));
+      for(G4int i=0, n=HC->entries(); i<n; ++i){
+        SetHitData((*HC)[i]);
+      }
+      SetNhits(name, HC->entries());
+    }
+  }
+  {
+    G4String name = "SDC4";
+    static const auto id = SDMan->GetCollectionID(name);
+    if(id >= 0){
+      //auto HC = dynamic_cast<SDCHitsCollection*>(HCE->GetHC(id));
+      auto HC = dynamic_cast<DCHitsCollection*>(HCE->GetHC(id));
+      for(G4int i=0, n=HC->entries(); i<n; ++i){
+        SetHitData((*HC)[i]);
+      }
+      SetNhits(name, HC->entries());
+    }
+  }
+  {
+    G4String name = "SDC5";
+    static const auto id = SDMan->GetCollectionID(name);
+    if(id >= 0){
+      //auto HC = dynamic_cast<SDCHitsCollection*>(HCE->GetHC(id));
+      auto HC = dynamic_cast<DCHitsCollection*>(HCE->GetHC(id));
+      for(G4int i=0, n=HC->entries(); i<n; ++i){
+        SetHitData((*HC)[i]);
+      }
+      SetNhits(name, HC->entries());
+    }
+  }
+  /*static const auto id = SDMan->GetCollectionID("SDC");
+  if(id >= 0){
+    //auto HC = dynamic_cast<SDCHitsCollection*>(HCE->GetHC(id));
+    auto HC = dynamic_cast<DCHitsCollection*>(HCE->GetHC(id));
+    for(G4int i=0, n=HC->entries(); i<n; ++i){
+      SetHitData((*HC)[i]);
+    }
+    SetNhits("SDC", HC->entries());
+   }*/
   {
     static const auto id = SDMan->GetCollectionID("TOF");
     if(id >= 0){
