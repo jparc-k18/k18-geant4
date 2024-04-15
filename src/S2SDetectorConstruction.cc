@@ -513,7 +513,7 @@ S2SDetectorConstruction::ConstructD1()
   }
 
   ///// HeBag between SDC34
-  if(!use_SDCouthebag) {return;}
+  if(!use_SDCouthebag){ return;}
   else{
     const G4double thickness = 600*mm;
     const G4double width = 2000*mm;
@@ -522,23 +522,23 @@ S2SDetectorConstruction::ConstructD1()
     auto solidSDCoutHeBag = new G4Box("solidSDCoutHeBag", width/2, height/2, thickness/2);
     auto logicSDCoutHeBag = new G4LogicalVolume(solidSDCoutHeBag, mlist.at("HeGas"), "logicSDCoutHeBag");
     const auto& posSDCoutHeBag = (geomMan.GetGlobalPosition("SDC3-Y2") +
-                       geomMan.GetGlobalPosition("SDC4-X1"))/2;
+                       geomMan.GetGlobalPosition("SDC4-Y1"))/2;
     G4RotationMatrix rot;
     rot.rotateY(70.*deg);
     new G4PVPlacement(G4Transform3D(rot, posSDCoutHeBag),
                       "physSDCoutHeBag", logicSDCoutHeBag, physWorld, false, 0, check_overlaps);
   
     const auto mylar_thickness = sizeMan.Get("HeBagMylarThickness")*mm;
-    auto solidSDCoutHeMylarU = new G4Box("solidSDCoutHeMylarU", width/2, height/2, mylar_thickness/2);
-    auto logicSDCoutHeMylarU = new G4LogicalVolume(solidSDCoutHeMylarU, mlist.at("Mylar"), "logicSDCoutHeMylarU");
+    G4VSolid* solidSDCoutHeMylar;
+    solidSDCoutHeMylar = new G4Box("solidSDCoutHeMylar", width/2, height/2, mylar_thickness/2);
+    solidSDCoutHeMylar = new G4IntersectionSolid("solidSDCoutHeMylar", solidSDCoutHeMylar, solidSDCoutHeBag);
+    auto logicSDCoutHeMylar = new G4LogicalVolume(solidSDCoutHeMylar, mlist.at("Mylar"), "logicSDCoutHeMylar");
     rot.rotateY(-70.*deg);
-    new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, thickness+mylar_thickness/2)),
-                      logicSDCoutHeMylarU, "physSDCoutHeMylarU", logicSDCoutHeBag, false, 0, check_overlaps);
+    new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, -thickness/2+mylar_thickness/2)),
+                      logicSDCoutHeMylar, "physSDCoutHeMylar", logicSDCoutHeBag, false, 0, check_overlaps);
   
-    auto solidSDCoutHeMylarD = new G4Box("solidSDCoutHeMylarD", width/2, height/2, mylar_thickness/2);
-    auto logicSDCoutHeMylarD = new G4LogicalVolume(solidSDCoutHeMylarD, mlist.at("Mylar"), "logicSDCoutHeMylarD");
-    new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, thickness+mylar_thickness/2)),
-                      logicSDCoutHeMylarD, "physSDCoutHeMylarU", logicSDCoutHeBag, false, 0, check_overlaps);
+    new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, thickness/2-mylar_thickness/2)),
+                      logicSDCoutHeMylar, "physSDCoutHeMylar", logicSDCoutHeBag, false, 1, check_overlaps);
   }
 
 }
