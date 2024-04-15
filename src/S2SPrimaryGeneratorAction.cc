@@ -61,6 +61,12 @@ S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   case 1: GenerateMonochromeBeam(anEvent); break;
   case 2: GenerateUniformSpherical(anEvent); break;
   case 3: GenerateBeam(anEvent); break;
+  case 7001: Generate12XiBe(anEvent); break;
+  case 7002: GenerateElementaryXiMinus(anEvent); break;
+  case 7003: GenerateElementarySigmaMinus(anEvent); break;
+  case 7004: GenerateElementarySigmaPlus(anEvent); break;
+  //case 7005: Generate12XiBePeakStructure(anEvent); break;
+  case 7501: Generate7XiH(anEvent); break;
   default:
     G4cerr << " * Generator number error : " << m_generator << G4endl;
     break;
@@ -203,6 +209,277 @@ S2SPrimaryGeneratorAction::GenerateBeam(G4Event* anEvent)
   beam.Print();
   G4cout << FUNC_NAME << G4endl
          << " " << p << " " << v << G4endl;
+#endif
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+}
+
+void // 7001 E70 12C(KK)12XiBe kinematics 
+S2SPrimaryGeneratorAction::Generate12XiBe(G4Event* anEvent)
+{
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const G4String name = "kaon+";
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
+  static const G4double m0 = particle->GetPDGMass();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  G4double theta;
+  //  std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(20*deg)))*radian;
+  G4double phi = G4RandFlat::shoot(0., 360.)*deg;
+  G4double pB = 1.8*GeV;
+
+  G4double mass_12C = 11.177929*GeV; // 7Li
+  G4double mass_12XiBe = (10.2551+1.32171)*GeV; // 6He + Xi
+  G4double m_tgt = mass_12C; // mass of target nucleus (7Li)
+  G4double m_hyp = mass_12XiBe; // mass of target nucleus (7Li)
+  G4double p0;
+  G4double cost = 0.92;
+
+  while(cost>1. || cost<0.93){
+    p0 = G4RandFlat::shoot(1.33, 1.39)*GeV; // scatter momentum
+    G4double Energy_B = TMath::Sqrt(pB*pB + m0*m0);
+    G4double Energy_S = TMath::Sqrt(p0*p0 + m0*m0);
+    G4double Energy_hyp = Energy_B + m_tgt - Energy_S;
+  
+    cost = (m_hyp*m_hyp - Energy_hyp*Energy_hyp + pB*pB + p0*p0)/(2.*pB*p0);
+  }
+
+  theta = std::acos(cost)*radian;
+  std::cout << "theta : " << theta << std::endl;
+
+  G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
+  p.setRThetaPhi(p0, theta, phi);
+  beam.VO(zK18Target);
+  beam.pos.setZ(0);
+  G4LorentzVector v(target_pos + beam.pos, 0);
+#if 0
+  beam.Print();
+  G4cout << FUNC_NAME << G4endl
+         << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
+         << " " << p << " " << p.theta()/deg << " " << v << G4endl;
+#endif
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+}
+
+void // 7002 E70 p(KK)Xi kinematics 
+S2SPrimaryGeneratorAction::GenerateElementaryXiMinus(G4Event* anEvent)
+{
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const G4String name = "kaon+";
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
+  static const G4double m0 = particle->GetPDGMass();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  G4double theta;
+  //  std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(20*deg)))*radian;
+  G4double phi = G4RandFlat::shoot(0., 360.)*deg;
+  G4double pB = 1.8*GeV;
+
+  G4double m_tgt = particleTable->FindParticle("proton") ->GetPDGMass(); // mass of target nucleus (p)
+  G4double m_hyp = particleTable->FindParticle("xi-") ->GetPDGMass(); // mass of target nucleus (Xi)
+  G4double p0;
+  G4double cost = 0.92;
+
+  while(cost>1. || cost<0.93){
+    p0 = G4RandFlat::shoot(1.1, 1.32)*GeV; // scatter momentum
+    G4double Energy_B = TMath::Sqrt(pB*pB + m0*m0);
+    G4double Energy_S = TMath::Sqrt(p0*p0 + m0*m0);
+    G4double Energy_hyp = Energy_B + m_tgt - Energy_S;
+  
+    cost = (m_hyp*m_hyp - Energy_hyp*Energy_hyp + pB*pB + p0*p0)/(2.*pB*p0);
+  }
+
+  theta = std::acos(cost)*radian;
+  std::cout << "theta : " << theta << std::endl;
+
+  G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
+  p.setRThetaPhi(p0, theta, phi);
+  beam.VO(zK18Target);
+  beam.pos.setZ(0);
+  G4LorentzVector v(target_pos + beam.pos, 0);
+#if 0
+  beam.Print();
+  G4cout << FUNC_NAME << G4endl
+         << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
+         << " " << p << " " << p.theta()/deg << " " << v << G4endl;
+#endif
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+}
+
+void // 7003 E70 p(Kpi)SigmaMinus kinematics 
+S2SPrimaryGeneratorAction::GenerateElementarySigmaMinus(G4Event* anEvent)
+{
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const G4String name = "pi+";
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
+  static const G4double m0 = particle->GetPDGMass();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  G4double theta;
+  //  std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(20*deg)))*radian;
+  G4double phi = G4RandFlat::shoot(0., 360.)*deg;
+  static const G4double pB = 1.8*GeV;
+  static const G4double mB = particleTable->FindParticle("kaon-") ->GetPDGMass(); // mass of target nucleus (p)
+
+  static const G4double m_tgt = particleTable->FindParticle("proton") ->GetPDGMass(); // mass of target nucleus (p)
+  static const G4double m_hyp = particleTable->FindParticle("sigma-") ->GetPDGMass(); // mass of target nucleus (Sigma)
+  G4double p0;
+  G4double cost = 0.92;
+
+  while(cost>1. || cost<0.93){
+    p0 = G4RandFlat::shoot(1.4, 1.6)*GeV; // scatter momentum
+    G4double Energy_B = TMath::Sqrt(pB*pB + mB*mB);
+    G4double Energy_S = TMath::Sqrt(p0*p0 + m0*m0);
+    G4double Energy_hyp = Energy_B + m_tgt - Energy_S;
+  
+    cost = (m_hyp*m_hyp - Energy_hyp*Energy_hyp + pB*pB + p0*p0)/(2.*pB*p0);
+  }
+
+  theta = std::acos(cost)*radian;
+  std::cout << "theta : " << theta << std::endl;
+
+  G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
+  p.setRThetaPhi(p0, theta, phi);
+  beam.VO(zK18Target);
+  beam.pos.setZ(0);
+  G4LorentzVector v(target_pos + beam.pos, 0);
+#if 0
+  beam.Print();
+  G4cout << FUNC_NAME << G4endl
+         << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
+         << " " << p << " " << p.theta()/deg << " " << v << G4endl;
+#endif
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+}
+
+void // 7004 E70 p(pi,K)SigmaPlus kinematics 
+S2SPrimaryGeneratorAction::GenerateElementarySigmaPlus(G4Event* anEvent)
+{
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const G4String name = "kaon+";
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
+  static const G4double m0 = particle->GetPDGMass();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  G4double theta;
+  //  std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(20*deg)))*radian;
+  G4double phi = G4RandFlat::shoot(0., 360.)*deg;
+  G4double pB = 1.8*GeV;
+  G4double mB = particleTable->FindParticle("pi+") ->GetPDGMass(); // mass of target nucleus (p)
+
+  G4double m_tgt = particleTable->FindParticle("proton") ->GetPDGMass(); // mass of target nucleus (p)
+  G4double m_hyp = particleTable->FindParticle("sigma+") ->GetPDGMass(); // mass of target nucleus (Sigma)
+  G4double p0;
+  G4double cost = 0.92;
+
+  while(cost>1. || cost<0.93){
+    p0 = G4RandFlat::shoot(1.2, 1.42)*GeV; // scatter momentum
+    G4double Energy_B = TMath::Sqrt(pB*pB + mB*mB);
+    G4double Energy_S = TMath::Sqrt(p0*p0 + m0*m0);
+    G4double Energy_hyp = Energy_B + m_tgt - Energy_S;
+  
+    cost = (m_hyp*m_hyp - Energy_hyp*Energy_hyp + pB*pB + p0*p0)/(2.*pB*p0);
+  }
+
+  theta = std::acos(cost)*radian;
+  std::cout << "theta : " << theta << std::endl;
+
+  G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
+  p.setRThetaPhi(p0, theta, phi);
+  beam.VO(zK18Target);
+  beam.pos.setZ(0);
+  G4LorentzVector v(target_pos + beam.pos, 0);
+#if 0
+  beam.Print();
+  G4cout << FUNC_NAME << G4endl
+         << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
+         << " " << p << " " << p.theta()/deg << " " << v << G4endl;
+#endif
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+}
+
+void // 7501 E75 phase-1 7Li(KK)7XiH kinematics 
+S2SPrimaryGeneratorAction::Generate7XiH(G4Event* anEvent)
+{
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const G4String name = "kaon+";
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
+  static const G4double m0 = particle->GetPDGMass();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  G4double theta;
+  //  std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(20*deg)))*radian;
+  G4double phi = G4RandFlat::shoot(0., 360.)*deg;
+  G4double pB = 1.8*GeV;
+
+  G4double mass_7Li = 6.53468*GeV; // 7Li
+  G4double mass_7XiH = (5.61153+1.32171)*GeV; // 6He + Xi
+  G4double m_tgt = mass_7Li; // mass of target nucleus (7Li)
+  G4double m_hyp = mass_7XiH; // mass of target nucleus (7Li)
+  G4double p0;
+  G4double cost = 0.92;
+
+  while(cost>1. || cost<0.93){
+    p0 = G4RandFlat::shoot(1.33, 1.39)*GeV; // scatter momentum
+    G4double Energy_B = TMath::Sqrt(pB*pB + m0*m0);
+    G4double Energy_S = TMath::Sqrt(p0*p0 + m0*m0);
+    G4double Energy_hyp = Energy_B + m_tgt - Energy_S;
+  
+    cost = (m_hyp*m_hyp - Energy_hyp*Energy_hyp + pB*pB + p0*p0)/(2.*pB*p0);
+  }
+
+  theta = std::acos(cost)*radian;
+  std::cout << "theta : " << theta << std::endl;
+
+  G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
+  p.setRThetaPhi(p0, theta, phi);
+  beam.VO(zK18Target);
+  beam.pos.setZ(0);
+  G4LorentzVector v(target_pos + beam.pos, 0);
+#if 0
+  beam.Print();
+  G4cout << FUNC_NAME << G4endl
+         << " " << p0 << " " << theta/deg << " " << phi/deg << G4endl
+         << " " << p << " " << p.theta()/deg << " " << v << G4endl;
 #endif
   m_particleGun->SetParticleDefinition(particle);
   m_particleGun->SetParticleMomentumDirection(p.v());

@@ -31,6 +31,11 @@ private:
   void GenerateMonochromeBeam(G4Event* anEvent);
   void GenerateUniformSpherical(G4Event* anEvent);
   void GenerateBeam(G4Event* anEvent);
+  void Generate12XiBe(G4Event* anEvent);
+  void GenerateElementaryXiMinus(G4Event* anEvent);
+  void GenerateElementarySigmaMinus(G4Event* anEvent);
+  void GenerateElementarySigmaPlus(G4Event* anEvent);
+  void Generate7XiH(G4Event* anEvent);
 };
 
 //_____________________________________________________________________________

@@ -163,8 +163,12 @@ S2SDetectorConstruction::ConstructTarget()
   G4Material *TargetMater = nullptr;
   auto Target = confMan.Get<G4String>("TargetMaterial");
   if(Target == "Be"){
-    TargetMater = mlist.at("Be9");
-  }else{
+    TargetMater = mlist.at("Be9");}
+  else if(Target == "natLi"){
+    TargetMater = mlist.at("natLi");}
+  else if(Target == "CH2"){
+    TargetMater = mlist.Polyethylene;}
+  else{
     G4cout << " Sorry, Target: " << Target
            << " is not defined. So Air will be used. " << G4endl;
     TargetMater = mlist.at("Air");

@@ -14,7 +14,9 @@ MaterialList::MaterialList()
   // Elements
   elH  = new G4Element( "Hydrogen"  , "H"  ,  1.,   1.00794 *g/mole );
   elHe = new G4Element( "Helium"    , "He" ,  2.,   4.002602*g/mole );
-  elLi = new G4Element( "Lithium"   , "Li" ,  3.,   7.0     *g/mole );
+  elLi = new G4Element( "Lithium"   , "Li",  3.,   6.94    *g/mole );
+  elLi6 = new G4Element( "Lithium6" , "Li6",  3.,   6.0     *g/mole );
+  elLi7 = new G4Element( "Lithium7" , "Li7",  3.,   7.0     *g/mole );
   elB10= new G4Element( "Boron10"   , "B10",  5.,  10.0     *g/mole );
   elB11= new G4Element( "Boron11"   , "B11",  5.,  11.0     *g/mole );
   elC  = new G4Element( "Carbon"    , "C"  ,  6.,  12.011   *g/mole );
@@ -44,6 +46,9 @@ MaterialList::MaterialList()
 
   // Simple Materials, Compounds & Mixtures
   material_map["Be9"]   = new G4Material("Be9",   4.,  9.012182*g/mole, 1.85  * g/cm3);
+  material_map["natLi"] = new G4Material("natLi", 0.534* g/cm3, 2);
+  material_map["natLi"]->AddElement(elLi7, 92.5*perCent);
+  material_map["natLi"]->AddElement(elLi6, 7.5*perCent );
   material_map["C"]     = new G4Material("C",     6., 12.0     *g/mole, 1.8   * g/cm3);
   material_map["Al"]    = new G4Material("Al",   13., 26.981539*g/mole, 2.70  * g/cm3);
   material_map["Si"]    = new G4Material("Si",   14., 28.0855  *g/mole, 2.33  * g/cm3);
@@ -246,6 +251,8 @@ MaterialList::~MaterialList()
   delete elH;
   delete elHe;
   delete elLi;
+  delete elLi6;
+  delete elLi7;
   delete elB10;
   delete elB11;
   delete elC;

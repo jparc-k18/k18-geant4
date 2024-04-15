@@ -25,6 +25,8 @@ public:
   G4Element *elH;
   G4Element *elHe;
   G4Element *elLi;
+  G4Element *elLi6;
+  G4Element *elLi7;
   G4Element *elB10;
   G4Element *elB11;
   G4Element *elC;
