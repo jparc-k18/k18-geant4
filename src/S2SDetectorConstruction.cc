@@ -521,8 +521,8 @@ S2SDetectorConstruction::ConstructD1()
   
     auto solidSDCoutHeBag = new G4Box("solidSDCoutHeBag", width/2, height/2, thickness/2);
     auto logicSDCoutHeBag = new G4LogicalVolume(solidSDCoutHeBag, mlist.at("HeGas"), "logicSDCoutHeBag");
-    const auto& posSDCoutHeBag = (geomMan.GetGlobalPosition("SDC3-X1") +
-                       geomMan.GetGlobalPosition("SDC4-Y2"))/2;
+    const auto& posSDCoutHeBag = (geomMan.GetGlobalPosition("SDC3-Y2") +
+                       geomMan.GetGlobalPosition("SDC4-X1"))/2;
     G4RotationMatrix rot;
     rot.rotateY(70.*deg);
     new G4PVPlacement(G4Transform3D(rot, posSDCoutHeBag),
