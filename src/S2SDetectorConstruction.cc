@@ -54,7 +54,10 @@ namespace
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
 const auto& sizeMan = DetSizeMan::GetInstance();
-const G4bool use_hebag = true;
+const G4bool use_Q1hebag = true;
+const G4bool use_Q2hebag = true;
+const G4bool use_D1hebag = true;
+const G4bool use_SDCouthebag = true;
 const MaterialList mlist;
 G4PVPlacement* physWorld;
 G4bool check_overlaps = false;
@@ -249,8 +252,9 @@ S2SDetectorConstruction::ConstructQ1()
   new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos + G4ThreeVector(0, 0, 530*mm)),
                     "physQ1CoilD", logicQ1Coil, physWorld, false, 1, check_overlaps);
   logicQ1Coil->SetVisAttributes(G4Color::Brown());
+
   ///// HeBag
-  if(!use_hebag) return;
+  if(!use_Q1hebag) return;
   auto logicQ1HeBag = new G4LogicalVolume(solidQ1Gap, mlist.at("HeGas"), "logicQ1HeBag");
   new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos),
                     "physQ1HeBag", logicQ1HeBag, physWorld, false, 0, check_overlaps);
@@ -337,7 +341,7 @@ S2SDetectorConstruction::ConstructQ2()
                     "physQ2CoilD", logicQ2Coil, physWorld, false, 1, check_overlaps);
   logicQ2Coil->SetVisAttributes(G4Color::Brown());
   ///// HeBag
-  if(!use_hebag) return;
+  if(!use_Q2hebag) return;
   auto logicQ2HeBag = new G4LogicalVolume(solidQ2Gap, mlist.at("HeGas"), "logicQ2HeBag");
   new G4PVPlacement(G4Transform3D(G4RotationMatrix(rot), pos),
                     "physQ2HeBag", logicQ2HeBag, physWorld, false, 0, check_overlaps);
@@ -382,7 +386,7 @@ S2SDetectorConstruction::ConstructQ2()
 void
 S2SDetectorConstruction::ConstructD1()
 {
-  G4Material *mD1Gap = use_hebag ? mlist.at("HeGas") : mlist.at("Air");
+  G4Material *mD1Gap = use_D1hebag ? mlist.at("HeGas") : mlist.at("Air");
   // D magnet surface
   G4Tubs *solD1Tub = new G4Tubs("solD1Tub", 0, Dfr2, DfHalfGap,
                                 0.*degree, bendAngleDf*degree);
@@ -440,67 +444,103 @@ S2SDetectorConstruction::ConstructD1()
   new G4PVPlacement(G4Transform3D(rotCoil, posCoil),
                     "physD1CoilD", logicD1Coil, physWorld, false, 1, check_overlaps);
   logicD1Coil->SetVisAttributes(G4Color::Brown());
+
   ///// HeBag UpStream
-  if(!use_hebag) return;
-  const G4double zlengthU = 180*mm;
-  auto solidHeBagU = new G4Box("solidD1HeBag", (Dr2-Dr1)/2, DHalfGap, zlengthU/2);
-  auto logicD1HeBagU = new G4LogicalVolume(solidHeBagU, mlist.at("HeGas"), "logicD1HeBag");
-  pos.setX(0);
-  pos += G4ThreeVector(0, 0, -zlengthU/2);
-  G4RotationMatrix rot;
-  new G4PVPlacement(G4Transform3D(rot, pos),
-                    "physD1HeBagU", logicD1HeBagU, physWorld, false, 0, check_overlaps);
-  const auto mylar_thickness = sizeMan.Get("HeBagMylarThickness")*mm;
-  auto solidD1MylarU = new G4Box("solidD1Mylar", (Dr2-Dr1)/2, DHalfGap, mylar_thickness/2);
-  auto logicD1MylarU = new G4LogicalVolume(solidD1MylarU, mlist.at("Mylar"), "logicD1MylarU");
-  new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, -zlengthU/2+mylar_thickness/2)),
-                    logicD1MylarU, "physD1Mylar", logicD1HeBagU, false, 0, check_overlaps);
-  ///// HeBag Downstream
-  const G4double zlengthD = 316.5*mm;
-  auto solidHeBagD = new G4Box("solidD1HeBag", (Dr2-Dr1)/2, DHalfGap, zlengthD/2);
-  auto logicD1HeBagD = new G4LogicalVolume(solidHeBagD, mlist.at("HeGas"), "logicD1HeBag");
-  pos.set(3*m*std::tan(35*deg) + zlengthD/2, 0, 0);
-  pos.rotateY(-20.*deg);
-  rot.rotateY(70.*deg);
-  new G4PVPlacement(G4Transform3D(rot, pos),
-                    "physD1HeBagD", logicD1HeBagD, physWorld, false, 0, check_overlaps);
-  auto solidD1MylarD = new G4Box("solidD1MylarD", (Dr2-Dr1)/2, DHalfGap, mylar_thickness/2);
-  auto logicD1MylarD = new G4LogicalVolume(solidD1MylarD, mlist.at("Mylar"), "logicD1MylarD");
-  rot.rotateY(-70.*deg);
-  new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, zlengthU/2-mylar_thickness/2)),
-                    logicD1MylarD, "physD1MylarD", logicD1HeBagD, false, 1, check_overlaps);
-  ///// Virtual Plane
-  auto sdVP = G4SDManager::GetSDMpointer()->FindSensitiveDetector("VP", false);
-  if(!sdVP){
-    sdVP = new VPSD("VP");
-    G4SDManager::GetSDMpointer()->AddNewDetector(sdVP);
-  }
-  {
-    auto solidVP = new G4Box("solidTmp", 800*mm/2, 320*mm/2, 1*CLHEP::um/2);
-    auto logicVP = new G4LogicalVolume(solidVP, mlist.at("HeGas"), "logicVP5");
-    logicVP->SetSensitiveDetector(sdVP);
-    logicVP->SetVisAttributes(G4Color::Red());
-    // logicVP->SetVisAttributes(G4VisAttributes::GetInvisible());
-    auto rotVP5 = new G4RotationMatrix;
-    rotVP5->rotateY(-geomMan.GetRotAngle2("VP5")*deg);
-    new G4PVPlacement(rotVP5, G4ThreeVector(0, 0, zlengthU/2-1*CLHEP::um/2), logicVP,
-                      "physVP5", logicD1HeBagU, false, 5, check_overlaps);
-    for(G4int i=6; i<=8; ++i){
-      auto rotVP = new G4RotationMatrix;
-      rotVP->rotateX(90*deg);
-      rotVP->rotateY(70*deg);
-      const auto& ra2VP = geomMan.GetRotAngle2("VP"+std::to_string(i))*deg;
-      rotVP->rotateY(-ra2VP);
-      G4ThreeVector posVP(rhoD, 0, 0);
-      posVP.rotateZ(70*deg-ra2VP);
-      new G4PVPlacement(rotVP, posVP, logicVP, "physVP"+std::to_string(i),
-                        logicD1Gap, false, i, check_overlaps);
+  if(!use_D1hebag){ return;}
+  else{
+    const G4double zlengthU = 180*mm;
+    auto solidHeBagU = new G4Box("solidD1HeBag", (Dr2-Dr1)/2, DHalfGap, zlengthU/2);
+    auto logicD1HeBagU = new G4LogicalVolume(solidHeBagU, mlist.at("HeGas"), "logicD1HeBag");
+    G4ThreeVector posD1HeBag(0, 0, -2776.5*mm);
+    posD1HeBag.setX(0);
+    posD1HeBag += G4ThreeVector(0, 0, -zlengthU/2);
+    G4RotationMatrix rot;
+    new G4PVPlacement(G4Transform3D(rot, posD1HeBag),
+                      "physD1HeBagU", logicD1HeBagU, physWorld, false, 0, check_overlaps);
+    const auto mylar_thickness = sizeMan.Get("HeBagMylarThickness")*mm;
+    auto solidD1MylarU = new G4Box("solidD1Mylar", (Dr2-Dr1)/2, DHalfGap, mylar_thickness/2);
+    auto logicD1MylarU = new G4LogicalVolume(solidD1MylarU, mlist.at("Mylar"), "logicD1MylarU");
+    new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, -zlengthU/2+mylar_thickness/2)),
+                      logicD1MylarU, "physD1Mylar", logicD1HeBagU, false, 0, check_overlaps);
+  
+    ///// HeBag Downstream
+    const G4double zlengthD = 316.5*mm;
+    auto solidHeBagD = new G4Box("solidD1HeBag", (Dr2-Dr1)/2, DHalfGap, zlengthD/2);
+    auto logicD1HeBagD = new G4LogicalVolume(solidHeBagD, mlist.at("HeGas"), "logicD1HeBag");
+    posD1HeBag.set(3*m*std::tan(35*deg) + zlengthD/2, 0, 0);
+    posD1HeBag.rotateY(-20.*deg);
+    rot.rotateY(70.*deg);
+    new G4PVPlacement(G4Transform3D(rot, posD1HeBag),
+                      "physD1HeBagD", logicD1HeBagD, physWorld, false, 0, check_overlaps);
+    auto solidD1MylarD = new G4Box("solidD1MylarD", (Dr2-Dr1)/2, DHalfGap, mylar_thickness/2);
+    auto logicD1MylarD = new G4LogicalVolume(solidD1MylarD, mlist.at("Mylar"), "logicD1MylarD");
+    rot.rotateY(-70.*deg);
+    new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, zlengthU/2-mylar_thickness/2)),
+                      logicD1MylarD, "physD1MylarD", logicD1HeBagD, false, 1, check_overlaps);
+  
+    ///// Virtual Plane
+    auto sdVP = G4SDManager::GetSDMpointer()->FindSensitiveDetector("VP", false);
+    if(!sdVP){
+      sdVP = new VPSD("VP");
+      G4SDManager::GetSDMpointer()->AddNewDetector(sdVP);
     }
-    new G4PVPlacement(nullptr, G4ThreeVector(0, 0, -zlengthD/2+1*CLHEP::um/2),
-                      logicVP, "physVP9", logicD1HeBagD, false, 9, check_overlaps);
-    new G4PVPlacement(nullptr, G4ThreeVector(0, 0, zlengthD/2-1*CLHEP::um/2),
+    {
+      auto solidVP = new G4Box("solidTmp", 800*mm/2, 320*mm/2, 1*CLHEP::um/2);
+      auto logicVP = new G4LogicalVolume(solidVP, mlist.at("HeGas"), "logicVP5");
+      logicVP->SetSensitiveDetector(sdVP);
+      logicVP->SetVisAttributes(G4Color::Red());
+      // logicVP->SetVisAttributes(G4VisAttributes::GetInvisible());
+      auto rotVP5 = new G4RotationMatrix;
+      rotVP5->rotateY(-geomMan.GetRotAngle2("VP5")*deg);
+      new G4PVPlacement(rotVP5, G4ThreeVector(0, 0, zlengthU/2-1*CLHEP::um/2), logicVP,
+                        "physVP5", logicD1HeBagU, false, 5, check_overlaps);
+      for(G4int i=6; i<=8; ++i){
+        auto rotVP = new G4RotationMatrix;
+        rotVP->rotateX(90*deg);
+        rotVP->rotateY(70*deg);
+        const auto& ra2VP = geomMan.GetRotAngle2("VP"+std::to_string(i))*deg;
+        rotVP->rotateY(-ra2VP);
+        G4ThreeVector posVP(rhoD, 0, 0);
+        posVP.rotateZ(70*deg-ra2VP);
+        new G4PVPlacement(rotVP, posVP, logicVP, "physVP"+std::to_string(i),
+                          logicD1Gap, false, i, check_overlaps);
+      }
+      new G4PVPlacement(nullptr, G4ThreeVector(0, 0, -zlengthD/2+1*CLHEP::um/2),
+                        logicVP, "physVP9", logicD1HeBagD, false, 9, check_overlaps);
+      new G4PVPlacement(nullptr, G4ThreeVector(0, 0, zlengthD/2-1*CLHEP::um/2),
                       logicVP, "physVP10", logicD1HeBagD, false, 10, check_overlaps);
+    }
   }
+
+  ///// HeBag between SDC34
+  if(!use_SDCouthebag) {return;}
+  else{
+    const G4double thickness = 600*mm;
+    const G4double width = 2000*mm;
+    const G4double height = 1600*mm;
+  
+    auto solidSDCoutHeBag = new G4Box("solidSDCoutHeBag", width/2, height/2, thickness/2);
+    auto logicSDCoutHeBag = new G4LogicalVolume(solidSDCoutHeBag, mlist.at("HeGas"), "logicSDCoutHeBag");
+    const auto& posSDCoutHeBag = (geomMan.GetGlobalPosition("SDC3-X1") +
+                       geomMan.GetGlobalPosition("SDC4-Y2"))/2;
+    G4RotationMatrix rot;
+    rot.rotateY(70.*deg);
+    new G4PVPlacement(G4Transform3D(rot, posSDCoutHeBag),
+                      "physSDCoutHeBag", logicSDCoutHeBag, physWorld, false, 0, check_overlaps);
+  
+    const auto mylar_thickness = sizeMan.Get("HeBagMylarThickness")*mm;
+    auto solidSDCoutHeMylarU = new G4Box("solidSDCoutHeMylarU", width/2, height/2, mylar_thickness/2);
+    auto logicSDCoutHeMylarU = new G4LogicalVolume(solidSDCoutHeMylarU, mlist.at("Mylar"), "logicSDCoutHeMylarU");
+    rot.rotateY(-70.*deg);
+    new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, thickness+mylar_thickness/2)),
+                      logicSDCoutHeMylarU, "physSDCoutHeMylarU", logicSDCoutHeBag, false, 0, check_overlaps);
+  
+    auto solidSDCoutHeMylarD = new G4Box("solidSDCoutHeMylarD", width/2, height/2, mylar_thickness/2);
+    auto logicSDCoutHeMylarD = new G4LogicalVolume(solidSDCoutHeMylarD, mlist.at("Mylar"), "logicSDCoutHeMylarD");
+    new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, thickness+mylar_thickness/2)),
+                      logicSDCoutHeMylarD, "physSDCoutHeMylarU", logicSDCoutHeBag, false, 0, check_overlaps);
+  }
+
 }
 
 //_____________________________________________________________________________
