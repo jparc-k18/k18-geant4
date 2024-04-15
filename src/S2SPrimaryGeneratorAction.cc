@@ -252,7 +252,6 @@ S2SPrimaryGeneratorAction::Generate12XiBe(G4Event* anEvent)
   }
 
   theta = std::acos(cost)*radian;
-  std::cout << "theta : " << theta << std::endl;
 
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
@@ -305,7 +304,6 @@ S2SPrimaryGeneratorAction::GenerateElementaryXiMinus(G4Event* anEvent)
   }
 
   theta = std::acos(cost)*radian;
-  std::cout << "theta : " << theta << std::endl;
 
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
@@ -359,7 +357,6 @@ S2SPrimaryGeneratorAction::GenerateElementarySigmaMinus(G4Event* anEvent)
   }
 
   theta = std::acos(cost)*radian;
-  std::cout << "theta : " << theta << std::endl;
 
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
@@ -413,7 +410,6 @@ S2SPrimaryGeneratorAction::GenerateElementarySigmaPlus(G4Event* anEvent)
   }
 
   theta = std::acos(cost)*radian;
-  std::cout << "theta : " << theta << std::endl;
 
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
@@ -468,7 +464,6 @@ S2SPrimaryGeneratorAction::Generate7XiH(G4Event* anEvent)
   }
 
   theta = std::acos(cost)*radian;
-  std::cout << "theta : " << theta << std::endl;
 
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
