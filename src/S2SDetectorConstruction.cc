@@ -54,7 +54,7 @@ namespace
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
 const auto& sizeMan = DetSizeMan::GetInstance();
-const G4bool use_Tgthebag = false;
+const G4bool use_Tgthebag = true;
 const G4bool use_Q1hebag = true;
 const G4bool use_Q2hebag = true;
 const G4bool use_D1hebag = true;
@@ -254,15 +254,15 @@ void
 S2SDetectorConstruction::ConstructTargetHeBag()
 {
   if(!use_Tgthebag) return;
-  const auto& radius = 200.*mm;
-  const auto& thickness = 490.*mm;
+  const auto& radius = 250./2.*mm;
+  const auto& thickness = 900./2.*mm;
   G4Material *TargetHeBagMater = mlist.at("HeGas");
 
-  auto TargetHeBagBox = new G4Box
-    ("TargetHeBagBox", radius,radius, thickness);
-//  auto TargetHeBagBox = new G4Tubs("TargetHeBagBox",
-//                                0*mm, radius, thickness,
-//                                0*deg, 360*deg);
+//  auto TargetHeBagBox = new G4Box
+//    ("TargetHeBagBox", radius,radius, thickness);
+  auto TargetHeBagBox = new G4Tubs("TargetHeBagBox",
+                                0*mm, radius, thickness,
+                                0*deg, 360*deg);
   auto logTargetHeBag = new G4LogicalVolume(TargetHeBagBox, TargetHeBagMater, "logTargetHeBag");
   G4RotationMatrix rotTargetHeBag;
 
