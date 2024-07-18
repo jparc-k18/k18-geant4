@@ -71,6 +71,7 @@ struct Event
   double phi0;
   double theta0;
   double p0;
+  double pB;
   double t0;
   int Id;
 
@@ -186,7 +187,7 @@ public:
                           G4bool is_virtual_beam=false);
   void SetPrimaryData(G4double x0, G4double y0, G4double z0,
 		      G4double u0, G4double v0, G4double phi,
-		      G4double theta, G4double p0, G4double t0,
+		      G4double theta, G4double p0, G4double pB,
 		      G4int ParIdNb);
   void SetProcessData(G4int nP, G4int nN, G4int nL,
 		      G4int nSm, G4int nSz, G4int nSp,

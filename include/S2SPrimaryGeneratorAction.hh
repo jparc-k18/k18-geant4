@@ -5,6 +5,9 @@
 
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <globals.hh>
+#include <TFile.h>
+#include <TTree.h>
+#include <TGraph.h>
 
 class G4ParticleGun;
 class G4ParticleDefinition;
@@ -22,6 +25,16 @@ private:
   G4int          m_generator;
 
 public:
+  TFile *profileK18;
+  TTree *k18track;
+  G4double p_3rd[500], xtgt[500], ytgt[500], utgt[500], vtgt[500];
+  G4int trigflag[32];
+  G4int ntK18;
+  G4double chisqrK18[500], CBtof0[500];
+  TGraph *gr;
+  G4double Sum;
+
+public:
   void GeneratePrimaries(G4Event* anEvent);
 
 private:
@@ -31,11 +44,14 @@ private:
   void GenerateMonochromeBeam(G4Event* anEvent);
   void GenerateUniformSpherical(G4Event* anEvent);
   void GenerateBeam(G4Event* anEvent);
+  void GenerateBeamThrough(G4Event* anEvent);
   void Generate12XiBe(G4Event* anEvent);
   void GenerateElementaryXiMinus(G4Event* anEvent);
   void GenerateElementarySigmaMinus(G4Event* anEvent);
   void GenerateElementarySigmaPlus(G4Event* anEvent);
   void Generate7XiH(G4Event* anEvent);
+  void GenerateRich7XiHSpectrum(G4Event* anEvent);
+  void GenerateKH7XiHSpectrum(G4Event* anEvent);
 };
 
 //_____________________________________________________________________________

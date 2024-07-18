@@ -54,6 +54,7 @@ namespace
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
 const auto& sizeMan = DetSizeMan::GetInstance();
+const G4bool use_Tgthebag = false;
 const G4bool use_Q1hebag = true;
 const G4bool use_Q2hebag = true;
 const G4bool use_D1hebag = true;
@@ -97,7 +98,12 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   logicWorld->SetVisAttributes(G4VisAttributes::GetInvisible());
 
 #if 1
+  ConstructBAC1();
+#endif
+
+#if 1
   ConstructTarget();
+  ConstructTargetHeBag();
 #endif
 
 #if 1
@@ -159,9 +165,57 @@ void S2SDetectorConstruction::ConstructField()
 }
 
 //_____________________________________________________________________________
+void 
+S2SDetectorConstruction::ConstructBAC1()
+{
+  if(use_Tgthebag) return;
+  const auto& ra2 = geomMan.GetRotAngle2("BAC1") * deg;
+  const auto& frame_size = sizeMan.GetSize("Bac1Frame") * 0.5 * mm;
+  const auto& radiator_size = sizeMan.GetSize("Bac1Radiator") * 0.5 * mm;
+  // Mother
+  auto mother_solid = new G4Box("Bac1MotherSolid",
+                                frame_size.x() + 5.*mm,
+                                frame_size.y() + 5.*mm,
+                                frame_size.z() + 5.*mm);
+  auto mother_lv = new G4LogicalVolume(mother_solid,
+                                       mlist.at("Air"),
+                                       "Bac1MotherLV");
+  auto rot = new G4RotationMatrix;
+  rot->rotateY(-ra2);
+  auto pos = geomMan.GetGlobalPosition("BAC1");
+  G4ThreeVector offset(0., 0., frame_size.z() - radiator_size.z());
+  offset.rotateY(ra2);
+  new G4PVPlacement(rot, pos + offset,
+                    "Bac1MotherPHYS", mother_lv, physWorld, false, 0, check_overlaps);
+  mother_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
+  // Frame
+  auto frame_solid = new G4Box("Bac1FrameSolid", frame_size.x(),
+                               frame_size.y(), frame_size.z());
+  auto frame_lv = new G4LogicalVolume(frame_solid,
+                                      mlist.at("Air"),
+                                      "Bac1FrameLV");
+  pos.setMag(0.);
+  new G4PVPlacement(nullptr, pos, frame_lv,
+                    "Bac1FramePHYS", mother_lv, false, 0, check_overlaps);
+  // Radiator
+  auto radiator_solid = new G4Box("Bac1RadiatorSolid", radiator_size.x(),
+                                  radiator_size.y(), radiator_size.z());
+  auto radiator_lv = new G4LogicalVolume(radiator_solid,
+                                         mlist.Aerogel,
+                                         "Bac1RadiatorLV");
+  //radiator_lv->SetSensitiveDetector(ac1_sd);
+  radiator_lv->SetVisAttributes(G4Color::Magenta());
+  pos.set(0., 0., -frame_size.z() + radiator_size.z());
+  new G4PVPlacement(nullptr, pos, radiator_lv,
+                    "Bac1RadiatorPHYS", frame_lv, false, 0);
+
+}
+
+//_____________________________________________________________________________
 void
 S2SDetectorConstruction::ConstructTarget()
 {
+  if(use_Tgthebag) return;
   const auto& half_size = sizeMan.GetSize("Target")*mm/2.;
   G4Material *TargetMater = nullptr;
   auto Target = confMan.Get<G4String>("TargetMaterial");
@@ -171,6 +225,8 @@ S2SDetectorConstruction::ConstructTarget()
     TargetMater = mlist.at("natLi");}
   else if(Target == "CH2"){
     TargetMater = mlist.Polyethylene;}
+  else if(Target == "HeGas"){
+    TargetMater = mlist.at("HeGas");}
   else{
     G4cout << " Sorry, Target: " << Target
            << " is not defined. So Air will be used. " << G4endl;
@@ -191,6 +247,34 @@ S2SDetectorConstruction::ConstructTarget()
                     0,
                     check_overlaps);
   logTarget->SetVisAttributes(G4Color::Gray());
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructTargetHeBag()
+{
+  if(!use_Tgthebag) return;
+  const auto& radius = 200.*mm;
+  const auto& thickness = 490.*mm;
+  G4Material *TargetHeBagMater = mlist.at("HeGas");
+
+  auto TargetHeBagBox = new G4Box
+    ("TargetHeBagBox", radius,radius, thickness);
+//  auto TargetHeBagBox = new G4Tubs("TargetHeBagBox",
+//                                0*mm, radius, thickness,
+//                                0*deg, 360*deg);
+  auto logTargetHeBag = new G4LogicalVolume(TargetHeBagBox, TargetHeBagMater, "logTargetHeBag");
+  G4RotationMatrix rotTargetHeBag;
+
+  auto pos = geomMan.GetGlobalPosition("BAC1");
+  new G4PVPlacement(G4Transform3D(rotTargetHeBag, pos),
+                    "physTargetHeBag",
+                    logTargetHeBag,
+                    physWorld,
+                    false,
+                    0,
+                    check_overlaps);
+  logTargetHeBag->SetVisAttributes(G4Color::White());
 }
 
 //_____________________________________________________________________________

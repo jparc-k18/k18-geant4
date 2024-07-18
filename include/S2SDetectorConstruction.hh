@@ -27,7 +27,9 @@ public:
 private:
   void ConstructField();
   //     void ConstructCalorimeter();
+  void ConstructBAC1();
   void ConstructTarget ();
+  void ConstructTargetHeBag();
   void ConstructQ1();
   void ConstructQ2();
   void ConstructD1();

@@ -119,6 +119,7 @@ S2SAnaManager::BeginOfPrimaryAction()
   event.uDeg = qnan;
   event.vDeg = qnan;
   event.p0   = qnan;
+  event.pB   = qnan;
   event.t0   = qnan;
   event.phi0 = qnan;
   event.theta0 = qnan;
@@ -184,7 +185,7 @@ S2SAnaManager::MakeHistogram(const G4String& sd_name)
 void
 S2SAnaManager::SetPrimaryData(double x0, double y0, double z0,
                               double u0, double v0, double phi, double theta,
-                              double p0,double t0, int /* ParIdNb */)
+                              double p0,double pB, int /* ParIdNb */)
 {
   event.x0In = x0; // generated position (x)
   event.y0In = y0; // generated position (y)
@@ -194,12 +195,14 @@ S2SAnaManager::SetPrimaryData(double x0, double y0, double z0,
   event.v0In = v0; // y' in rad
   //event.uDeg = atan(u0)*TMath::RadToDeg(); // x' in deg
   //event.vDeg = atan(v0)*TMath::RadToDeg(); // y' in deg
-  event.uDeg = -1.0 * u0 * TMath::RadToDeg(); // x' in deg
-  event.vDeg = v0*TMath::RadToDeg(); // y' in deg
+  //event.uDeg = -1.0 * u0 * TMath::RadToDeg(); // x' in deg
+  //event.vDeg = v0*TMath::RadToDeg(); // y' in deg
+  event.uDeg = u0;
+  event.vDeg = v0;
   event.phi0 = phi; // Phi in rad
   event.theta0 = theta; // Theta in rad
   event.p0   = p0; // Momentum
-  event.t0   = t0; // Kinetic energy
+  event.pB   = pB; // Kinetic energy
   //  event.Id = ParIdNb;
   //  G4cout<<"setPrimaryData"<<G4endl;
 }
@@ -435,7 +438,6 @@ void S2SAnaManager::InitializeEvent()
 void S2SAnaManager::DefineTree()
 {
   m_tree->Branch("evnum", &event.evnum, "evnum/I");
-  return;
   m_tree->Branch("x0",&event.x0In, "x0/D");
   m_tree->Branch("y0",&event.y0In, "y0/D");
   m_tree->Branch("z0",&event.z0In, "z0/D");
@@ -446,7 +448,9 @@ void S2SAnaManager::DefineTree()
   m_tree->Branch("phi0",&event.phi0, "phi0/D");
   m_tree->Branch("theta0",&event.theta0, "theta0/D");
   m_tree->Branch("p0",&event.p0,   "p0/D");
+  m_tree->Branch("pB",&event.pB,   "pB/D");
 
+  return;
   //  m_tree->Branch("t0",&event.t0,   "t0/D");
   // m_tree->Branch("Id",&event.Id, "Id/I");
   //   m_tree->Branch("nP",&event.nP,"nP/I");
