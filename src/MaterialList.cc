@@ -22,11 +22,13 @@ MaterialList::MaterialList()
   elC  = new G4Element( "Carbon"    , "C"  ,  6.,  12.011   *g/mole );
   elN  = new G4Element( "Nitrogen"  , "N"  ,  7.,  14.00674 *g/mole );
   elO  = new G4Element( "Oxygen"    , "O"  ,  8.,  15.9994  *g/mole );
+  elF  = new G4Element( "Fluorine"  , "F"  ,  9.,  18.9984  *g/mole );
   elNa = new G4Element( "Na"        , "Na" , 11.,  23.0     *g/mole );
   elAl = new G4Element( "Aluminum"  , "Al" , 13.,  26.981539*g/mole );
   elSi = new G4Element( "Silicon"   , "Si" , 14.,  28.0855  *g/mole );
   elP  = new G4Element( "Phoshorus" , "P"  , 15.,  30.973762*g/mole );
   elS  = new G4Element( "Sulfur"    , "S"  , 16.,  32.066   *g/mole );
+  elCl  = new G4Element( "Chlorine" , "Cl" , 17.,  35.453   *g/mole );
   elAr = new G4Element( "Argon"     , "Ar" , 18.,  39.948   *g/mole );
   elTi = new G4Element( "Titanium"  , "Ti" , 22.,  47.867   *g/mole );
   elCr = new G4Element( "Chrominum" , "Cr" , 24.,  51.9961  *g/mole );
@@ -164,6 +166,17 @@ MaterialList::MaterialList()
   Acrylic -> AddElement( elH, 8 );
   Acrylic -> AddElement( elO, 2 );
 
+  // Poly Vinyl Chloride (for black sheet)
+  PVC = new G4Material( "PVC", 1.4*g/cm3, 3 );
+  PVC -> AddElement( elC, 2 );
+  PVC -> AddElement( elH, 3 );
+  PVC -> AddElement( elCl, 1 );
+
+  // Teflon
+  Teflon= new G4Material( "Teflon", 2.2*g/cm3, 2 );
+  Teflon-> AddElement( elC, 2 );
+  Teflon-> AddElement( elF, 4 );
+
   // LiO
   LiO = new G4Material( "LithiumOxide", 2.013*g/cm3, 2 );
   LiO->AddElement( elLi,2 );
@@ -239,6 +252,8 @@ MaterialList::~MaterialList()
   delete Scin;
   delete Polyethylene;
   delete Acrylic;
+  delete PVC;
+  delete Teflon;
   delete LiO;
   delete LiN;
   delete Brass;
@@ -258,11 +273,13 @@ MaterialList::~MaterialList()
   delete elC;
   delete elN;
   delete elO;
+  delete elF;
   delete elNa;
   delete elAl;
   delete elSi;
   delete elP;
   delete elS;
+  delete elCl;
   delete elAr;
   delete elTi;
   delete elCr;

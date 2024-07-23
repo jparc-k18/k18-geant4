@@ -29,7 +29,7 @@ private:
   //     void ConstructCalorimeter();
   void ConstructBAC1();
   void ConstructTarget ();
-  void ConstructTargetHeBag();
+  void ConstructTgtHeBag();
   void ConstructQ1();
   void ConstructQ2();
   void ConstructD1();

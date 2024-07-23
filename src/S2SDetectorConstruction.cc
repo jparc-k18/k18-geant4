@@ -54,7 +54,7 @@ namespace
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
 const auto& sizeMan = DetSizeMan::GetInstance();
-const G4bool use_Tgthebag = true;
+const G4bool use_Tgthebag = false;
 const G4bool use_Q1hebag = true;
 const G4bool use_Q2hebag = true;
 const G4bool use_D1hebag = true;
@@ -103,7 +103,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 
 #if 1
   ConstructTarget();
-  ConstructTargetHeBag();
+  ConstructTgtHeBag();
 #endif
 
 #if 1
@@ -209,6 +209,37 @@ S2SDetectorConstruction::ConstructBAC1()
   new G4PVPlacement(nullptr, pos, radiator_lv,
                     "Bac1RadiatorPHYS", frame_lv, false, 0);
 
+  // Black sheet
+  const auto sheet_thickness = 0.3*mm;
+  G4VSolid* solidBlackSheet;
+  solidBlackSheet = new G4Box("solidBlackSheet",frame_size.x(),
+                               frame_size.y(), sheet_thickness);
+  solidBlackSheet = new G4IntersectionSolid("solidBlackSheet", solidBlackSheet, frame_solid);
+  auto logicBlackSheet = new G4LogicalVolume(solidBlackSheet, mlist.PVC, "logicBlackSheet");
+  G4RotationMatrix rot_sheet;
+  new G4PVPlacement(G4Transform3D(rot_sheet, G4ThreeVector(0, 0, -frame_size.z()+sheet_thickness/2)),
+                    logicBlackSheet, "physBlackSheet", frame_lv, false, 0, check_overlaps);
+
+  // Mirror w/ teflon
+  const G4double mirror_thickness = 0.3*mm;
+  const G4double mirror_space = 20.*mm;
+  const G4ThreeVector triangle_size(frame_size.x(), frame_size.y(), frame_size.z()-radiator_size.z());
+  const G4double mirror_angle = std::atan2(triangle_size.z(),
+                                           triangle_size.y());
+  const G4ThreeVector mirror_size(triangle_size.x(),
+				  std::hypot(triangle_size.y(),
+                                   triangle_size.z()),
+                                  mirror_thickness);
+  auto mirror_solid = new G4Box("Bac1MirrorSolid", mirror_size.x(),
+                                 mirror_size.y(), mirror_size.z());
+  auto mirror_lv = new G4LogicalVolume(mirror_solid,
+                                        mlist.PVC,
+					"Bac1MirrorLV");
+  pos.set(0.,0., -frame_size.z()+radiator_size.z()*2 + triangle_size.z());
+  auto rot_mirror = new G4RotationMatrix;
+  rot_mirror->rotateX(mirror_angle);
+  new G4PVPlacement(rot_mirror, pos, mirror_lv,
+                      "Bac1MirrorPHYS", frame_lv, false, 0);
 }
 
 //_____________________________________________________________________________
@@ -251,30 +282,42 @@ S2SDetectorConstruction::ConstructTarget()
 
 //_____________________________________________________________________________
 void
-S2SDetectorConstruction::ConstructTargetHeBag()
+S2SDetectorConstruction::ConstructTgtHeBag()
 {
   if(!use_Tgthebag) return;
   const auto& radius = 250./2.*mm;
   const auto& thickness = 900./2.*mm;
-  G4Material *TargetHeBagMater = mlist.at("HeGas");
+  G4Material *TgtHeBagMater = mlist.at("HeGas");
 
-//  auto TargetHeBagBox = new G4Box
-//    ("TargetHeBagBox", radius,radius, thickness);
-  auto TargetHeBagBox = new G4Tubs("TargetHeBagBox",
+
+//  auto TgtHeBagBox = new G4Box
+//    ("TgtHeBagBox", radius,radius, thickness);
+  auto TgtHeBagBox = new G4Tubs("TgtHeBagBox",
                                 0*mm, radius, thickness,
                                 0*deg, 360*deg);
-  auto logTargetHeBag = new G4LogicalVolume(TargetHeBagBox, TargetHeBagMater, "logTargetHeBag");
-  G4RotationMatrix rotTargetHeBag;
+  auto logTgtHeBag = new G4LogicalVolume(TgtHeBagBox, TgtHeBagMater, "logTgtHeBag");
+  G4RotationMatrix rotTgtHeBag;
 
   auto pos = geomMan.GetGlobalPosition("BAC1");
-  new G4PVPlacement(G4Transform3D(rotTargetHeBag, pos),
-                    "physTargetHeBag",
-                    logTargetHeBag,
+  new G4PVPlacement(G4Transform3D(rotTgtHeBag, pos),
+                    "physTgtHeBag",
+                    logTgtHeBag,
                     physWorld,
                     false,
                     0,
                     check_overlaps);
-  logTargetHeBag->SetVisAttributes(G4Color::White());
+
+  const auto mylar_thickness = sizeMan.Get("HeBagMylarThickness")*mm;
+  G4VSolid* solidTgtHeMylar;
+  solidTgtHeMylar = new G4Tubs("solidTgtHeMylar",0.*mm,radius, mylar_thickness, 0*deg,360*deg);
+  solidTgtHeMylar = new G4IntersectionSolid("solidTgtHeMylar", solidTgtHeMylar,  TgtHeBagBox);
+  auto logicTgtHeMylar = new G4LogicalVolume(solidTgtHeMylar, mlist.at("Mylar"), "logicTgtHeMylar");
+  G4RotationMatrix rot;
+  new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, -thickness+mylar_thickness/2)),
+                    logicTgtHeMylar, "physTgtHeMylar", logTgtHeBag, false, 0, check_overlaps);
+  new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0,  thickness-mylar_thickness/2)),
+                    logicTgtHeMylar, "physTgtHeMylar", logTgtHeBag, false, 1, check_overlaps);
+  logTgtHeBag->SetVisAttributes(G4Color::White());
 }
 
 //_____________________________________________________________________________

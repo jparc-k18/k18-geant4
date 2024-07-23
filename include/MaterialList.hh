@@ -32,11 +32,13 @@ public:
   G4Element *elC;
   G4Element *elN;
   G4Element *elO;
+  G4Element *elF;
   G4Element *elNa;
   G4Element *elAl;
   G4Element *elSi;
   G4Element *elP;
   G4Element *elS;
+  G4Element *elCl;
   G4Element *elAr;
   G4Element *elTi;
   G4Element *elCr;
@@ -79,6 +81,8 @@ public:
   G4Material *Scin;
   G4Material *Polyethylene;
   G4Material *Acrylic;
+  G4Material *PVC;
+  G4Material *Teflon;
   G4Material *LiO;
   G4Material *LiN;
   G4Material *Brass;
