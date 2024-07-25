@@ -194,6 +194,7 @@ S2SDetectorConstruction::ConstructBAC1()
   auto frame_lv = new G4LogicalVolume(frame_solid,
                                       mlist.at("Air"),
                                       "Bac1FrameLV");
+  frame_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
   pos.setMag(0.);
   new G4PVPlacement(nullptr, pos, frame_lv,
                     "Bac1FramePHYS", mother_lv, false, 0, check_overlaps);
@@ -221,7 +222,7 @@ S2SDetectorConstruction::ConstructBAC1()
                     logicBlackSheet, "physBlackSheet", frame_lv, false, 0, check_overlaps);
 
   // Mirror w/ teflon
-  const G4double mirror_thickness = 0.3*mm;
+  const G4double mirror_thickness = 0.6*mm;
   const G4double mirror_space = 20.*mm;
   const G4ThreeVector triangle_size(frame_size.x(), frame_size.y(), frame_size.z()-radiator_size.z());
   const G4double mirror_angle = std::atan2(triangle_size.z(),
@@ -233,7 +234,7 @@ S2SDetectorConstruction::ConstructBAC1()
   auto mirror_solid = new G4Box("Bac1MirrorSolid", mirror_size.x(),
                                  mirror_size.y(), mirror_size.z());
   auto mirror_lv = new G4LogicalVolume(mirror_solid,
-                                        mlist.PVC,
+                                        mlist.Teflon,
 					"Bac1MirrorLV");
   pos.set(0.,0., -frame_size.z()+radiator_size.z()*2 + triangle_size.z());
   auto rot_mirror = new G4RotationMatrix;

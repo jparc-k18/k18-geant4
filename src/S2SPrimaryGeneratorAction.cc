@@ -164,14 +164,19 @@ S2SPrimaryGeneratorAction::GenerateMonochromeBeam(G4Event* anEvent)
   const G4double m0 = particle->GetPDGMass();
   G4double p0 = (experiment == 10) ? 0.9*GeV : 1.4*GeV;
   const auto& target_pos = geomMan.GetGlobalPosition("Target");
+  beam.pos.setX(target_pos.x());
+  beam.pos.setY(target_pos.y());
+  beam.pos.setZ(target_pos.z()-956.*mm);
   G4LorentzVector p(0, 0, p0, TMath::Sqrt(p0*p0 + m0*m0));
-  G4LorentzVector v(target_pos, 0);
+  G4LorentzVector v(beam.pos, 0);
   m_particleGun->SetParticleDefinition(particle);
   m_particleGun->SetParticleMomentumDirection(p.v());
   m_particleGun->SetParticleEnergy(p.e() - m0);
   m_particleGun->SetParticlePosition(v.v());
   m_particleGun->GeneratePrimaryVertex(anEvent);
   anaMan.SetPrimaryParticle(0, pdg, p, v);
+  anaMan.SetPrimaryData(beam.pos.x(),beam.pos.y(),beam.pos.z(),
+			0.,0.,0.,0.,p0,0.,9999);
 }
 
 //_____________________________________________________________________________
@@ -276,7 +281,7 @@ S2SPrimaryGeneratorAction::GenerateBeamThrough(G4Event* anEvent)
     k18track->GetEntry(i);
     if(/*trigflag[21]>0 &&*/ ntK18==1 && abs(CBtof0[0])<0.2 && chisqrK18[0]<10.){
     z0 = bac1_pos.z() - target_pos.z() -556.*mm;
-     // z0 = 556 mm upstrm from BAC1 (approximately dwnstr surface of BH2)
+    // z0 = 556 mm upstrm from BAC1 (approximately dwnstr surface of BH2)
     x0 = xtgt[0] + utgt[0]*z0; // Horizontal direction
     y0 = ytgt[0] + vtgt[0]*z0; // vertical direction
     u0 = utgt[0];
