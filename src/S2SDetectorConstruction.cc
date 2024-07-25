@@ -54,7 +54,7 @@ namespace
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
 const auto& sizeMan = DetSizeMan::GetInstance();
-const G4bool use_Tgthebag = false;
+const G4bool use_Tgthebag = true;
 const G4bool use_Q1hebag = true;
 const G4bool use_Q2hebag = true;
 const G4bool use_D1hebag = true;
@@ -183,7 +183,7 @@ S2SDetectorConstruction::ConstructBAC1()
   auto rot = new G4RotationMatrix;
   rot->rotateY(-ra2);
   auto pos = geomMan.GetGlobalPosition("BAC1");
-  G4ThreeVector offset(0., 0., frame_size.z() - radiator_size.z());
+  G4ThreeVector offset(0., 0., frame_size.z()-0.6*mm - radiator_size.z());
   offset.rotateY(ra2);
   new G4PVPlacement(rot, pos + offset,
                     "Bac1MotherPHYS", mother_lv, physWorld, false, 0, check_overlaps);
@@ -206,41 +206,74 @@ S2SDetectorConstruction::ConstructBAC1()
                                          "Bac1RadiatorLV");
   //radiator_lv->SetSensitiveDetector(ac1_sd);
   radiator_lv->SetVisAttributes(G4Color::Magenta());
-  pos.set(0., 0., -frame_size.z() + radiator_size.z());
+  pos.set(0., 0., -frame_size.z()+0.6*mm + radiator_size.z());
   new G4PVPlacement(nullptr, pos, radiator_lv,
                     "Bac1RadiatorPHYS", frame_lv, false, 0);
 
-  // Black sheet
-  const auto sheet_thickness = 0.3*mm;
-  G4VSolid* solidBlackSheet;
-  solidBlackSheet = new G4Box("solidBlackSheet",frame_size.x(),
+  // Foward Black sheet
+  const auto sheet_thickness = 0.2*mm/2;
+  G4VSolid* solidBlackSheet1;
+  solidBlackSheet1 = new G4Box("solidBac1BlackSheet1",frame_size.x(),
                                frame_size.y(), sheet_thickness);
-  solidBlackSheet = new G4IntersectionSolid("solidBlackSheet", solidBlackSheet, frame_solid);
-  auto logicBlackSheet = new G4LogicalVolume(solidBlackSheet, mlist.PVC, "logicBlackSheet");
+  solidBlackSheet1 = new G4IntersectionSolid("solidBac1BlackSheet1", solidBlackSheet1, frame_solid);
+  auto logicBlackSheet1 = new G4LogicalVolume(solidBlackSheet1, mlist.PVC, "logicBlackSheet1");
   G4RotationMatrix rot_sheet;
-  new G4PVPlacement(G4Transform3D(rot_sheet, G4ThreeVector(0, 0, -frame_size.z()+sheet_thickness/2)),
-                    logicBlackSheet, "physBlackSheet", frame_lv, false, 0, check_overlaps);
+  logicBlackSheet1->SetVisAttributes(G4Color::Gray());
+  new G4PVPlacement(G4Transform3D(rot_sheet, G4ThreeVector(0, 0, -frame_size.z()+sheet_thickness)),
+                    logicBlackSheet1, "physBac1BlackSheet1", frame_lv, false, 0, check_overlaps);
 
-  // Mirror w/ teflon
-  const G4double mirror_thickness = 0.6*mm;
-  const G4double mirror_space = 20.*mm;
-  const G4ThreeVector triangle_size(frame_size.x(), frame_size.y(), frame_size.z()-radiator_size.z());
-  const G4double mirror_angle = std::atan2(triangle_size.z(),
+  // Foreward Reflector w/ teflon
+  const G4double reflector_thickness = 0.3*mm/2;
+  const G4ThreeVector reflector1_size(frame_size.x(),
+					frame_size.y(),
+                                  	reflector_thickness);
+  auto reflector1_solid = new G4Box("Bac1Reflector1Solid", reflector1_size.x(),
+                                 reflector1_size.y(), reflector1_size.z());
+  auto reflector1_lv = new G4LogicalVolume(reflector1_solid,
+                                        mlist.Teflon,
+					"Bac1Reflector1LV");
+  reflector1_lv->SetVisAttributes(G4Color::White());
+  pos.set(0.,0., -frame_size.z()+sheet_thickness*2 + reflector_thickness);
+  auto rot_reflector1 = new G4RotationMatrix;
+  new G4PVPlacement(rot_reflector1, pos, reflector1_lv,
+                      "Bac1Reflector1PHYS", frame_lv, false, 0);
+
+  // Backward Black sheet  w/ PVC
+  const G4ThreeVector triangle_size(frame_size.x(), frame_size.y(), frame_size.z()-radiator_size.z()-0.3*mm);
+  const G4double BlackSheet2_angle = std::atan2(triangle_size.z(),
                                            triangle_size.y());
-  const G4ThreeVector mirror_size(triangle_size.x(),
+  const G4ThreeVector BlackSheet2_size(triangle_size.x(),
 				  std::hypot(triangle_size.y(),
                                    triangle_size.z()),
-                                  mirror_thickness);
-  auto mirror_solid = new G4Box("Bac1MirrorSolid", mirror_size.x(),
-                                 mirror_size.y(), mirror_size.z());
-  auto mirror_lv = new G4LogicalVolume(mirror_solid,
-                                        mlist.Teflon,
-					"Bac1MirrorLV");
+                                  sheet_thickness);
+  auto solidBlackSheet2 = new G4Box("solidBac1BlackSheet2", BlackSheet2_size.x(),
+                                 BlackSheet2_size.y(), BlackSheet2_size.z());
+  auto logicBlackSheet2 = new G4LogicalVolume(solidBlackSheet2,
+                                        mlist.PVC,
+					"logicBac1BlackSheet2");
+  logicBlackSheet2->SetVisAttributes(G4Color::Gray());
   pos.set(0.,0., -frame_size.z()+radiator_size.z()*2 + triangle_size.z());
-  auto rot_mirror = new G4RotationMatrix;
-  rot_mirror->rotateX(mirror_angle);
-  new G4PVPlacement(rot_mirror, pos, mirror_lv,
-                      "Bac1MirrorPHYS", frame_lv, false, 0);
+  auto rot_BlackSheet2 = new G4RotationMatrix;
+  rot_BlackSheet2->rotateX(BlackSheet2_angle);
+  new G4PVPlacement(rot_BlackSheet2, pos, logicBlackSheet2,
+                      "physBac1BlackSheet1", frame_lv, false, 0);
+
+
+  // Backward Reflector  w/ Teflon
+  const G4ThreeVector reflector2_size(triangle_size.x(),
+				  std::hypot(triangle_size.y(),
+                                   triangle_size.z()),
+                                  reflector_thickness);
+  auto reflector2_solid = new G4Box("Bac1Reflector2Solid", reflector2_size.x(),
+                                 reflector2_size.y(), reflector2_size.z());
+  auto reflector2_lv = new G4LogicalVolume(reflector2_solid,
+                                        mlist.Teflon,
+					"Bac1Reflector2LV");
+  reflector2_lv->SetVisAttributes(G4Color::White());
+  pos.set(0.,0., -frame_size.z()+radiator_size.z()*2 + triangle_size.z()-0.5*mm);
+  new G4PVPlacement(rot_BlackSheet2, pos, reflector2_lv,
+                      "Bac1Reflector2PHYS", frame_lv, false, 0);
+
 }
 
 //_____________________________________________________________________________
