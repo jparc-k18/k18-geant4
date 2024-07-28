@@ -612,20 +612,20 @@ S2SDetectorConstruction::ConstructD1()
     const G4double zlengthU = 180*mm;
     auto solidHeBagU = new G4Box("solidD1HeBag", (Dr2-Dr1)/2, DHalfGap, zlengthU/2);
     auto logicD1HeBagU = new G4LogicalVolume(solidHeBagU, mlist.at("HeGas"), "logicD1HeBag");
-    G4ThreeVector posD1HeBag(0, 0, -2776.5*mm);
+    G4ThreeVector posD1HeBag(0, 0, -3*m*std::tan(35*deg));
     posD1HeBag.setX(0);
     posD1HeBag += G4ThreeVector(0, 0, -zlengthU/2);
     G4RotationMatrix rot;
     new G4PVPlacement(G4Transform3D(rot, posD1HeBag),
                       "physD1HeBagU", logicD1HeBagU, physWorld, false, 0, check_overlaps);
     const auto mylar_thickness = sizeMan.Get("HeBagMylarThickness")*mm;
-    auto solidD1MylarU = new G4Box("solidD1Mylar", (Dr2-Dr1)/2, DHalfGap, mylar_thickness/2);
+    auto solidD1MylarU = new G4Box("solidD1MylarU", (Dr2-Dr1)/2, DHalfGap, mylar_thickness/2);
     auto logicD1MylarU = new G4LogicalVolume(solidD1MylarU, mlist.at("Mylar"), "logicD1MylarU");
     new G4PVPlacement(G4Transform3D(rot, G4ThreeVector(0, 0, -zlengthU/2+mylar_thickness/2)),
                       logicD1MylarU, "physD1Mylar", logicD1HeBagU, false, 0, check_overlaps);
   
     ///// HeBag Downstream
-    const G4double zlengthD = 316.5*mm;
+    const G4double zlengthD = 320*mm;
     auto solidHeBagD = new G4Box("solidD1HeBag", (Dr2-Dr1)/2, DHalfGap, zlengthD/2);
     auto logicD1HeBagD = new G4LogicalVolume(solidHeBagD, mlist.at("HeGas"), "logicD1HeBag");
     posD1HeBag.set(3*m*std::tan(35*deg) + zlengthD/2, 0, 0);
