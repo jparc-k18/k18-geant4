@@ -15,7 +15,8 @@
 #
 World		15000	12000	12000
 
-Target	 	75.0	75.0	100.0
+Target	 	110.0	55.0	110.0
+#Target	 	100.0	50.0	100.0
 
 ### Mylars
 HeBagMylarThickness		0.016

@@ -54,7 +54,7 @@ namespace
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
 const auto& sizeMan = DetSizeMan::GetInstance();
-const G4bool use_Tgthebag = true;
+const G4bool use_Tgthebag = false;
 const G4bool use_Q1hebag = true;
 const G4bool use_Q2hebag = true;
 const G4bool use_D1hebag = true;
@@ -292,17 +292,19 @@ S2SDetectorConstruction::ConstructTarget()
     TargetMater = mlist.Polyethylene;}
   else if(Target == "HeGas"){
     TargetMater = mlist.at("HeGas");}
+  else if(Target == "AFT"){
+    TargetMater = mlist.at("Air");}
   else{
     G4cout << " Sorry, Target: " << Target
            << " is not defined. So Air will be used. " << G4endl;
     TargetMater = mlist.at("Air");
   }
-
+  
   auto TargetBox = new G4Box
     ("TargetBox", half_size.x(), half_size.y(), half_size.z());
   auto logTarget = new G4LogicalVolume(TargetBox, TargetMater, "logTarget");
   G4RotationMatrix rotTarget;
-
+  
   const auto& pos = geomMan.GetGlobalPosition("Target");
   new G4PVPlacement(G4Transform3D(rotTarget, pos),
                     "physTarget",
@@ -312,6 +314,172 @@ S2SDetectorConstruction::ConstructTarget()
                     0,
                     check_overlaps);
   logTarget->SetVisAttributes(G4Color::Gray());
+
+  if(Target == "AFT"){
+    // ===== Define fiber targets ================================
+    G4Material *Fiber_Core_Material =mlist.Scin;   // Polystylene
+    G4Material *Fiber_Clad_Material =mlist.Acrylic; // PMMA
+    // ~~~~~~~ Create logical volumes of x layers ~~~~~~~~~~
+    double fiber_phi_core = 2.94*mm;
+    double fiber_phi_clad = 0.06*mm;
+    double fiber_phi = fiber_phi_core + fiber_phi_clad;
+    
+    
+    G4EllipticalTube* fiber_core_solid_x 
+      = new G4EllipticalTube("fiber_core_solid_x",
+  			   fiber_phi_core/2.0, fiber_phi_core/2.0, 50.0/2.0*mm );
+    G4Tubs* fiber_clad_solid_x
+      = new G4Tubs("fiber_clad_solid_x",
+  		 fiber_phi_core/2.0, fiber_phi/2.0, //Min and Max radii
+  		 50.*mm/2.0,//height
+  		 0.0*deg,
+  		 360.*deg);
+    
+    G4LogicalVolume* FiberXLV 
+      =  new G4LogicalVolume( fiber_core_solid_x, Fiber_Core_Material, "Fiber x LV");
+    G4LogicalVolume* CladXLV 
+      =  new G4LogicalVolume( fiber_clad_solid_x, Fiber_Clad_Material, "Clad x LV");
+    G4RotationMatrix* rotFiberx = new G4RotationMatrix();//Rotaion of fiber target
+    rotFiberx->rotateX(90.0 * deg);//Rotation of fiber target
+    
+    // ~~~~~~~ Create logical volumes of y layers ~~~~~~~~~~
+    G4EllipticalTube* fiber_core_solid_y 
+      = new G4EllipticalTube("fiber_core_solid_y",
+  			   fiber_phi_core/2.0, fiber_phi_core/2.0, 100./2.0*mm );
+    G4Tubs* fiber_clad_solid_y
+      = new G4Tubs("fiber_clad_solid_y",
+  		 fiber_phi_core/2.0, fiber_phi/2.0, //Min and Max radii
+  		 100.*mm/2.0,//height
+  		 0.0*deg,
+  		 360.*deg);
+    
+    G4LogicalVolume* FiberYLV 
+      =  new G4LogicalVolume( fiber_core_solid_y, Fiber_Core_Material, "Fiber y LV");
+    G4LogicalVolume* CladYLV 
+      =  new G4LogicalVolume( fiber_clad_solid_y, Fiber_Clad_Material, "Clad y LV");
+    G4RotationMatrix* rotFibery = new G4RotationMatrix();//Rotaion of fiber target
+    rotFibery->rotateY(90.0 * deg);//Rotation of fiber target
+    
+    //double fiber_x = 150.0*mm;
+    //double fiber_y =  50.0*mm;
+    //double fiber_z = 100.0*mm;
+  
+    int fiber_tot_layers = 9; // 1-layer = xx'yy' // default
+    double fiber_posz   = 0.0;
+    double fiber_posz_p = 0.0;
+    
+    int fiber_nx = 32; 
+    double fiber_startx = -1.0 * fiber_phi*((double)fiber_nx-1.0) / 2.0;
+    
+    int fiber_ny = 16; 
+    double fiber_starty = -1.0 * fiber_phi*((double)fiber_ny-1.0) / 2.0;
+  
+    int count_fiber = 0;
+    int countx=0;//, countxp=0;
+    int county=0;//, countyp=0;
+    double target_shift = 2.0 * (fiber_phi+fiber_phi/2.0*sqrt(3.0)) * fiber_tot_layers;
+    target_shift = target_shift / 2.0 ;
+  
+    
+    //if (TargetMaterial != "Vacuum"){
+    for(int layer=0 ; layer<fiber_tot_layers ; layer++){
+      // ~~~~ fiber z position ~~~~
+      if(layer!=0) fiber_posz   = fiber_posz_p + fiber_phi; // xy zpos
+      else fiber_posz=fiber_phi/2.0;
+      fiber_posz_p = fiber_posz   + fiber_phi/2.0*sqrt(3.0);// x'y'-zpos
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      for(int i=0 ; i<fiber_nx ; i++){
+  	countx++;
+  	new G4PVPlacement( rotFiberx
+  			   , G4ThreeVector(fiber_startx+fiber_phi*i, 0*cm, fiber_posz-target_shift)
+  			   ,FiberXLV
+  			   ,"FiberX" 
+  			   , logTarget 
+  			   , false
+  			   , countx-1 );
+  			   //, 1000 );
+  	new G4PVPlacement( rotFiberx
+  			   //, G4ThreeVector(fiber_startx+fiber_phi*i, 0*cm, fiber_posz)
+  			   , G4ThreeVector(fiber_startx+fiber_phi*i, 0*cm, fiber_posz-target_shift)
+  			   , CladXLV 
+  			   ,"CladX" 
+  			   , logTarget 
+  			   , false
+  			   , countx-1 );
+  	
+        }
+     for(int i=0 ; i<fiber_nx ; i++){
+  	// -- x' --
+  	countx++;
+  	new G4PVPlacement( rotFiberx
+  		, G4ThreeVector(fiber_phi/2.0 + fiber_startx + fiber_phi*i,
+  					   0*cm,
+  					   fiber_posz_p-target_shift)
+  			   ,FiberXLV
+  			   ,"FiberX" 
+  			   , logTarget 
+  			   , false
+  			   , countx-1 );
+  			   //, 1001 );
+  	new G4PVPlacement( rotFiberx
+  			   , G4ThreeVector(fiber_phi/2.0 + fiber_startx + fiber_phi*i,
+  					   0*cm,
+  					   fiber_posz_p-target_shift)
+  			   ,CladXLV
+  			   ,"CladX" 
+  			   , logTarget 
+  			   , false
+  			   , countx-1 );
+  	
+      }
+        
+      // ~~~~ fiber z position ~~~~
+      fiber_posz   = fiber_posz_p + fiber_phi;
+      fiber_posz_p = fiber_posz + fiber_phi/2.0*sqrt(3.0);
+  
+      for(int i=0 ; i<fiber_ny ; i++){
+  	county++;
+  	// -- y --
+  	new G4PVPlacement( rotFibery
+  			   , G4ThreeVector( 0*cm,fiber_starty+fiber_phi*i, fiber_posz-target_shift)
+  			   ,FiberYLV
+  			   ,"FiberY" 
+  			   , logTarget 
+  			   , false
+  			   , county-1 );
+  	new G4PVPlacement( rotFibery
+  			   , G4ThreeVector( 0*cm,fiber_starty+fiber_phi*i, fiber_posz-target_shift)
+  			   ,CladYLV
+  			   ,"CladY" 
+  			   , logTarget 
+  			   , false
+  			   , county-1 );
+      }
+      // -- y' ------------------------------------
+      for(int i=0 ; i<fiber_ny ; i++){
+  	//if(county!=0) county++;
+  	county++;
+  	new G4PVPlacement( rotFibery
+  			   , G4ThreeVector( 0*cm,fiber_phi/2.0+fiber_starty+fiber_phi*i,
+  					    fiber_posz_p-target_shift)
+  			   ,FiberYLV
+  			   ,"FiberY" 
+  			   , logTarget 
+  			   , false
+  			   , county-1 );
+  	new G4PVPlacement( rotFibery
+  			   , G4ThreeVector( 0*cm,fiber_phi/2.0+fiber_starty+fiber_phi*i,
+  					    fiber_posz_p-target_shift)
+  			   ,CladYLV
+  			   ,"CladY" 
+  			   , logTarget 
+  			   , false
+  			   , county-1 );
+      }
+      
+    }
+  
+  }
 }
 
 //_____________________________________________________________________________
