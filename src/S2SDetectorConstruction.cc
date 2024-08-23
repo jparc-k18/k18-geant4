@@ -320,8 +320,8 @@ S2SDetectorConstruction::ConstructTarget()
     G4Material *Fiber_Core_Material =mlist.Scin;   // Polystylene
     G4Material *Fiber_Clad_Material =mlist.Acrylic; // PMMA
     // ~~~~~~~ Create logical volumes of x layers ~~~~~~~~~~
-    double fiber_phi_core = 2.94*mm;
-    double fiber_phi_clad = 0.06*mm;
+    double fiber_phi_core = 2.91*mm;
+    double fiber_phi_clad = 0.09*mm;
     double fiber_phi = fiber_phi_core + fiber_phi_clad;
     
     
