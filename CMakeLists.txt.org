@@ -3,11 +3,6 @@
 cmake_minimum_required(VERSION 3.17)
 cmake_host_system_information(RESULT host QUERY HOSTNAME)
 cmake_host_system_information(RESULT ncpu QUERY NUMBER_OF_PHYSICAL_CORES)
-if(host MATCHES ".kek\.jp")
-  message(STATUS "The hostname is ${host}")
-  set(CMAKE_C_COMPILER /opt/gcc-8.3.0/bin/gcc)
-  set(CMAKE_CXX_COMPILER /opt/gcc-8.3.0/bin/g++)
-endif()
 project(S2S)
 
 #----------------------------------------------------------------------------
