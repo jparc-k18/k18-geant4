@@ -14,17 +14,21 @@ MaterialList::MaterialList()
   // Elements
   elH  = new G4Element( "Hydrogen"  , "H"  ,  1.,   1.00794 *g/mole );
   elHe = new G4Element( "Helium"    , "He" ,  2.,   4.002602*g/mole );
-  elLi = new G4Element( "Lithium"   , "Li" ,  3.,   7.0     *g/mole );
+  elLi = new G4Element( "Lithium"   , "Li",  3.,   6.94    *g/mole );
+  elLi6 = new G4Element( "Lithium6" , "Li6",  3.,   6.0     *g/mole );
+  elLi7 = new G4Element( "Lithium7" , "Li7",  3.,   7.0     *g/mole );
   elB10= new G4Element( "Boron10"   , "B10",  5.,  10.0     *g/mole );
   elB11= new G4Element( "Boron11"   , "B11",  5.,  11.0     *g/mole );
   elC  = new G4Element( "Carbon"    , "C"  ,  6.,  12.011   *g/mole );
   elN  = new G4Element( "Nitrogen"  , "N"  ,  7.,  14.00674 *g/mole );
   elO  = new G4Element( "Oxygen"    , "O"  ,  8.,  15.9994  *g/mole );
+  elF  = new G4Element( "Fluorine"  , "F"  ,  9.,  18.9984  *g/mole );
   elNa = new G4Element( "Na"        , "Na" , 11.,  23.0     *g/mole );
   elAl = new G4Element( "Aluminum"  , "Al" , 13.,  26.981539*g/mole );
   elSi = new G4Element( "Silicon"   , "Si" , 14.,  28.0855  *g/mole );
   elP  = new G4Element( "Phoshorus" , "P"  , 15.,  30.973762*g/mole );
   elS  = new G4Element( "Sulfur"    , "S"  , 16.,  32.066   *g/mole );
+  elCl  = new G4Element( "Chlorine" , "Cl" , 17.,  35.453   *g/mole );
   elAr = new G4Element( "Argon"     , "Ar" , 18.,  39.948   *g/mole );
   elTi = new G4Element( "Titanium"  , "Ti" , 22.,  47.867   *g/mole );
   elCr = new G4Element( "Chrominum" , "Cr" , 24.,  51.9961  *g/mole );
@@ -44,6 +48,9 @@ MaterialList::MaterialList()
 
   // Simple Materials, Compounds & Mixtures
   material_map["Be9"]   = new G4Material("Be9",   4.,  9.012182*g/mole, 1.85  * g/cm3);
+  material_map["natLi"] = new G4Material("natLi", 0.534* g/cm3, 2);
+  material_map["natLi"]->AddElement(elLi7, 92.5*perCent);
+  material_map["natLi"]->AddElement(elLi6, 7.5*perCent );
   material_map["C"]     = new G4Material("C",     6., 12.0     *g/mole, 1.8   * g/cm3);
   material_map["Al"]    = new G4Material("Al",   13., 26.981539*g/mole, 2.70  * g/cm3);
   material_map["Si"]    = new G4Material("Si",   14., 28.0855  *g/mole, 2.33  * g/cm3);
@@ -159,6 +166,17 @@ MaterialList::MaterialList()
   Acrylic -> AddElement( elH, 8 );
   Acrylic -> AddElement( elO, 2 );
 
+  // Poly Vinyl Chloride (for black sheet)
+  PVC = new G4Material( "PVC", 1.4*g/cm3, 3 );
+  PVC -> AddElement( elC, 2 );
+  PVC -> AddElement( elH, 3 );
+  PVC -> AddElement( elCl, 1 );
+
+  // Teflon
+  Teflon= new G4Material( "Teflon", 2.2*g/cm3, 2 );
+  Teflon-> AddElement( elC, 2 );
+  Teflon-> AddElement( elF, 4 );
+
   // LiO
   LiO = new G4Material( "LithiumOxide", 2.013*g/cm3, 2 );
   LiO->AddElement( elLi,2 );
@@ -234,6 +252,8 @@ MaterialList::~MaterialList()
   delete Scin;
   delete Polyethylene;
   delete Acrylic;
+  delete PVC;
+  delete Teflon;
   delete LiO;
   delete LiN;
   delete Brass;
@@ -246,16 +266,20 @@ MaterialList::~MaterialList()
   delete elH;
   delete elHe;
   delete elLi;
+  delete elLi6;
+  delete elLi7;
   delete elB10;
   delete elB11;
   delete elC;
   delete elN;
   delete elO;
+  delete elF;
   delete elNa;
   delete elAl;
   delete elSi;
   delete elP;
   delete elS;
+  delete elCl;
   delete elAr;
   delete elTi;
   delete elCr;

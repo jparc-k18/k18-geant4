@@ -5,6 +5,8 @@
 #include <G4ParticleTable.hh>
 #include <G4Step.hh>
 #include <G4Track.hh>
+#include <G4TouchableHistory.hh>
+#include <G4TouchableHandle.hh>
 
 #include <TLorentzVector.h>
 #include <TParticle.h>
@@ -23,6 +25,7 @@ VHitInfo::VHitInfo(const G4String& name, G4Step* step,
   : m_detector_name(name),
     m_particle_name(),
     m_position(),
+    //m_lposition(),
     m_momentum(),
     m_time(),
     m_energy_deposit(),
@@ -44,12 +47,15 @@ VHitInfo::VHitInfo(const G4String& name, G4Step* step,
   const auto pre = step->GetPreStepPoint();
   const auto post = step->GetPostStepPoint();
   const auto dp = track->GetDynamicParticle();
+  G4TouchableHandle theTouchable = pre->GetTouchableHandle();
   m_particle_name = track->GetDefinition()->GetParticleName();
   if (use_center_point) {
     m_position = (pre->GetPosition() + post->GetPosition())/2.;
+    m_lposition = theTouchable->GetHistory()->GetTopTransform().TransformPoint(m_position);
     m_momentum = (pre->GetMomentum() + post->GetMomentum())/2.;
   } else {
     m_position = pre->GetPosition();
+    m_lposition = theTouchable->GetHistory()->GetTopTransform().TransformPoint(m_position);
     m_momentum = pre->GetMomentum();
   }
   m_time = pre->GetGlobalTime();
@@ -67,7 +73,9 @@ VHitInfo::VHitInfo(const G4String& name, G4Step* step,
   m_vertex_kinetic_energy = track->GetVertexKineticEnergy();
   TLorentzVector p(m_momentum.x(), m_momentum.y(), m_momentum.z(),
                    dp->GetTotalEnergy());
-  TLorentzVector v(m_position.x(), m_position.y(), m_position.z(),
+  //TLorentzVector v(m_position.x(), m_position.y(), m_position.z(),
+  //                 pre->GetGlobalTime());
+  TLorentzVector v(m_lposition.x(), m_lposition.y(), m_lposition.z(),
                    pre->GetGlobalTime());
   m_particle = new TParticle(m_pdg_encoding,
                              0, // fStatusCode
