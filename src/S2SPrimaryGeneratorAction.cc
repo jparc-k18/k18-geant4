@@ -206,8 +206,10 @@ S2SPrimaryGeneratorAction::GenerateUniformSpherical(G4Event* anEvent)
   u0 = TMath::Tan(theta)*TMath::Cos(phi);
   v0 = TMath::Tan(theta)*TMath::Sin(phi);
   beam.VO(zK18Target);
-  beam.pos.setZ(0);
-  G4LorentzVector v(target_pos + beam.pos, 0);
+  beam.pos.setX(target_pos.x());
+  beam.pos.setY(target_pos.y());
+  beam.pos.setZ(target_pos.z());
+  G4LorentzVector v(beam.pos, 0);
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -220,7 +222,7 @@ S2SPrimaryGeneratorAction::GenerateUniformSpherical(G4Event* anEvent)
   m_particleGun->SetParticlePosition(v.v());
   m_particleGun->GeneratePrimaryVertex(anEvent);
   anaMan.SetPrimaryParticle(0, pdg, p, v);
-  anaMan.SetPrimaryData(0,0,0,u0,v0,phi,theta,p0,1.8*GeV,9999);
+  anaMan.SetPrimaryData(beam.pos.x(),beam.pos.y(),beam.pos.z(),u0,v0,phi,theta,p0,1.8*GeV,9999);
 }
 
 //_____________________________________________________________________________
@@ -244,10 +246,12 @@ S2SPrimaryGeneratorAction::GenerateBeam(G4Event* anEvent)
   const G4double m0 = particle->GetPDGMass();
   const auto& target_pos = geomMan.GetGlobalPosition("Target");
   beam.VO(zK18Target);
-  beam.pos.setZ(0);
+  beam.pos.setX(target_pos.x());
+  beam.pos.setY(target_pos.y());
+  beam.pos.setZ(target_pos.z());
   beam.mom.setMag(p0);
   G4LorentzVector p(beam.mom, TMath::Sqrt(p0*p0 + m0*m0));
-  G4LorentzVector v(target_pos + beam.pos, 0);
+  G4LorentzVector v(beam.pos, 0);
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -294,14 +298,14 @@ S2SPrimaryGeneratorAction::GenerateBeamThrough(G4Event* anEvent)
    }
   }
   beam.VO(zK18Target);
-  beam.pos.setX(x0);
-  beam.pos.setY(y0);
-  beam.pos.setZ(z0);
+  beam.pos.setX(x0+target_pos.x());
+  beam.pos.setY(y0+target_pos.y());
+  beam.pos.setZ(z0+target_pos.z());
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setX(p0*u0/TMath::Sqrt(1+u0*u0+v0*v0));
   p.setY(p0*v0/TMath::Sqrt(1+u0*u0+v0*v0));
   p.setZ(p0/TMath::Sqrt(1+u0*u0+v0*v0));
-  G4LorentzVector v(beam.pos+target_pos, 0);
+  G4LorentzVector v(beam.pos, 0);
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -313,7 +317,7 @@ S2SPrimaryGeneratorAction::GenerateBeamThrough(G4Event* anEvent)
   m_particleGun->SetParticlePosition(v.v());
   m_particleGun->GeneratePrimaryVertex(anEvent);
   anaMan.SetPrimaryParticle(0, pdg, p, v);
-  anaMan.SetPrimaryData(x0,y0,z0,u0,v0,0.,0.,p0,p0,9999);
+  anaMan.SetPrimaryData(beam.pos.x(),beam.pos.y(),beam.pos.z(),u0,v0,0.,0.,p0,p0,9999);
 }
 
 void // 5
@@ -359,7 +363,7 @@ S2SPrimaryGeneratorAction::GenerateBeamGausProfile(G4Event* anEvent)
   p.setX(p0*u0/TMath::Sqrt(1+u0*u0+v0*v0));
   p.setY(p0*v0/TMath::Sqrt(1+u0*u0+v0*v0));
   p.setZ(p0/TMath::Sqrt(1+u0*u0+v0*v0));
-  G4LorentzVector v(beam.pos+target_pos, 0);
+  G4LorentzVector v(beam.pos, 0);
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -371,7 +375,7 @@ S2SPrimaryGeneratorAction::GenerateBeamGausProfile(G4Event* anEvent)
   m_particleGun->SetParticlePosition(v.v());
   m_particleGun->GeneratePrimaryVertex(anEvent);
   anaMan.SetPrimaryParticle(0, pdg, p, v);
-  anaMan.SetPrimaryData(x0,y0,z0,u0,v0,0.,0.,p0,p0,9999);
+  anaMan.SetPrimaryData(beam.pos.x(),beam.pos.y(),beam.pos.z(),u0,v0,0.,0.,p0,p0,9999);
 }
 
 void // 7001 E70 12C(KK)12XiBe kinematics 
@@ -412,8 +416,10 @@ S2SPrimaryGeneratorAction::Generate12XiBeryllium(G4Event* anEvent)
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
   beam.VO(zK18Target);
-  beam.pos.setZ(0);
-  G4LorentzVector v(target_pos + beam.pos, 0);
+  beam.pos.setX(target_pos.x());
+  beam.pos.setY(target_pos.y());
+  beam.pos.setZ(target_pos.z());
+  G4LorentzVector v(beam.pos, 0);
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -464,8 +470,10 @@ S2SPrimaryGeneratorAction::GenerateElementaryXiMinus(G4Event* anEvent)
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
   beam.VO(zK18Target);
-  beam.pos.setZ(0);
-  G4LorentzVector v(target_pos + beam.pos, 0);
+  beam.pos.setX(target_pos.x());
+  beam.pos.setY(target_pos.y());
+  beam.pos.setZ(target_pos.z());
+  G4LorentzVector v(beam.pos, 0);
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -517,8 +525,10 @@ S2SPrimaryGeneratorAction::GenerateElementarySigmaMinus(G4Event* anEvent)
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
   beam.VO(zK18Target);
-  beam.pos.setZ(0);
-  G4LorentzVector v(target_pos + beam.pos, 0);
+  beam.pos.setX(target_pos.x());
+  beam.pos.setY(target_pos.y());
+  beam.pos.setZ(target_pos.z());
+  G4LorentzVector v(beam.pos, 0);
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -570,8 +580,10 @@ S2SPrimaryGeneratorAction::GenerateElementarySigmaPlus(G4Event* anEvent)
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
   beam.VO(zK18Target);
-  beam.pos.setZ(0);
-  G4LorentzVector v(target_pos + beam.pos, 0);
+  beam.pos.setX(target_pos.x());
+  beam.pos.setY(target_pos.y());
+  beam.pos.setZ(target_pos.z());
+  G4LorentzVector v(beam.pos, 0);
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -661,10 +673,10 @@ S2SPrimaryGeneratorAction::GenerateKH7XiHSpectrum(G4Event* anEvent)
   p.setRThetaPhi(p0, theta, phi);
   beam.VO(zK18Target);
   
-  beam.pos.setX(x0);
-  beam.pos.setY(y0);
-  beam.pos.setZ(z0);
-  G4LorentzVector v(target_pos + beam.pos, 0);
+  beam.pos.setX(x0+target_pos.x());
+  beam.pos.setY(y0+target_pos.y());
+  beam.pos.setZ(z0+target_pos.z());
+  G4LorentzVector v(beam.pos, 0);
   u0 = TMath::Tan(theta)*TMath::Cos(phi);
   v0 = TMath::Tan(theta)*TMath::Sin(phi);
 #if 0
@@ -679,5 +691,5 @@ S2SPrimaryGeneratorAction::GenerateKH7XiHSpectrum(G4Event* anEvent)
   m_particleGun->SetParticlePosition(v.v());
   m_particleGun->GeneratePrimaryVertex(anEvent);
   anaMan.SetPrimaryParticle(0, pdg, p, v);
-  anaMan.SetPrimaryData(x0,y0,z0,u0,v0,phi,theta,p0,pB,9999);
+  anaMan.SetPrimaryData(beam.pos.x(),beam.pos.y(),beam.pos.z(),u0,v0,phi,theta,p0,pB,9999);
 }
