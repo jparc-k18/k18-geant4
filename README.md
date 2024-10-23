@@ -3,14 +3,12 @@ k18geant4
 
 K1.8 geant4 simulation tool.
 
-**Note that this README needs to be modified.**
-
 ## Platform
 
-This tool is developed on the platform of KEKCC, CentOS 7.9.2009.
-- g++ (GCC) 8.3.0
-- ROOT 6.22/08
-- Geant4 11.0.2
+This tool is developed on the platform of KEKCC, Red Hat Enterprise Linux release 9.3 (Plow).
+- g++ (GCC) 11.4.1
+- ROOT 6.32.04
+- Geant4 11.2.2
 
 ## Anaconda setting
 
@@ -19,15 +17,15 @@ it is necessary to build the Anaconda local environment once using the `conda` c
 Note that it is recommended to use `conda install` instead of `pip install` in the anaconda environment.
 
 ```sh
-$ conda create -n py37 python=3.7 # py37 is an example name
-$ conda activate py37
+$ conda create -n myenv python=3.9 # myenv is an example name
+$ conda activate myenv
 $ conda install numpy psutil pyyaml rich
 ```
 
 Add the following line in .bashrc to activate your environment.
 
 ```sh
-conda activate py37
+conda activate myenv
 ```
 
 If the prompt header of conda is annoying, add the following line in .condarc.
@@ -41,15 +39,13 @@ changeps1: False
 Set environment variables.
 
 ```shell
-. /opt/python-3.7/etc/profile.d/conda.sh
-. /group/had/sks/software/root/6.22.08/bin/thisroot.sh
-. /sw/packages/geant4/11.0.2/bin/geant4.sh
-. /sw/packages/geant4/11.0.2/share/Geant4-11.0.2/geant4make/geant4make.sh
-export PATH=$PATH:/group/had/sks/software/unpacker/s2s/bin
-export MAKEFLAGS=-j40
-conda activate py37
-module load gcc/830
-module load git/2260
+. /sw/packages/root/6.32.04/bin/thisroot.sh
+. /sw/packages/geant4/11.2.2/bin/geant4.sh
+. /sw/packages/geant4/11.2.2/share/Geant4/geant4make/geant4make.sh
+conda activate myenv
+export G4WORKDIR=$HOME/work/geant4 # set as you like
+export PATH=/group/had/sks/software/unpacker/e70/bin:$PATH
+export PATH=$G4WORKDIR/bin/Linux-g++:$PATH
 ```
 
 then
