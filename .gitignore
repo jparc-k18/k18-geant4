@@ -20,4 +20,5 @@ backup/
 
 CMakeLists.txt
 fieldmap
+rootfile*
 G4History.macro
