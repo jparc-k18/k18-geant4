@@ -79,6 +79,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
   m_tree = new TTree("g4s2s", "S-2S simulation");
   event.hits.clear();
   event.evnum = -1;
+  event.trig.assign(kTriggerFlagSize, false);
   DefineTree();
   for(const auto& sd_name : std::vector<G4String>{
       "PRM", "SDC1","SDC2","SDC3","SDC4","SDC5", "TOF", "AC1", "WC", "VP" }
@@ -394,6 +395,12 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
     }
   }
 
+  {
+    for(G4int i=0; i<kTriggerFlagSize; ++i){
+      event.trig[i] = trigger_flag[i];
+    }
+  }
+
   if(confMan.Get<G4bool>("TREE"))
     m_tree->Fill();
 
@@ -438,6 +445,7 @@ void S2SAnaManager::InitializeEvent()
 void S2SAnaManager::DefineTree()
 {
   m_tree->Branch("evnum", &event.evnum, "evnum/I");
+  m_tree->Branch("trig", &event.trig);
   m_tree->Branch("x0",&event.x0In, "x0/D");
   m_tree->Branch("y0",&event.y0In, "y0/D");
   m_tree->Branch("z0",&event.z0In, "z0/D");

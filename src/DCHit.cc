@@ -15,7 +15,7 @@ G4Allocator<DCHit> DCHitAllocator;
 //_____________________________________________________________________________
 DCHit::DCHit(const G4String& name, G4Step* step)
   : G4VHit(),
-    VHitInfo(name, step)
+    VHitInfo(name, step, true)
 {
 }
 

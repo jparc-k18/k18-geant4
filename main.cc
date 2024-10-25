@@ -32,6 +32,7 @@ main(int argc, char** argv)
     return EXIT_SUCCESS;
   }
 
+  // TTree::SetMaxTreeSize(1000000000000LL);
   auto& confMan = ConfMan::GetInstance();
   if(!confMan.Initialize(argv[kConfFile])){
     return EXIT_FAILURE;

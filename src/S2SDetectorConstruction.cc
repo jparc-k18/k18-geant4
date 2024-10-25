@@ -878,8 +878,8 @@ S2SDetectorConstruction::ConstructSDC1()
 {
   auto sdSDC1 = new DCSD("SDC1");
   G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC1);
-  const auto& sdc1_pos = (geomMan.GetGlobalPosition("SDC1-V1") +
-                          geomMan.GetGlobalPosition("SDC1-U2"))/2;
+  const auto& sdc1_pos = (geomMan.GetGlobalPosition("SDC1-X1") +
+                          geomMan.GetGlobalPosition("SDC1-X2"))/2;
   const auto& frame_size = sizeMan.GetSize("Sdc1Frame")*mm/2;
   const auto& drift_size = sizeMan.GetSize("Sdc1Drift")*mm/2;
   auto sdc1_solid = new G4Box("Sdc1Solid", frame_size.x(),
@@ -891,30 +891,12 @@ S2SDetectorConstruction::ConstructSDC1()
                     "Sdc1PHYS", sdc1_logic, physWorld, false, 0, check_overlaps);
   auto sdc1pl_solid = new G4Box("Sdc1PlSolid", drift_size.x(),
                                 drift_size.y(), drift_size.z());
-  G4String plane_name[] = { "Sdc1V1", "Sdc1V2", "Sdc1X1",
-			    "Sdc1X2", "Sdc1U1", "Sdc1U2" };
+  G4String plane_name[] = { "SDC1-U1", "SDC1-U2",
+			    "SDC1-X1", "SDC1-X2",
+			    "SDC1-V1", "SDC1-V2" };
   for(G4int i=0; i<NumOfLayersSDC1; ++i){
-    G4ThreeVector pos;
-    switch (i) {
-    case 0:
-      pos.setZ(-22.5985*mm);
-      break;
-    case 1:
-      pos.setZ(-17.4015*mm);
-      break;
-    case 2:
-      pos.setZ(-2.5985*mm);
-      break;
-    case 3:
-      pos.setZ(2.5985*mm);
-      break;
-    case 4:
-      pos.setZ(17.4015*mm);
-      break;
-    case 5:
-      pos.setZ(22.5985*mm);
-      break;
-    }
+    G4ThreeVector pos = geomMan.GetGlobalPosition(plane_name[i]);
+    pos -= sdc1_pos;
     auto sdc1pl_logic = new G4LogicalVolume(sdc1pl_solid,
                                             mlist.at("Ar80IsoButane20Gas"),
                                             plane_name[i] + "LOGIC", 0, 0, 0);
@@ -969,33 +951,30 @@ S2SDetectorConstruction::ConstructSDC2()
 {
   auto sdSDC2 = new DCSD("SDC2");
   G4SDManager::GetSDMpointer()->AddNewDetector(sdSDC2);
-  const auto& sdc2_pos = (geomMan.GetGlobalPosition("SDC2-V1") +
-                          geomMan.GetGlobalPosition("SDC2-U2"))/2;
+  const auto& sdc2_pos = (geomMan.GetGlobalPosition("SDC2-V2") +
+                          geomMan.GetGlobalPosition("SDC2-U1"))/2;
   const auto& frame_size = sizeMan.GetSize("Sdc2Frame")*mm/2;
   const auto& drift_size = sizeMan.GetSize("Sdc2Drift")*mm/2;
-  auto solidGas = new G4Box("solidSdc2Gas", frame_size.x(),
-                            frame_size.y(), frame_size.z());
-  auto logicGas = new G4LogicalVolume(solidGas, mlist.at("Ar80IsoButane20Gas"),
-                                      "logicSdc2Gas");
-  logicGas->SetVisAttributes(G4Colour::Green());
-  new G4PVPlacement(nullptr, sdc2_pos, "physSdc2Gas", logicGas,
-                    physWorld, false, 0, check_overlaps);
-  auto solidLayer = new G4Box("Sdc2PlSolid", drift_size.x(),
-                              drift_size.y(), drift_size.z());
-  G4String layer_name[] = { "Sdc2V1", "Sdc2V2",
-                            "Sdc2U1", "Sdc2U2" };
-  {
-    G4double zoffset[] = { -12.4*mm, -7.6*mm,
-                           7.6*mm, 12.4*mm };
-    for(G4int i=0; i<NumOfLayersSDC2; ++i){
-      G4ThreeVector pos(0, 0, zoffset[i]);
-      auto logicLayer = new G4LogicalVolume(solidLayer,
+  auto sdc2_solid = new G4Box("Sdc2Solid", frame_size.x(),
+                              frame_size.y(), frame_size.z());
+  auto sdc2_logic = new G4LogicalVolume(sdc2_solid, mlist.at("Ar80IsoButane20Gas"),
+                                        "Sdc2LOGIC", 0, 0, 0);
+  sdc2_logic->SetVisAttributes(G4Colour::Green());
+  new G4PVPlacement(nullptr, sdc2_pos,
+                    "Sdc2PHYS", sdc2_logic, physWorld, false, 0, check_overlaps);
+  auto sdc2pl_solid = new G4Box("Sdc2PlSolid", drift_size.x(),
+                                drift_size.y(), drift_size.z());
+  G4String plane_name[] = { "SDC2-V1", "SDC2-V2",
+			    "SDC2-U1", "SDC2-U2" };
+  for(G4int i=0; i<NumOfLayersSDC2; ++i){
+    G4ThreeVector pos = geomMan.GetGlobalPosition(plane_name[i]);
+    pos -= sdc2_pos;
+    auto sdc2pl_logic = new G4LogicalVolume(sdc2pl_solid,
                                             mlist.at("Ar80IsoButane20Gas"),
-                                            "logic"+layer_name[i]);
-      logicLayer->SetSensitiveDetector(sdSDC2);
-      new G4PVPlacement(nullptr, pos, logicLayer, "phys"+layer_name[i],
-                        logicGas, false, 101+i, check_overlaps);
-    }
+                                            plane_name[i] + "LOGIC", 0, 0, 0);
+    sdc2pl_logic->SetSensitiveDetector(sdSDC2);
+    new G4PVPlacement(nullptr, pos, sdc2pl_logic, plane_name[i] + "PHYS",
+                      sdc2_logic, false, 101+i, check_overlaps);
   }
   ///// Mylar
   const G4double mylar_thickness = sizeMan.Get("Sdc2MylarThickness")*mm;
@@ -1010,7 +989,7 @@ S2SDetectorConstruction::ConstructSDC2()
     if(i==0) pos.setZ(-frame_size.z()+alplate_thickness+mylar_thickness/2);
     if(i==1) pos.setZ(+frame_size.z()-alplate_thickness-mylar_thickness/2);
     new G4PVPlacement(nullptr, pos, logicMylar, "physSdc2WindowMylar",
-                      logicGas, false, i, check_overlaps);
+                      sdc2_logic, false, i, check_overlaps);
   }
   ///// Al plate
   auto solidAlPlate = new G4Box("solidAlPlate", frame_size.x(),
@@ -1022,11 +1001,11 @@ S2SDetectorConstruction::ConstructSDC2()
     if(i==0) pos.setZ(-frame_size.z()+alplate_thickness/2);
     if(i==1) pos.setZ(+frame_size.z()-alplate_thickness/2);
     new G4PVPlacement(nullptr, pos, logicAlPlate, "physSdc2WindowAlPlate",
-                      logicGas, false, i, check_overlaps);
+                      sdc2_logic, false, i, check_overlaps);
     if(i==0) pos.setZ(-frame_size.z()+alplate_thickness*3/2+mylar_thickness);
     if(i==1) pos.setZ(+frame_size.z()-alplate_thickness*3/2-mylar_thickness);
     new G4PVPlacement(nullptr, pos, logicAlPlate, "physSdc2WindowAlPlate",
-                      logicGas, false, i, check_overlaps);
+                      sdc2_logic, false, i, check_overlaps);
   }
   ///// Cathode
   auto solidCathodePlate = new G4Box("solidCathodePlate", frame_size.x(),
@@ -1040,13 +1019,13 @@ S2SDetectorConstruction::ConstructSDC2()
   for(G4int i=0; i<NumOfCathode; ++i){
     G4ThreeVector pos(0, 0, zoffset[i]);
     new G4PVPlacement(nullptr, pos, logicMylar, "physSdc2CathodeMylar",
-                      logicGas, false, i, check_overlaps);
+                      sdc2_logic, false, i, check_overlaps);
     new G4PVPlacement(nullptr, pos-G4ThreeVector(0, 0, mylar_thickness/2+cplate_thickness/2),
                       logicCarbonPlate, "physSdc2CarbonPlate",
-                      logicGas, false, 2*i, check_overlaps);
+                      sdc2_logic, false, 2*i, check_overlaps);
     new G4PVPlacement(nullptr, pos+G4ThreeVector(0, 0, mylar_thickness/2+cplate_thickness/2),
                       logicCarbonPlate, "physSdc2CarbonPlate",
-                      logicGas, false, 2*i+1, check_overlaps);
+                      sdc2_logic, false, 2*i+1, check_overlaps);
   }
 
 }
@@ -1083,31 +1062,29 @@ S2SDetectorConstruction::ConstructKLChamber(G4int i)
   const G4String uname = "SDC"+std::to_string(i);
   auto sd = new DCSD("SDC"+std::to_string(i));
   G4SDManager::GetSDMpointer()->AddNewDetector(sd);
-  const G4double zoffset[] = { -16.0*mm, -8.206*mm,
-                               8.206*mm, 16.0*mm };
   G4int NumOfLayers;
   std::vector<G4String> layer_name;
   switch(i){
   case 3:
     NumOfLayers = NumOfLayersSDC3;
-    layer_name.push_back(name+"X1");
-    layer_name.push_back(name+"X2");
-    layer_name.push_back(name+"Y1");
-    layer_name.push_back(name+"Y2");
+    layer_name.push_back("X1");
+    layer_name.push_back("X2");
+    layer_name.push_back("Y1");
+    layer_name.push_back("Y2");
     break;
   case 4:
     NumOfLayers = NumOfLayersSDC4;
-    layer_name.push_back(name+"Y1");
-    layer_name.push_back(name+"Y2");
-    layer_name.push_back(name+"X1");
-    layer_name.push_back(name+"X2");
+    layer_name.push_back("Y1");
+    layer_name.push_back("Y2");
+    layer_name.push_back("X1");
+    layer_name.push_back("X2");
     break;
   case 5:
     NumOfLayers = NumOfLayersSDC5;
-    layer_name.push_back(name+"Y1");
-    layer_name.push_back(name+"Y2");
-    layer_name.push_back(name+"X1");
-    layer_name.push_back(name+"X2");
+    layer_name.push_back("Y1");
+    layer_name.push_back("Y2");
+    layer_name.push_back("X1");
+    layer_name.push_back("X2");
     break;
   default:
     throw std::out_of_range("no such key : " + name);
@@ -1124,21 +1101,25 @@ S2SDetectorConstruction::ConstructKLChamber(G4int i)
     auto rot = new G4RotationMatrix;
     rot->rotateY(-ra2);
     const auto& pos = (geomMan.GetGlobalPosition(uname+"-X1") +
-                       geomMan.GetGlobalPosition(uname+"-Y2"))/2;
+		       geomMan.GetGlobalPosition(uname+"-Y2"))/2;
     new G4PVPlacement(rot, pos, "phys"+name+"Gas",
-                      logicGas, physWorld, false, 0, check_overlaps);
+		      logicGas, physWorld, false, 0, check_overlaps);
   }
+  const auto& sdc_local_z = (geomMan.GetLocalZ(uname+"-X1") +
+			     geomMan.GetLocalZ(uname+"-Y2"))/2;
   for(G4int l=0; l<NumOfLayers; ++l){
-    const auto& layer_size = sizeMan.GetSize(layer_name[l]+"Layer")*mm/2;
-    auto solidLayer = new G4Box("solid"+layer_name[l], layer_size.x(),
+    const auto& layer_size = sizeMan.GetSize(name+layer_name[l]+"Layer")*mm/2;
+    auto solidLayer = new G4Box("solid"+name+layer_name[l], layer_size.x(),
                                 layer_size.y(), layer_size.z());
-    G4ThreeVector pos(0, 0, zoffset[l]);
+    const auto& local_z = geomMan.GetLocalZ(uname+"-"+layer_name[l])*mm;
+    G4double zoffset = local_z-sdc_local_z;
+    G4ThreeVector pos(0, 0, zoffset);
     auto logicLayer = new G4LogicalVolume(solidLayer,
                                           mlist.at("Ar50Ethane50Gas"),
-                                          "logic"+layer_name[l]);
+                                          "logic"+name+layer_name[l]);
     logicLayer->SetSensitiveDetector(sd);
-    new G4PVPlacement(nullptr, pos, logicLayer, "phys"+layer_name[l],
-                      logicGas, false, 101+i, check_overlaps);
+    new G4PVPlacement(nullptr, pos, logicLayer, "phys"+name+layer_name[l],
+                      logicGas, false, 101+l, check_overlaps);
   }
 }
 

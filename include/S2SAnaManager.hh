@@ -17,6 +17,7 @@
 #include <TVector3.h>
 
 #include "RootHelper.hh"
+#include "DetectorID.hh"
 
 class G4Run;
 class G4Event;
@@ -60,6 +61,7 @@ struct Event
 {
   Int_t evnum;
   std::map<TString, std::vector<TParticle>> hits;
+  std::vector<Bool_t> trig;
 
   double x0In;
   double y0In;
