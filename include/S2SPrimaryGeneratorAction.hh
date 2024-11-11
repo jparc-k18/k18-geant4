@@ -33,7 +33,8 @@ public:
   G4double chisqrK18[500], CBtof0[500];
   TGraph *gr;
   G4double Sum;
-
+  G4int inum;
+  
 public:
   void GeneratePrimaries(G4Event* anEvent);
 
@@ -46,6 +47,8 @@ private:
   void GenerateBeam(G4Event* anEvent);
   void GenerateBeamThrough(G4Event* anEvent);
   void GenerateBeamGausProfile(G4Event* anEvent);
+  void GenerateBeamFixSeed(G4Event* anEvent);
+  void GenerateScatParticles(G4Event* anEvent);
   void Generate12XiBeryllium(G4Event* anEvent);
   void GenerateElementaryXiMinus(G4Event* anEvent);
   void GenerateElementarySigmaMinus(G4Event* anEvent);

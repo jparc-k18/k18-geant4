@@ -93,6 +93,8 @@ S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   case 3: GenerateBeam(anEvent); break;
   case 4: GenerateBeamThrough(anEvent); break;
   case 5: GenerateBeamGausProfile(anEvent); break;
+  case 6: GenerateBeamFixSeed(anEvent); break;
+  case 7: GenerateScatParticles(anEvent); break;    
   case 7001: Generate12XiBeryllium(anEvent); break;
   case 7002: GenerateElementaryXiMinus(anEvent); break;
   case 7003: GenerateElementarySigmaMinus(anEvent); break;
@@ -377,6 +379,164 @@ S2SPrimaryGeneratorAction::GenerateBeamGausProfile(G4Event* anEvent)
   anaMan.SetPrimaryParticle(0, pdg, p, v);
   anaMan.SetPrimaryData(beam.pos.x(),beam.pos.y(),beam.pos.z(),u0,v0,0.,0.,p0,p0,9999);
 }
+
+void // 6
+S2SPrimaryGeneratorAction::GenerateBeamFixSeed(G4Event* anEvent)
+{
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const G4String name = "kaon+";
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const G4double m0 = particle->GetPDGMass();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+
+  // G4double BeamSizeX = 10.*mm;
+  // G4double BeamSizeY = 5.*mm;
+  G4double BeamSizeX = 30.*mm;
+  G4double BeamSizeY = 30.*mm;
+
+  // G4double BeamSizeU = 5.e-3;
+  // G4double BeamSizeV = 3.e-3;
+  G4double BeamSizeU = 0.1;
+  G4double BeamSizeV = 0.1;
+  G4double ThetaSize =3.;
+  G4double MomCenter = 1.35*GeV ;
+  G4double MomSize = 0.*GeV ;
+
+  G4double x0 = 0.0;
+  G4double y0 = 0.0;
+  G4double z0 = 0.0;
+  G4double u0 = 0.0;
+  G4double v0 = 0.0;
+  G4double p0 = 0.0;
+
+  ++inum;
+  G4Random::setTheSeed(inum);
+  //  G4cout << "   Seed = " << G4Random::getTheSeed() << G4endl;
+  x0 = G4RandGauss::shoot(target_pos.x(),BeamSizeX);
+  y0 = G4RandGauss::shoot(target_pos.y(),BeamSizeY);
+  z0 = target_pos.z();
+
+  // G4double theta =
+  //   std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(ThetaSize*deg)))*radian;
+  // G4double phi = G4RandFlat::shoot(0., 360.)*deg;
+
+  G4double theta =G4RandFlat::shoot(0., ThetaSize)*deg;
+  G4double phi = G4RandFlat::shoot(0., 360.)*deg;
+
+  //  std::cout<<"x:"<<x0<<", y:"<<y0<<", theta:"<<theta/deg<<", phi:"<<phi/deg<<std::endl;
+  // u0 = G4RandGauss::shoot(0.0,BeamSizeU);
+  // v0 = G4RandGauss::shoot(0.0,BeamSizeV);
+
+  u0 = TMath::Tan(theta)*TMath::Cos(phi);
+  v0 = TMath::Tan(theta)*TMath::Sin(phi);
+  
+  p0 = G4RandFlat::shoot(MomCenter-MomSize, MomCenter+MomSize);
+
+
+  beam.VO(zK18Target);
+  beam.pos.setX(x0);
+  beam.pos.setY(y0);
+  beam.pos.setZ(z0);
+  G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
+  p.setX(p0*u0/TMath::Sqrt(1+u0*u0+v0*v0));
+  p.setY(p0*v0/TMath::Sqrt(1+u0*u0+v0*v0));
+  p.setZ(p0/TMath::Sqrt(1+u0*u0+v0*v0));
+  //  G4LorentzVector v(beam.pos+target_pos, 0);
+    G4LorentzVector v(beam.pos, 0);
+    //  std::cout<<"target:"<<target_pos<<", beam:"<<beam.pos<<", v:"<<v.v()<<std::endl;
+#if 0
+  beam.Print();
+  G4cout << FUNC_NAME << G4endl
+         << " " << p << " " << v << G4endl;
+#endif
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+  //anaMan.SetPrimaryData(x0,y0,z0,u0,v0,0.,0.,p0,p0,9999);
+  anaMan.SetPrimaryData(x0,y0,z0,u0,v0,phi,theta,p0,p0,9999);
+}
+
+void // 7
+S2SPrimaryGeneratorAction::GenerateScatParticles(G4Event* anEvent)
+{
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const G4String name = "kaon+";
+  static const auto particle = particleTable->FindParticle(name);
+  static const auto pdg = particle->GetPDGEncoding();
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const G4double m0 = particle->GetPDGMass();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+
+  G4double BeamSizeX = 10.*mm;
+  G4double BeamSizeY = 5.*mm;
+  // G4double BeamSizeU = 5.e-3;
+  // G4double BeamSizeV = 3.e-3;
+  G4double BeamSizeU = 0.1;
+  G4double BeamSizeV = 0.1;
+  G4double ThetaSize =15.;
+  G4double MomCenter = 1.2*GeV ;
+  G4double MomSize = 0.3*GeV ;
+
+  G4double x0 = 0.0;
+  G4double y0 = 0.0;
+  G4double z0 = 0.0;
+  G4double u0 = 0.0;
+  G4double v0 = 0.0;
+  G4double p0 = 0.0;
+
+  x0 = G4RandGauss::shoot(target_pos.x(),BeamSizeX);
+  y0 = G4RandGauss::shoot(target_pos.y(),BeamSizeY);
+  z0 = target_pos.z();
+
+  // G4double theta =
+  //   std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(ThetaSize*deg)))*radian;
+  // G4double phi = G4RandFlat::shoot(0., 360.)*deg;
+
+  G4double theta =G4RandFlat::shoot(0., ThetaSize)*deg;
+  G4double phi = G4RandFlat::shoot(0., 360.)*deg;
+
+  // u0 = G4RandGauss::shoot(0.0,BeamSizeU);
+  // v0 = G4RandGauss::shoot(0.0,BeamSizeV);
+
+  u0 = TMath::Tan(theta)*TMath::Cos(phi);
+  v0 = TMath::Tan(theta)*TMath::Sin(phi);
+  
+  p0 = G4RandFlat::shoot(MomCenter-MomSize, MomCenter+MomSize);
+
+  beam.VO(zK18Target);
+  beam.pos.setX(x0);
+  beam.pos.setY(y0);
+  beam.pos.setZ(z0);
+  G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
+  p.setX(p0*u0/TMath::Sqrt(1+u0*u0+v0*v0));
+  p.setY(p0*v0/TMath::Sqrt(1+u0*u0+v0*v0));
+  p.setZ(p0/TMath::Sqrt(1+u0*u0+v0*v0));
+  //  G4LorentzVector v(beam.pos+target_pos, 0);
+    G4LorentzVector v(beam.pos, 0);
+    //  std::cout<<"target:"<<target_pos<<", beam:"<<beam.pos<<", v:"<<v.v()<<std::endl;
+#if 0
+  beam.Print();
+  G4cout << FUNC_NAME << G4endl
+         << " " << p << " " << v << G4endl;
+#endif
+  m_particleGun->SetParticleDefinition(particle);
+  m_particleGun->SetParticleMomentumDirection(p.v());
+  m_particleGun->SetParticleEnergy(p.e() - m0);
+  m_particleGun->SetParticlePosition(v.v());
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+  //anaMan.SetPrimaryData(x0,y0,z0,u0,v0,0.,0.,p0,p0,9999);
+  anaMan.SetPrimaryData(x0,y0,z0,u0,v0,phi,theta,p0,p0,9999);
+}
+
+
 
 void // 7001 E70 12C(KK)12XiBe kinematics 
 S2SPrimaryGeneratorAction::Generate12XiBeryllium(G4Event* anEvent)
