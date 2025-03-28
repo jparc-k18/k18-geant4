@@ -199,6 +199,9 @@ S2SPrimaryGeneratorAction::GenerateUniformSpherical(G4Event* anEvent)
   G4double p0 = (experiment == 10)
     ? G4RandFlat::shoot(0.6, 1.2)*GeV
     : G4RandFlat::shoot(1.37, 1.38)*GeV;
+  if(experiment==90)
+    p0 = G4RandFlat::shoot(0.9, 1.5)*GeV;
+  
   G4double theta =
     std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(20*deg)))*radian;
   G4double phi = G4RandFlat::shoot(0., 360.)*deg;
@@ -208,9 +211,25 @@ S2SPrimaryGeneratorAction::GenerateUniformSpherical(G4Event* anEvent)
   u0 = TMath::Tan(theta)*TMath::Cos(phi);
   v0 = TMath::Tan(theta)*TMath::Sin(phi);
   beam.VO(zK18Target);
-  beam.pos.setX(target_pos.x());
-  beam.pos.setY(target_pos.y());
-  beam.pos.setZ(target_pos.z());
+
+  if(experiment!=90){
+    beam.pos.setX(target_pos.x());
+    beam.pos.setY(target_pos.y());
+    beam.pos.setZ(target_pos.z());
+  }
+  if(experiment==90){
+    double beam_x = G4RandGauss::shoot(target_pos.x(),23.);
+    while(1){
+      if(fabs(beam_x)<(54./2.))
+	break;
+      else
+	beam_x = G4RandGauss::shoot(target_pos.x(),23.);
+    }
+    beam.pos.setX(beam_x);
+    beam.pos.setY(target_pos.y());
+    beam.pos.setZ(target_pos.z());
+  }
+
   G4LorentzVector v(beam.pos, 0);
 #if 0
   beam.Print();
