@@ -49,6 +49,7 @@ private:
   void GenerateBeamGausProfile(G4Event* anEvent);
   void GenerateBeamFixSeed(G4Event* anEvent);
   void GenerateScatParticles(G4Event* anEvent);
+  void GenerateDefocusBeam(G4Event* anEvent);  
   void Generate12XiBeryllium(G4Event* anEvent);
   void GenerateElementaryXiMinus(G4Event* anEvent);
   void GenerateElementarySigmaMinus(G4Event* anEvent);
