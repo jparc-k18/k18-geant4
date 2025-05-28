@@ -98,7 +98,6 @@ DCGeomRecord::ClassName()
 
 //______________________________________________________________________________
 struct DCGeomRecordComp
-  : public std::binary_function <DCGeomRecord*, DCGeomRecord*, G4bool>
 {
   G4bool operator()(const DCGeomRecord* const p1,
                     const DCGeomRecord* const p2) const
