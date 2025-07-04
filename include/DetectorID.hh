@@ -18,6 +18,14 @@ const Int_t NumOfLayersSSD1 = 4;
 const Int_t NumOfLayersSSD2 = 4;
 const Int_t NumOfLayersVP = 11;
 
+// HTOF / HypTPC
+const Int_t NumOfSegHTOF = 32;
+const Int_t NumOfPlaneHTOF = 8;
+const Int_t NumOfSegHTOFOnePlane = NumOfSegHTOF / NumOfPlaneHTOF;
+const Int_t NumOfPadTPCIn  = 10;
+const Int_t NumOfPadTPCOut = 22;
+const Int_t NumOfPadTPC = NumOfPadTPCIn + NumOfPadTPCOut;
+
 enum ETriggerFlag
   {
     kSSD1,
@@ -72,5 +80,7 @@ const std::vector<TString> TriggerFlag =
     "AC1",
     "WC",
   };
+
+
 
 #endif

@@ -11,6 +11,8 @@
 
 MaterialList::MaterialList()
 {
+  const G4double room_temp = NTP_Temperature; // 293.15*CLHEP::kelvin;
+
   // Elements
   elH  = new G4Element( "Hydrogen"  , "H"  ,  1.,   1.00794 *g/mole );
   elHe = new G4Element( "Helium"    , "He" ,  2.,   4.002602*g/mole );
@@ -199,20 +201,16 @@ MaterialList::MaterialList()
   PET->AddElement( elH,  8 );
 
   // MethaneGas
-  MethaneGas = new G4Material("MethaneGas", 0.7162*mg/cm3, 2, kStateGas );
-  MethaneGas->AddElement(elH,4);
-  MethaneGas->AddElement(elC,1);
+  G4double densityMethane = 0.717*mg/cm3 * CLHEP::STP_Temperature / room_temp;
+  MethaneGas = new G4Material("MethaneGas", densityMethane, 2, kStateGas, room_temp);
+  MethaneGas->AddElement(elH, 4);
+  MethaneGas->AddElement(elC, 1);
 
-  /*
-  // P10 Gas
-  // Ar (90) Methane (10) by volume
-  P10Gas = new G4Material("P10Gas", 1.6767*mg/cm3, 2, kStateGas );
-  P10Gas->AddMaterial(ArGas,      0.9573);
+  // P10 Gas : Ar(90) Methane(10) by volume = 95.73% + 4.27% by mass
+  G4double densityP10 = 1.6764*mg/cm3 * CLHEP::STP_Temperature / room_temp;
+  P10Gas = new G4Material("P10", densityP10, 2, kStateGas, room_temp);
+  P10Gas->AddElement(elAr, 0.9573);
   P10Gas->AddMaterial(MethaneGas, 0.0427);
-  */
-
-  // Ar::IsoButhane=80:20
-
 }
 
 G4Material*

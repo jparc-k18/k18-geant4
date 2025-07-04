@@ -45,9 +45,9 @@ S2SPrimaryGeneratorAction::S2SPrimaryGeneratorAction()
     m_particleGun(nullptr),
     m_generator(confMan.Get<G4int>("Generator"))
 {
-  auto igene = confMan.Get<G4int>("Generator");  
+  auto igene = confMan.Get<G4int>("Generator");
   if(igene==4 ||igene==7501 ){
-    auto ifsK18name = confMan.Get<G4String>("K18ROOT");  
+    auto ifsK18name = confMan.Get<G4String>("K18ROOT");
     profileK18 = new TFile(ifsK18name);
     if(!profileK18){G4cout<< ifsK18name << " is not found." <<G4endl;}
     k18track = (TTree*)profileK18 ->Get("k18track");
@@ -63,7 +63,7 @@ S2SPrimaryGeneratorAction::S2SPrimaryGeneratorAction()
   }
 
   if(igene==7501 ){
-    auto ifsTheoname = confMan.Get<G4String>("TheoCalc");  
+    auto ifsTheoname = confMan.Get<G4String>("TheoCalc");
     gr = new TGraph(ifsTheoname, "%lg %*lg %*lg %*lg %lg");
     for(Int_t i=0;i<gr->GetN();++i){
       G4double x,y;
@@ -94,7 +94,7 @@ S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   case 4: GenerateBeamThrough(anEvent); break;
   case 5: GenerateBeamGausProfile(anEvent); break;
   case 6: GenerateBeamFixSeed(anEvent); break;
-  case 7: GenerateScatParticles(anEvent); break;    
+  case 7: GenerateScatParticles(anEvent); break;
   case 7001: Generate12XiBeryllium(anEvent); break;
   case 7002: GenerateElementaryXiMinus(anEvent); break;
   case 7003: GenerateElementarySigmaMinus(anEvent); break;
@@ -123,6 +123,7 @@ S2SPrimaryGeneratorAction::GenerateDemo(G4Event* anEvent)
   static const G4int experiment = confMan.Get<G4int>("Experiment");
   const auto evnum = anEvent->GetEventID();
   G4double p0 = (experiment == 10) ? 0.9*GeV : 1.4*GeV;
+  // p0 = (experiment == 90) ?
   p0 = (evnum%3 == 0) ? p0
     : (evnum%3 == 1) ? p0*1.075
     : p0*0.925;
@@ -201,7 +202,7 @@ S2SPrimaryGeneratorAction::GenerateUniformSpherical(G4Event* anEvent)
     : G4RandFlat::shoot(1.37, 1.38)*GeV;
   if(experiment==90)
     p0 = G4RandFlat::shoot(0.9, 1.5)*GeV;
-  
+
   G4double theta =
     std::acos(G4RandFlat::shoot(std::cos(0*deg), std::cos(20*deg)))*radian;
   G4double phi = G4RandFlat::shoot(0., 360.)*deg;
@@ -451,7 +452,7 @@ S2SPrimaryGeneratorAction::GenerateBeamFixSeed(G4Event* anEvent)
 
   u0 = TMath::Tan(theta)*TMath::Cos(phi);
   v0 = TMath::Tan(theta)*TMath::Sin(phi);
-  
+
   p0 = G4RandFlat::shoot(MomCenter-MomSize, MomCenter+MomSize);
 
 
@@ -526,7 +527,7 @@ S2SPrimaryGeneratorAction::GenerateScatParticles(G4Event* anEvent)
 
   u0 = TMath::Tan(theta)*TMath::Cos(phi);
   v0 = TMath::Tan(theta)*TMath::Sin(phi);
-  
+
   p0 = G4RandFlat::shoot(MomCenter-MomSize, MomCenter+MomSize);
 
   beam.VO(zK18Target);
@@ -557,7 +558,7 @@ S2SPrimaryGeneratorAction::GenerateScatParticles(G4Event* anEvent)
 
 
 
-void // 7001 E70 12C(KK)12XiBe kinematics 
+void // 7001 E70 12C(KK)12XiBe kinematics
 S2SPrimaryGeneratorAction::Generate12XiBeryllium(G4Event* anEvent)
 {
   static const G4int n_particle = 1;
@@ -586,7 +587,7 @@ S2SPrimaryGeneratorAction::Generate12XiBeryllium(G4Event* anEvent)
     G4double Energy_B = TMath::Sqrt(pB*pB + m0*m0);
     G4double Energy_S = TMath::Sqrt(p0*p0 + m0*m0);
     G4double Energy_hyp = Energy_B + m_tgt - Energy_S;
-  
+
     cost = (m_hyp*m_hyp - Energy_hyp*Energy_hyp + pB*pB + p0*p0)/(2.*pB*p0);
   }
 
@@ -613,7 +614,7 @@ S2SPrimaryGeneratorAction::Generate12XiBeryllium(G4Event* anEvent)
   anaMan.SetPrimaryParticle(0, pdg, p, v);
 }
 
-void // 7002 E70 p(KK)Xi kinematics 
+void // 7002 E70 p(KK)Xi kinematics
 S2SPrimaryGeneratorAction::GenerateElementaryXiMinus(G4Event* anEvent)
 {
   static const G4int n_particle = 1;
@@ -640,7 +641,7 @@ S2SPrimaryGeneratorAction::GenerateElementaryXiMinus(G4Event* anEvent)
     G4double Energy_B = TMath::Sqrt(pB*pB + m0*m0);
     G4double Energy_S = TMath::Sqrt(p0*p0 + m0*m0);
     G4double Energy_hyp = Energy_B + m_tgt - Energy_S;
-  
+
     cost = (m_hyp*m_hyp - Energy_hyp*Energy_hyp + pB*pB + p0*p0)/(2.*pB*p0);
   }
 
@@ -667,7 +668,7 @@ S2SPrimaryGeneratorAction::GenerateElementaryXiMinus(G4Event* anEvent)
   anaMan.SetPrimaryParticle(0, pdg, p, v);
 }
 
-void // 7003 E70 p(Kpi)SigmaMinus kinematics 
+void // 7003 E70 p(Kpi)SigmaMinus kinematics
 S2SPrimaryGeneratorAction::GenerateElementarySigmaMinus(G4Event* anEvent)
 {
   static const G4int n_particle = 1;
@@ -695,7 +696,7 @@ S2SPrimaryGeneratorAction::GenerateElementarySigmaMinus(G4Event* anEvent)
     G4double Energy_B = TMath::Sqrt(pB*pB + mB*mB);
     G4double Energy_S = TMath::Sqrt(p0*p0 + m0*m0);
     G4double Energy_hyp = Energy_B + m_tgt - Energy_S;
-  
+
     cost = (m_hyp*m_hyp - Energy_hyp*Energy_hyp + pB*pB + p0*p0)/(2.*pB*p0);
   }
 
@@ -722,7 +723,7 @@ S2SPrimaryGeneratorAction::GenerateElementarySigmaMinus(G4Event* anEvent)
   anaMan.SetPrimaryParticle(0, pdg, p, v);
 }
 
-void // 7004 E70 p(pi,K)SigmaPlus kinematics 
+void // 7004 E70 p(pi,K)SigmaPlus kinematics
 S2SPrimaryGeneratorAction::GenerateElementarySigmaPlus(G4Event* anEvent)
 {
   static const G4int n_particle = 1;
@@ -750,7 +751,7 @@ S2SPrimaryGeneratorAction::GenerateElementarySigmaPlus(G4Event* anEvent)
     G4double Energy_B = TMath::Sqrt(pB*pB + mB*mB);
     G4double Energy_S = TMath::Sqrt(p0*p0 + m0*m0);
     G4double Energy_hyp = Energy_B + m_tgt - Energy_S;
-  
+
     cost = (m_hyp*m_hyp - Energy_hyp*Energy_hyp + pB*pB + p0*p0)/(2.*pB*p0);
   }
 
@@ -778,7 +779,7 @@ S2SPrimaryGeneratorAction::GenerateElementarySigmaPlus(G4Event* anEvent)
 }
 
 
-void // 7501 E75 phase-1 7XiH+6XiH spectrum kinematics 
+void // 7501 E75 phase-1 7XiH+6XiH spectrum kinematics
 S2SPrimaryGeneratorAction::GenerateKH7XiHSpectrum(G4Event* anEvent)
 {
   static const G4int n_particle = 1;
@@ -812,7 +813,7 @@ S2SPrimaryGeneratorAction::GenerateKH7XiHSpectrum(G4Event* anEvent)
   G4double p0=0.;
   G4double BE=0.;
 
-  G4double r = Sum*G4UniformRand(); 
+  G4double r = Sum*G4UniformRand();
   G4double yint =0;
   for(Int_t i=0;i<gr->GetN();++i){
     Double_t x, y;
@@ -845,13 +846,13 @@ S2SPrimaryGeneratorAction::GenerateKH7XiHSpectrum(G4Event* anEvent)
       break;
     }
   }
-  std::cout <<"BE: "<< BE <<", pB: "<< pB<<", pS: "<< p0 <<", Theta: "<<cost<< std::endl;  
+  std::cout <<"BE: "<< BE <<", pB: "<< pB<<", pS: "<< p0 <<", Theta: "<<cost<< std::endl;
   theta = std::acos(cost)*radian;
 
   G4LorentzVector p(0, 0, 0, TMath::Sqrt(p0*p0 + m0*m0));
   p.setRThetaPhi(p0, theta, phi);
   beam.VO(zK18Target);
-  
+
   beam.pos.setX(x0+target_pos.x());
   beam.pos.setY(y0+target_pos.y());
   beam.pos.setZ(z0+target_pos.z());

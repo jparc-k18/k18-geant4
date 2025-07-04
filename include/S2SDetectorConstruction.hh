@@ -3,10 +3,14 @@
 #ifndef S2S_DETECTOR_CONSTRUCTION_HH
 #define S2S_DETECTOR_CONSTRUCTION_HH 1
 
+#include <map>
+
 #include <G4VUserDetectorConstruction.hh>
+#include <G4String.hh>
 #include <globals.hh>
 
 class G4Box;
+class G4Element;
 class G4LogicalVolume;
 class G4VPhysicalVolume;
 class G4Material;
@@ -25,6 +29,12 @@ public:
   G4VPhysicalVolume* Construct();
 
 private:
+  G4int                           m_experiment;
+  G4bool                          m_check_overlaps;
+  G4LogicalVolume*                m_world_lv;
+  static std::vector<G4String>    s_detector_list;
+
+  void AddNewDetector(G4VSensitiveDetector* sd);
   void ConstructField();
   //     void ConstructCalorimeter();
   void ConstructBAC1();
@@ -46,6 +56,9 @@ private:
   void ConstructVP();
   void ConstructKLChamber(G4int i);
   void ConstructKLChamberMylar(G4int i);
+
+  void ConstructHTOF();
+  void ConstructHypTPC();
 };
 
 #endif
