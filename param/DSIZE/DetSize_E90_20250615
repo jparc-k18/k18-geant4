@@ -1,5 +1,5 @@
 #
-#  DetSize_E70_240717
+#  DetSize_E90_20250615
 #
 #  note:
 #    The size is not half but full length.
@@ -30,8 +30,10 @@ Sdc4MylarThickness		0.100
 Sdc5MylarThickness		0.100
 
 ### Counters
-Bac1Frame        180.0  80.0  90.0
-Bac1Radiator     170.0  70.0  46.0
+Bac1Frame	180.0  80.0  90.0
+Bac1Radiator	170.0  70.0  46.0
+SacFrame	417.0  386.0 41.0
+SacRadiator	113.0  145.0 33.0
 
 TofSeg		80.0	580.0	30.0
 

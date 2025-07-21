@@ -112,6 +112,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   if(m_experiment == 90){
     ConstructHTOF();
     ConstructHypTPC();
+    ConstructSAC();
   }
 #endif
 
@@ -294,6 +295,119 @@ S2SDetectorConstruction::ConstructBAC1()
   new G4PVPlacement(rot_BlackSheet2, pos, reflector2_lv,
                       "Bac1Reflector2PHYS", frame_lv, false, 0);
 
+}
+
+//_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructSAC()
+{
+  if(m_experiment != 90) return;
+  const auto& ra2 = geomMan.GetRotAngle2("SAC") * deg;
+  const auto& frame_size = sizeMan.GetSize("SacFrame") * 0.5 * mm;
+  const auto& radiator_size = sizeMan.GetSize("SacRadiator") * 0.5 * mm;
+  // Mother
+  auto mother_solid = new G4Box("SacMotherSolid",
+                                frame_size.x() + 5.*mm,
+                                frame_size.y() + 5.*mm,
+                                frame_size.z() + 5.*mm);
+  auto mother_lv = new G4LogicalVolume(mother_solid,
+                                       mlist.at("Air"),
+                                       "SacMotherLV");
+  auto rot = new G4RotationMatrix;
+  rot->rotateY(-ra2);
+  auto pos = geomMan.GetGlobalPosition("SAC");
+  G4ThreeVector offset(0., 0., frame_size.z()-0.6*mm - radiator_size.z());
+  offset.rotateY(ra2);
+  new G4PVPlacement(rot, pos + offset, "SacMotherPV",
+                    mother_lv, physWorld, false, 0, m_check_overlaps);
+  mother_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
+  // Frame
+  auto frame_solid = new G4Box("SacFrameSolid", frame_size.x(),
+                               frame_size.y(), frame_size.z());
+  auto frame_lv = new G4LogicalVolume(frame_solid,
+                                      mlist.at("Air"),
+                                      "SacFrameLV");
+  // frame_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
+  frame_lv->SetVisAttributes(G4Color::Gray());
+  pos.setMag(0.);
+  new G4PVPlacement(nullptr, pos, frame_lv,
+                    "SacFramePV", mother_lv, false, 0, m_check_overlaps);
+  // Radiator
+  auto radiator_solid = new G4Box("SacRadiatorSolid", radiator_size.x(),
+                                  radiator_size.y(), radiator_size.z());
+  auto radiator_lv = new G4LogicalVolume(radiator_solid,
+                                         mlist.Aerogel,
+                                         "SacRadiatorLV");
+  //radiator_lv->SetSensitiveDetector(ac1_sd);
+  radiator_lv->SetVisAttributes(G4Color::Magenta());
+  // pos.set(0., 0., -frame_size.z()+0.6*mm + radiator_size.z());
+  new G4PVPlacement(nullptr, pos, radiator_lv,
+                    "SacRadiatorPV", frame_lv, false, 0);
+#if 0
+  // Foward Black sheet
+  const auto sheet_thickness = 0.2*mm/2;
+  G4VSolid* solidBlackSheet1;
+  solidBlackSheet1 = new G4Box("solidSacBlackSheet1",frame_size.x(),
+                               frame_size.y(), sheet_thickness);
+  solidBlackSheet1 = new G4IntersectionSolid("solidSacBlackSheet1", solidBlackSheet1, frame_solid);
+  auto logicBlackSheet1 = new G4LogicalVolume(solidBlackSheet1, mlist.PVC, "logicBlackSheet1");
+  G4RotationMatrix rot_sheet;
+  logicBlackSheet1->SetVisAttributes(G4Color::Gray());
+  new G4PVPlacement(G4Transform3D(rot_sheet, G4ThreeVector(0, 0, -frame_size.z()+sheet_thickness)),
+                    logicBlackSheet1, "physSacBlackSheet1", frame_lv, false, 0, m_check_overlaps);
+
+  // Foreward Reflector w/ teflon
+  const G4double reflector_thickness = 0.3*mm/2;
+  const G4ThreeVector reflector1_size(frame_size.x(),
+					frame_size.y(),
+                                  	reflector_thickness);
+  auto reflector1_solid = new G4Box("SacReflector1Solid", reflector1_size.x(),
+                                 reflector1_size.y(), reflector1_size.z());
+  auto reflector1_lv = new G4LogicalVolume(reflector1_solid,
+                                        mlist.Teflon,
+					"SacReflector1LV");
+  reflector1_lv->SetVisAttributes(G4Color::White());
+  pos.set(0.,0., -frame_size.z()+sheet_thickness*2 + reflector_thickness);
+  auto rot_reflector1 = new G4RotationMatrix;
+  new G4PVPlacement(rot_reflector1, pos, reflector1_lv,
+                      "SacReflector1PHYS", frame_lv, false, 0);
+
+  // Backward Black sheet  w/ PVC
+  const G4ThreeVector triangle_size(frame_size.x(), frame_size.y(), frame_size.z()-radiator_size.z()-0.3*mm);
+  const G4double BlackSheet2_angle = std::atan2(triangle_size.z(),
+                                           triangle_size.y());
+  const G4ThreeVector BlackSheet2_size(triangle_size.x(),
+				  std::hypot(triangle_size.y(),
+                                   triangle_size.z()),
+                                  sheet_thickness);
+  auto solidBlackSheet2 = new G4Box("solidSacBlackSheet2", BlackSheet2_size.x(),
+                                 BlackSheet2_size.y(), BlackSheet2_size.z());
+  auto logicBlackSheet2 = new G4LogicalVolume(solidBlackSheet2,
+                                        mlist.PVC,
+					"logicSacBlackSheet2");
+  logicBlackSheet2->SetVisAttributes(G4Color::Gray());
+  pos.set(0.,0., -frame_size.z()+radiator_size.z()*2 + triangle_size.z());
+  auto rot_BlackSheet2 = new G4RotationMatrix;
+  rot_BlackSheet2->rotateX(BlackSheet2_angle);
+  new G4PVPlacement(rot_BlackSheet2, pos, logicBlackSheet2,
+                      "physSacBlackSheet1", frame_lv, false, 0);
+
+
+  // Backward Reflector  w/ Teflon
+  const G4ThreeVector reflector2_size(triangle_size.x(),
+				  std::hypot(triangle_size.y(),
+                                   triangle_size.z()),
+                                  reflector_thickness);
+  auto reflector2_solid = new G4Box("SacReflector2Solid", reflector2_size.x(),
+                                 reflector2_size.y(), reflector2_size.z());
+  auto reflector2_lv = new G4LogicalVolume(reflector2_solid,
+                                        mlist.Teflon,
+					"SacReflector2LV");
+  reflector2_lv->SetVisAttributes(G4Color::White());
+  pos.set(0.,0., -frame_size.z()+radiator_size.z()*2 + triangle_size.z()-0.5*mm);
+  new G4PVPlacement(rot_BlackSheet2, pos, reflector2_lv,
+                      "SacReflector2PHYS", frame_lv, false, 0);
+#endif
 }
 
 //_____________________________________________________________________________

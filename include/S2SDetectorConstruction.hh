@@ -38,6 +38,7 @@ private:
   void ConstructField();
   //     void ConstructCalorimeter();
   void ConstructBAC1();
+  void ConstructSAC();
   void ConstructTarget ();
   void ConstructTgtHeBag();
   void ConstructQ1();
