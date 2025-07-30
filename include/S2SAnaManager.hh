@@ -62,6 +62,7 @@ struct Event
   Int_t evnum;
   std::map<TString, std::vector<TParticle>> hits;
   std::vector<Bool_t> trig;
+  std::vector<Bool_t> rctrig; //[seong]
 
   double x0In;
   double y0In;
@@ -77,6 +78,16 @@ struct Event
   double t0;
   int Id;
 
+  // E63 for weak pi
+  double x1;
+  double y1;
+  double z1;
+  double px1;
+  double py1;
+  double pz1;
+  double p1;
+  double t1;
+  
   G4int nP, nN, nL, nSm, nSz, nSp, nXm, nXz, nXsm, nXsz;
   G4int nPim, nPiz, nPip, nKm, nKp;
 
@@ -191,6 +202,9 @@ public:
 		      G4double u0, G4double v0, G4double phi,
 		      G4double theta, G4double p0, G4double pB,
 		      G4int ParIdNb);
+  void SetSecondaryData(G4double x1, G4double y1, G4double z1,
+			G4double px1, G4double py1, G4double pz1,
+			G4double p1, G4double t1); // E63 for weak pi
   void SetProcessData(G4int nP, G4int nN, G4int nL,
 		      G4int nSm, G4int nSz, G4int nSp,
 		      G4int nXm, G4int nXz, G4int nXsm,

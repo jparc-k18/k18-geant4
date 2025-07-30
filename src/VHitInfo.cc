@@ -111,7 +111,14 @@ VHitInfo::Is(G4int pdg_encoding) const
 G4bool
 VHitInfo::IsPrimary() const
 {
-  return m_parent_id == 0;
+  return (m_parent_id == 0) && (m_track_id == 1);
+}
+
+//_____________________________________________________________________________
+G4bool
+VHitInfo::IsWeakPi() const // E63 for weak pi-
+{
+  return (m_parent_id == 0) && (m_track_id == 2);
 }
 
 //_____________________________________________________________________________

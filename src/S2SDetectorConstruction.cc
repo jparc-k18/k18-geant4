@@ -109,6 +109,17 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 #endif
 
 #if 1
+  if(m_experiment == 63){
+    ConstructPD(1, "Y");
+    ConstructPD(1, "Z");
+    ConstructRC(1);
+    ConstructRC(2);
+    ConstructPD(2, "Y");
+    ConstructPD(2, "Z");
+  }
+#endif
+
+#if 1
   if(m_experiment == 90){
     ConstructHTOF();
     ConstructHypTPC();

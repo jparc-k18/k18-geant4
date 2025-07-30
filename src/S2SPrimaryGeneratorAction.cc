@@ -9,6 +9,7 @@
 #include <G4LorentzVector.hh>
 #include <G4ThreeVector.hh>
 #include <Randomize.hh>
+#include <G4RandomDirection.hh> // E63
 
 #include <TMath.h>
 #include <TFile.h>
@@ -25,18 +26,18 @@
 
 namespace
 {
-using CLHEP::mm;
-using CLHEP::deg;
-using CLHEP::radian;
-using CLHEP::GeV;
-const auto& beamMan = BeamMan::GetInstance();
-const auto& confMan = ConfMan::GetInstance();
-const auto& geomMan = DCGeomMan::GetInstance();
-const auto& sizeMan = DetSizeMan::GetInstance();
-auto& anaMan = S2SAnaManager::GetInstance();
-const auto particleTable = G4ParticleTable::GetParticleTable();
-const auto& zK18Target = geomMan.LocalZ("K18Target");
-BeamInfo beam;
+  using CLHEP::mm;
+  using CLHEP::deg;
+  using CLHEP::radian;
+  using CLHEP::GeV;
+  const auto& beamMan = BeamMan::GetInstance();
+  const auto& confMan = ConfMan::GetInstance();
+  const auto& geomMan = DCGeomMan::GetInstance();
+  const auto& sizeMan = DetSizeMan::GetInstance();
+  auto& anaMan = S2SAnaManager::GetInstance();
+  const auto particleTable = G4ParticleTable::GetParticleTable();
+  const auto& zK18Target = geomMan.LocalZ("K18Target");
+  BeamInfo beam;
 }
 
 //_____________________________________________________________________________
@@ -99,8 +100,11 @@ S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   case 7002: GenerateElementaryXiMinus(anEvent); break;
   case 7003: GenerateElementarySigmaMinus(anEvent); break;
   case 7004: GenerateElementarySigmaPlus(anEvent); break;
-  //case 7005: Generate12XiBePeakStructure(anEvent); break;
+    //case 7005: Generate12XiBePeakStructure(anEvent); break;
   case 7501: GenerateKH7XiHSpectrum(anEvent); break;
+  case 6301: GenerateE63_7LambdaLi(anEvent, 7); break;
+  case 6302: GenerateE63_7LambdaLi(anEvent, 10); break;
+  case 6303: GenerateE63_7LambdaLi(anEvent, 12); break;
   default:
     G4cerr << " * Generator number error : " << m_generator << G4endl;
     break;
@@ -309,15 +313,15 @@ S2SPrimaryGeneratorAction::GenerateBeamThrough(G4Event* anEvent)
     G4int i = int(G4UniformRand()*(k18track->GetEntries()));
     k18track->GetEntry(i);
     if(/*trigflag[21]>0 &&*/ ntK18==1 && abs(CBtof0[0])<0.2 && chisqrK18[0]<10.){
-    z0 = bac1_pos.z() - target_pos.z() -556.*mm;
-    // z0 = 556 mm upstrm from BAC1 (approximately dwnstr surface of BH2)
-    x0 = xtgt[0] + utgt[0]*z0; // Horizontal direction
-    y0 = ytgt[0] + vtgt[0]*z0; // vertical direction
-    u0 = utgt[0];
-    v0 = vtgt[0];
-    p0 = p_3rd[0]*GeV;
-    count++;
-   }
+      z0 = bac1_pos.z() - target_pos.z() -556.*mm;
+      // z0 = 556 mm upstrm from BAC1 (approximately dwnstr surface of BH2)
+      x0 = xtgt[0] + utgt[0]*z0; // Horizontal direction
+      y0 = ytgt[0] + vtgt[0]*z0; // vertical direction
+      u0 = utgt[0];
+      v0 = vtgt[0];
+      p0 = p_3rd[0]*GeV;
+      count++;
+    }
   }
   beam.VO(zK18Target);
   beam.pos.setX(x0+target_pos.x());
@@ -465,8 +469,8 @@ S2SPrimaryGeneratorAction::GenerateBeamFixSeed(G4Event* anEvent)
   p.setY(p0*v0/TMath::Sqrt(1+u0*u0+v0*v0));
   p.setZ(p0/TMath::Sqrt(1+u0*u0+v0*v0));
   //  G4LorentzVector v(beam.pos+target_pos, 0);
-    G4LorentzVector v(beam.pos, 0);
-    //  std::cout<<"target:"<<target_pos<<", beam:"<<beam.pos<<", v:"<<v.v()<<std::endl;
+  G4LorentzVector v(beam.pos, 0);
+  //  std::cout<<"target:"<<target_pos<<", beam:"<<beam.pos<<", v:"<<v.v()<<std::endl;
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -539,8 +543,8 @@ S2SPrimaryGeneratorAction::GenerateScatParticles(G4Event* anEvent)
   p.setY(p0*v0/TMath::Sqrt(1+u0*u0+v0*v0));
   p.setZ(p0/TMath::Sqrt(1+u0*u0+v0*v0));
   //  G4LorentzVector v(beam.pos+target_pos, 0);
-    G4LorentzVector v(beam.pos, 0);
-    //  std::cout<<"target:"<<target_pos<<", beam:"<<beam.pos<<", v:"<<v.v()<<std::endl;
+  G4LorentzVector v(beam.pos, 0);
+  //  std::cout<<"target:"<<target_pos<<", beam:"<<beam.pos<<", v:"<<v.v()<<std::endl;
 #if 0
   beam.Print();
   G4cout << FUNC_NAME << G4endl
@@ -555,8 +559,6 @@ S2SPrimaryGeneratorAction::GenerateScatParticles(G4Event* anEvent)
   //anaMan.SetPrimaryData(x0,y0,z0,u0,v0,0.,0.,p0,p0,9999);
   anaMan.SetPrimaryData(x0,y0,z0,u0,v0,phi,theta,p0,p0,9999);
 }
-
-
 
 void // 7001 E70 12C(KK)12XiBe kinematics
 S2SPrimaryGeneratorAction::Generate12XiBeryllium(G4Event* anEvent)
@@ -801,13 +803,13 @@ S2SPrimaryGeneratorAction::GenerateKH7XiHSpectrum(G4Event* anEvent)
     G4int i = int(G4UniformRand()*(k18track->GetEntries()));
     k18track->GetEntry(i);
     if(trigflag[21]>0 && ntK18>0 && abs(CBtof0[0])<0.2 && chisqrK18[0]<10.){
-    //z0 = G4RandFlat::shoot(-target_size.z()/2, target_size.z()/2);
-    z0 = G4RandFlat::shoot(-187.*mm/2, 187*mm/2);
-    x0 = xtgt[0] + utgt[0]*z0; // Horizontal direction
-    y0 = ytgt[0] + vtgt[0]*z0; // vertical direction
-    pB = p_3rd[0]*GeV;
-    count++;
-   }
+      //z0 = G4RandFlat::shoot(-target_size.z()/2, target_size.z()/2);
+      z0 = G4RandFlat::shoot(-187.*mm/2, 187*mm/2);
+      x0 = xtgt[0] + utgt[0]*z0; // Horizontal direction
+      y0 = ytgt[0] + vtgt[0]*z0; // vertical direction
+      pB = p_3rd[0]*GeV;
+      count++;
+    }
   }
   G4double phi = G4RandFlat::shoot(0., 360.)*deg;
   G4double p0=0.;
@@ -872,4 +874,287 @@ S2SPrimaryGeneratorAction::GenerateKH7XiHSpectrum(G4Event* anEvent)
   m_particleGun->GeneratePrimaryVertex(anEvent);
   anaMan.SetPrimaryParticle(0, pdg, p, v);
   anaMan.SetPrimaryData(beam.pos.x(),beam.pos.y(),beam.pos.z(),u0,v0,phi,theta,p0,pB,9999);
+}
+
+//_____________________________________________________________________________
+// E63
+void // 6301~  [ E63 A(K-,pi-)lambda_hyper kinematics ] 
+S2SPrimaryGeneratorAction::GenerateE63_7LambdaLi(G4Event* anEvent, G4int MassNum)
+{
+  static const G4int n_particle = 1;  // should 1 even if you generate weak pion
+  m_particleGun = new G4ParticleGun(n_particle);
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  auto WeakParticle = confMan.Get<G4String>("WeakDecayParticle");
+  int dummy_event_flag = 0;
+  int dummy_event_flag_out_of_tgt = 0; // out of target
+  int dummy_event_flag_out_of_cs = 0; // out of cross section
+  
+  // ***************
+  // *** beam K- ***
+  static const auto beam_particle = particleTable->FindParticle("kaon-");
+  static const auto beam_pdg =      beam_particle->GetPDGEncoding();
+  static const G4double m_beam =    beam_particle->GetPDGMass();
+  // momentum
+  G4double p_beam = confMan.Get<G4double>("PK18")*CLHEP::GeV;
+  if(1){ // include BeamMomentuBite
+    p_beam += G4RandGauss::shoot( 0.0,  p_beam*0.0134 );  // momentum bite [202501 data]
+  }
+  // momentum direction
+  G4double beam_u_rms = 0.0164; // [202501 data]
+  G4double beam_v_rms = 0.0045;
+  G4double beam_u = G4RandGauss::shoot( 0.0, beam_u_rms );
+  G4double beam_v = G4RandGauss::shoot( 0.0, beam_v_rms );
+  G4double beam_z = 1./sqrt(1. + beam_u*beam_u + beam_v*beam_v);
+  G4ThreeVector BeamMomDir = G4ThreeVector( beam_u*beam_z, beam_v*beam_z, beam_z );
+  // profile at target center -> vertex at terget coodinate
+  G4double beam_x_rms = 16.94; // [202501 data]
+  G4double beam_y_rms =  7.01;
+  G4double vertex_x = G4RandGauss::shoot( 0.0, beam_x_rms );
+  G4double vertex_y = G4RandGauss::shoot( 0.0, beam_y_rms );
+  G4double vertex_z = G4RandFlat::shoot( -target_size.z(), target_size.z() );
+  G4ThreeVector VertexPos = G4ThreeVector( vertex_x, vertex_y, vertex_z );
+  G4LorentzVector VertexLv(VertexPos, 0);
+
+  if(1){  // InsideTarget cut
+    if( fabs(vertex_x)>fabs(target_size.x()) || fabs(vertex_y)>fabs(target_size.y()) ){
+      //G4cerr << "out of target" << G4endl;
+      dummy_event_flag_out_of_tgt = 1;  // set dummy vertex if vertex is outof target_size
+    }
+  }
+
+  // ****************
+  // *** scat pi- ***
+  static const auto scat_particle = particleTable->FindParticle("pi-");
+  static const auto scat_pdg =      scat_particle->GetPDGEncoding();
+  static const G4double m_scat =    scat_particle->GetPDGMass();
+  G4double costLab;
+  // limit of scat angle
+  {
+    //costLab = 1. - G4RandFlat::shoot(0., 0.003805); // (0- 5 deg.)
+    costLab = 1. - G4RandFlat::shoot(0., 0.015192); // (0-10 deg.)
+    //costLab = 1. - G4RandFlat::shoot(0., 0.034074); // (0-15 deg.)
+    //costLab = 1. - G4RandFlat::shoot(0., 0.060307); // (0-20 deg.)
+    //costLab = 1. - G4RandFlat::shoot(0., 0.093692); // (0-25 deg.)
+    //costLab = 1. - G4RandFlat::shoot(0., 0.133974); // (0-30 deg.)
+  }
+  
+  if(1){ // cross section shape cut
+    G4int DeltaL = 0;  // need 0 or 1 or 2
+    G4double p[6]; // f_cross = pol(6)
+    G4double MaxCrossSection = 1100; // [a.u.]
+    if(DeltaL==0){  // table for 0.9 GeV/c Li (k.pi)
+      p[0]=1033; p[1]=70.55; p[2]=-59.28;
+      p[3]=7.2325; p[4]=-0.37978; p[5]=0.00927192;
+      p[6]=-8.56922e-5;
+    }
+    else if(DeltaL==1){
+      p[0]=259.9; p[1]=-38.1581; p[2]=27.6301;
+      p[3]=-3.38422; p[4]=0.149127; p[5]=-0.00233459;
+      p[6]=3.37185e-6;
+    }
+    else if(DeltaL==2){
+      p[0]=140.35; p[1]=31.2678; p[2]=-17.7024;
+      p[3]=4.27016; p[4]=-0.3732; p[5]=0.0135775;
+      p[6]=-0.000177677;
+    }
+    else{
+      G4cerr << "DeltaL setting is wrong" << G4endl;
+      exit(-1);
+    }
+
+    G4double thetaLab = acos(costLab)*(180./3.141592); // degree
+    G4double RandValue = G4RandFlat::shoot(0., MaxCrossSection);
+    G4double cross_section = p[0];
+    for(int n=1; n<7; n++){
+      cross_section += p[n]*pow(thetaLab,n);
+    }
+    if( RandValue>cross_section ){
+      dummy_event_flag_out_of_cs = 1; // set dummy vertex if RandValue > cross section table
+    }
+  } // cross section cut
+  
+  // ****************
+  // *** weak pi- ***
+  static const auto weak_particle = particleTable->FindParticle("pi-");
+  static const auto weak_pdg =      weak_particle->GetPDGEncoding();
+  static const G4double m_weak =    weak_particle->GetPDGMass();
+  G4double WeakT;
+  {
+    if(WeakParticle == "3LH") WeakT = 40.88 *CLHEP::MeV ; // for 3LH
+    if(WeakParticle == "4LH") WeakT = 53.25 *CLHEP::MeV ; // for 4LH
+    if(WeakParticle == "6LH") WeakT = 37.20 *CLHEP::MeV ; // for 6LHe
+    //else WeakT = 40. *CLHEP::MeV ; //
+  }
+  G4double WeakMom = sqrt( pow(WeakT+m_weak,2) -m_scat*m_scat );
+  
+  
+  // *************************************
+  // *** target nuclei and hypernuclei ***
+  G4double AtomicMassUnit = 0.93149432;
+  G4double LambdaMass = particleTable->FindParticle("lambda")->GetPDGMass();
+  G4double m_tgt, m_hyp;
+  {
+    // 7Li -----------
+    G4double mass_7Li = (7.0*AtomicMassUnit+0.014908)*GeV;
+    //G4double mass_7LambdaLi = (6.0*AtomicMassUnit+0.014086-0.00522+0.000)*GeV + LambdaMass; // Ex=0 MeV
+    G4double mass_7LambdaLi = (6.0*AtomicMassUnit+0.014086-0.00522+0.020)*GeV + LambdaMass; // Ex=20 MeV
+    
+    // 10B -----------
+    G4double mass_10B = (10.0*AtomicMassUnit+0.0120508)*GeV;
+    G4double mass_10LambdaB = (9.0*AtomicMassUnit+0.0113477-0.0081+0.000)*GeV + LambdaMass; // Ex=0 MeV
+
+    // 12C -----------
+    G4double mass_12C = (12.0*AtomicMassUnit+0.0)*GeV;
+    G4double mass_12LambdaC = (11.0*AtomicMassUnit+0.010650-0.0108+0.000)*GeV + LambdaMass; // Ex=0 MeV
+
+    if(MassNum==7){
+      m_tgt = mass_7Li; 
+      m_hyp = mass_7LambdaLi;
+    }
+    else if(MassNum==10){
+      m_tgt = mass_10B; 
+      m_hyp = mass_10LambdaB;
+    }
+    else if(MassNum==12){
+      m_tgt = mass_12C; 
+      m_hyp = mass_12LambdaC;
+    }
+    else{
+      G4cerr << "not regstered MassNumber  MassNum = " << MassNum << G4endl;
+      exit(-1);
+    }
+  }
+  
+  
+  // ************************
+  // **** calculate scat ****
+  // ************************
+  
+  //Kaon 1.5GeV/c
+  G4LorentzVector BeamLv( p_beam*BeamMomDir, 
+			  sqrt( m_beam*m_beam+p_beam*p_beam ) );
+  //Neutron 0.0GeV/c
+  G4double NuclMom = 0.0;
+  G4ThreeVector NuclMomDir( 0., 0., NuclMom );
+  G4LorentzVector NuclLv( NuclMom*NuclMomDir,
+			  sqrt( m_tgt*m_tgt+NuclMom*NuclMom )  );
+
+  //Primary frame
+  G4LorentzVector PrimaryLv =  BeamLv+NuclLv;
+  G4double TotalEnergyCM = PrimaryLv.mag();
+  G4ThreeVector beta( PrimaryLv.vect()/PrimaryLv.e() ); 
+
+  //scat CM
+  G4double ScatMomCM 
+    = 0.5*sqrt(( TotalEnergyCM*TotalEnergyCM
+  		 -( m_scat+m_hyp )*( m_scat+m_hyp ))
+  	       *( TotalEnergyCM*TotalEnergyCM
+  		  -( m_scat-m_hyp )*( m_scat-m_hyp )))/TotalEnergyCM;
+
+  G4double cottLab=costLab/sqrt(1.-costLab*costLab);
+  G4double bt=beta.mag(), gamma=1./sqrt(1.-bt*bt);
+  G4double gbep=gamma*bt*sqrt(ScatMomCM*ScatMomCM+m_scat*m_scat)/ScatMomCM;
+  G4double a  = gamma*gamma+cottLab*cottLab;
+  G4double bp = gamma*gbep;
+  G4double c  = gbep*gbep-cottLab*cottLab;
+
+  G4double dd=bp*bp-a*c;
+  if( dd<0. ){
+    G4cerr << "dd<0." << G4endl;
+    exit(-1);
+  }
+
+  G4double costCM=(sqrt(dd)-bp)/a;
+  if( costCM>1. || costCM<-1. ){
+    G4cerr << "costCM>1. || costCM<-1." << G4endl;
+    exit(-1);
+  }
+
+  G4double sintCM=sqrt(1.-costCM*costCM);
+  G4double phiCM=G4RandFlat::shoot(0., 360.)*deg;
+  G4ThreeVector ScatMomCM_vector( ScatMomCM*sintCM*cos(phiCM),
+				  ScatMomCM*sintCM*sin(phiCM), 
+				  ScatMomCM*costCM );
+  //ScatMomCM_vector.rotateY(KaonMomDir.theta()); 
+  //ScatMomCM_vector.rotateZ(KaonMomDir.phi());
+  ScatMomCM_vector.rotateUz(BeamMomDir);
+  
+  G4LorentzVector ScatLv( ScatMomCM_vector, 
+			  sqrt( ScatMomCM*ScatMomCM + m_scat*m_scat ));
+  ScatLv.boost(beta);
+  
+  G4ThreeVector ScatMom_vector = ScatLv.vect();
+  G4double ScatMom = ScatMom_vector.mag();
+  G4ThreeVector ScatMomDir = ScatMom_vector/ScatMom;
+  G4double ScatT = sqrt( ScatMom*ScatMom + m_scat*m_scat ) - m_scat;
+
+  
+  // ************************
+  // **** calculate weak ****
+  // ************************
+  G4ThreeVector WeakMomDir = G4RandomDirection();
+  G4ThreeVector WeakMom_vector = WeakMom * WeakMomDir;
+  G4LorentzVector WeakLv( WeakMom_vector, WeakT);
+
+  
+  // ***************************
+  // **** particle generate ****
+  // ***************************
+
+  // ****************************
+  // ** scat particle generate **
+  if(dummy_event_flag_out_of_tgt || dummy_event_flag_out_of_cs) dummy_event_flag = 1;
+  if(dummy_event_flag){ // set primary vertex at out of world
+    ScatMomDir = G4ThreeVector(0, 0, -1);
+    ScatMom = 0; ScatT = 0;
+    VertexPos = G4ThreeVector(-200*CLHEP::m, -200*CLHEP::m, -200*CLHEP::m);
+  }
+  m_particleGun->SetParticleDefinition(scat_particle);
+  m_particleGun->SetParticleMomentumDirection(ScatMomDir);
+  m_particleGun->SetParticleEnergy(ScatT);
+  m_particleGun->SetParticlePosition(VertexPos + target_pos);
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+  // analyzer fill : scat particle
+  {
+    G4double x0 = VertexPos.x(); G4double y0 = VertexPos.y(); G4double z0 = VertexPos.z();
+    G4double u0 = ScatMomDir.x()/ScatMomDir.z(); G4double v0 = ScatMomDir.y()/ScatMomDir.z();
+    G4double phi = ScatMomDir.phi(); G4double theta = ScatMomDir.theta();
+    G4double p0 = ScatMom; G4double pB = ScatT;
+    anaMan.SetPrimaryData(x0,y0,z0,u0,v0,phi,theta,p0,pB,9999);
+    // unit: x0,y0,z0=mm, phi,theta=rad, p0[momentum]=MeV/c, pB[KineticEnergy]=MeV
+    anaMan.SetPrimaryParticle(0, scat_pdg, ScatLv, VertexLv);
+  }
+
+  // **********************************
+  // ** weak decay particle generate **
+  if(1){
+    if(dummy_event_flag){ // set primary vertex at out of world
+      WeakMomDir = G4ThreeVector(0, 0, -1);
+      WeakMom = 0; WeakT = 0;
+      if(dummy_event_flag_out_of_tgt){
+	VertexPos = G4ThreeVector(-200*CLHEP::m, -200*CLHEP::m, -200*CLHEP::m);
+	if(dummy_event_flag_out_of_cs)
+	VertexPos = G4ThreeVector(-190*CLHEP::m, -190*CLHEP::m, -190*CLHEP::m);
+      }
+      if(dummy_event_flag_out_of_cs)
+	VertexPos = G4ThreeVector(-180*CLHEP::m, -180*CLHEP::m, -180*CLHEP::m);
+    }
+
+    m_particleGun->SetParticleDefinition(weak_particle);
+    m_particleGun->SetParticleMomentumDirection(WeakMomDir);
+    m_particleGun->SetParticleEnergy(WeakT);
+    m_particleGun->SetParticlePosition(VertexPos + target_pos);
+    m_particleGun->GeneratePrimaryVertex(anEvent);
+    // analyzer fill : weak decay particle
+    {
+      G4double x1 = VertexPos.x(); G4double y1 = VertexPos.y(); G4double z1 = VertexPos.z();
+      G4double px1 = WeakMom_vector.x(); G4double py1 = WeakMom_vector.y(); G4double pz1 = WeakMom_vector.z();
+      G4double p1 = WeakMom; G4double t1 = WeakT;
+      anaMan.SetSecondaryData(x1,y1,z1,px1,py1,pz1,p1,t1);
+      // unit: x1,y1,z1=mm, px1,py1,pz1,p1[momentum]=MeV/c, t1[KineticEnergy]=MeV
+    }
+  } // if weak decay particle
+  
 }

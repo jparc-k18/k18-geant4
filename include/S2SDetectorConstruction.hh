@@ -60,6 +60,9 @@ private:
 
   void ConstructHTOF();
   void ConstructHypTPC();
+
+  void ConstructRC(G4int i);
+  void ConstructPD(G4int i, G4String YZ);
 };
 
 #endif

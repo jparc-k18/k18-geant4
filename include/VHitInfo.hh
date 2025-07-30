@@ -64,6 +64,7 @@ public:
   G4bool   Is(const G4String& particle_name) const;
   G4bool   Is(G4int pdg_encoding) const;
   G4bool   IsPrimary() const;
+  G4bool   IsWeakPi() const; // E63 for weak pi-
   void          Print() const;
   TParticle* GetParticle() const { return m_particle; }
 };

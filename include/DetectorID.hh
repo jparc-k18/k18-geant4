@@ -26,6 +26,11 @@ const Int_t NumOfPadTPCIn  = 10;
 const Int_t NumOfPadTPCOut = 22;
 const Int_t NumOfPadTPC = NumOfPadTPCIn + NumOfPadTPCOut;
 
+// RC
+const Int_t NumOfSegRC = 24;
+const Int_t NumOfSegPDY = 6;
+const Int_t NumOfSegPDZ = 16;
+
 enum ETriggerFlag
   {
     kSSD1,
@@ -52,6 +57,18 @@ enum ETriggerFlag
     kAC1,
     kWC,
     kTriggerFlagSize
+  };
+
+// RC
+enum ERCTriggerFlag
+  {
+    kPD1Y,
+    kPD1Z,
+    kRC1,
+    kPD2Y,
+    kPD2Z,
+    kRC2,
+    kRCTriggerFlagSize
   };
 
 const std::vector<TString> TriggerFlag =

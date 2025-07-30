@@ -37,6 +37,10 @@
 #include "VPHit.hh"
 #include "HistMan.hh"
 
+#include "RCHit.hh"
+#include "PDHit.hh"
+
+
 namespace
 {
 using CLHEP::mm;
@@ -71,7 +75,8 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
 {
   fActive_=true;
   m_file = new TFile(m_file_name, "recreate");
-  static auto obj = new TNamed("conf", confMan.ConfPath()+confMan.ConfBuf());
+  //static auto obj = new TNamed("conf", confMan.ConfPath()+confMan.ConfBuf());
+  static auto obj = new TNamed("conf", confMan.ConfBuf()); // [seong]
   obj->Write();
   static auto git = new TNamed
     ("git", ("\n"+gSystem->GetFromPipe("git log -1")).Data());
@@ -80,14 +85,26 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
   event.hits.clear();
   event.evnum = -1;
   event.trig.assign(kTriggerFlagSize, false);
+  event.rctrig.assign(kRCTriggerFlagSize, false); //[seong]
   DefineTree();
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
   for(const auto& sd_name : std::vector<G4String>{
-      "PRM", "SDC1","SDC2","SDC3","SDC4","SDC5", "TOF", "AC1", "WC", "VP" }
+      "PRM", "SDC1","SDC2","SDC3","SDC4","SDC5", "TOF", "AC1", "WC", "VP"}
         // S2SDetectorConstruction::GetSDList()
     ){
     G4cout << "   make branch : " << sd_name << G4endl;
     MakeBranch(sd_name);
     MakeHistogram(sd_name);
+  }
+  if(experiment == 63){
+    for(const auto& sd_name : std::vector<G4String>{
+	"RC1", "RC2", "PD1Y", "PD1Z", "PD2Y", "PD2Z"}
+	  // S2SDetectorConstruction::GetSDList()
+      ){
+      G4cout << "   make branch : " << sd_name << G4endl;
+      MakeBranch(sd_name);
+      MakeHistogram(sd_name);
+    }
   }
   for(auto& h: hmap){
     h.second->Reset();
@@ -126,6 +143,18 @@ S2SAnaManager::BeginOfPrimaryAction()
   event.theta0 = qnan;
   // event.Id = qnan;
   //  G4cout<<"BeginOfPrimaryAction"<<G4endl;
+
+#if 0
+  // E63 for weak pi-
+  event.x1 = qnan;
+  event.y1 = qnan;
+  event.z1 = qnan;
+  event.px1 = qnan;
+  event.py1 = qnan;
+  event.pz1 = qnan;
+  event.p1  = qnan;
+  event.t1  = qnan;
+#endif
 }
 
 //_____________________________________________________________________________
@@ -208,6 +237,25 @@ S2SAnaManager::SetPrimaryData(double x0, double y0, double z0,
   //  G4cout<<"setPrimaryData"<<G4endl;
 }
 
+// E63 for weak pi
+//_____________________________________________________________________________
+void
+S2SAnaManager::SetSecondaryData(double x1, double y1, double z1,
+				double px1, double py1, double pz1,
+				double p1,double t1)
+{
+  event.x1 = x1; // generated position (x)
+  event.y1 = y1; // generated position (y)
+  event.z1 = z1; // generated position (z)
+  event.px1 = px1;
+  event.py1 = py1;
+  event.pz1 = pz1;
+  event.p1   = p1; // Momentum
+  event.t1   = t1; // Kinetic energy
+  //  event.Id = ParIdNb;
+  //  G4cout<<"setPrimaryData"<<G4endl;
+}
+
 //_____________________________________________________________________________
 void S2SAnaManager::SetProcessData(G4int nP, G4int nN, G4int nL,
 				 G4int nSm, G4int nSz, G4int nSp,
@@ -242,6 +290,11 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   auto HCE = anEvent->GetHCofThisEvent();
   auto SDMan = G4SDManager::GetSDMpointer();
   std::bitset<kTriggerFlagSize> trigger_flag;
+  std::bitset<kRCTriggerFlagSize> rc_trigger_flag;
+  static const G4int experiment = confMan.Get<G4int>("Experiment");
+  G4String particle_name = "kaon+";
+  if(experiment == 63) particle_name = "pi-"; //for E63
+  //G4String particle_name = "kaon-"; //for E63
   {
     //G4String name = "SDC"+std::to_string(k);
     G4String name = "SDC1";
@@ -318,7 +371,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       auto HC = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         auto hit = (*HC)[i];
-        if(hit->Is("kaon+")) trigger_flag[kTOF] = true;
+        if(hit->Is(particle_name) && hit->IsPrimary()) trigger_flag[kTOF] = true;
         SetHitData(hit);
       }
       SetNhits("TOF", HC->entries());
@@ -330,7 +383,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       auto HC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         auto hit = (*HC)[i];
-        if(hit->Is("kaon+")) trigger_flag[kAC1] = true;
+        if(hit->Is(particle_name) && hit->IsPrimary()) trigger_flag[kAC1] = true;
         SetHitData(hit);
       }
       SetNhits("AC1", HC->entries());
@@ -342,7 +395,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       auto HC = dynamic_cast<WCHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         auto hit = (*HC)[i];
-        if(hit->Is("kaon+")) trigger_flag[kWC] = true;
+        if(hit->Is(particle_name) && hit->IsPrimary()) trigger_flag[kWC] = true;
         SetHitData(hit);
       }
       SetNhits("WC", HC->entries());
@@ -354,7 +407,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       auto HC = dynamic_cast<VPHitsCollection*>(HCE->GetHC(id));
       for(G4int i=0, n=HC->entries(); i<n; ++i){
         auto hit = (*HC)[i];
-        if(hit->Is("kaon+")){
+        if(hit->Is(particle_name) && hit->IsPrimary()){
           trigger_flag[kVP1-1+hit->GetCopyNumber()] = true;
         }
         SetHitData(hit);
@@ -362,7 +415,87 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       SetNhits("VP", HC->entries());
     }
   }
-
+  if(experiment == 63)
+  {
+    {
+      G4String name = "RC1";
+      static const auto id = SDMan->GetCollectionID(name);
+      if(id >= 0){
+	auto HC = dynamic_cast<RCHitsCollection*>(HCE->GetHC(id));
+	for(G4int i=0, n=HC->entries(); i<n; ++i){
+	  auto hit = (*HC)[i];
+	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kRC1] = true;
+	  SetHitData((*HC)[i]);
+	}
+	SetNhits(name, HC->entries());
+      }
+    }
+    {
+      G4String name = "RC2";
+      static const auto id = SDMan->GetCollectionID(name);
+      if(id >= 0){
+	auto HC = dynamic_cast<RCHitsCollection*>(HCE->GetHC(id));
+	for(G4int i=0, n=HC->entries(); i<n; ++i){
+	  auto hit = (*HC)[i];
+	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kRC2] = true;
+	  SetHitData((*HC)[i]);
+	}
+	SetNhits(name, HC->entries());
+      }
+    }
+    {
+      G4String name = "PD1Y";
+      static const auto id = SDMan->GetCollectionID(name);
+      if(id >= 0){
+	auto HC = dynamic_cast<PDHitsCollection*>(HCE->GetHC(id));
+	for(G4int i=0, n=HC->entries(); i<n; ++i){
+	  auto hit = (*HC)[i];
+	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kPD1Y] = true;
+	  SetHitData((*HC)[i]);
+	}
+	SetNhits(name, HC->entries());
+      }
+    }
+    {
+      G4String name = "PD1Z";
+      static const auto id = SDMan->GetCollectionID(name);
+      if(id >= 0){
+	auto HC = dynamic_cast<PDHitsCollection*>(HCE->GetHC(id));
+	for(G4int i=0, n=HC->entries(); i<n; ++i){
+	  auto hit = (*HC)[i];
+	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kPD1Z] = true;
+	  SetHitData((*HC)[i]);
+	}
+	SetNhits(name, HC->entries());
+      }
+    }
+    {
+      G4String name = "PD2Y";
+      static const auto id = SDMan->GetCollectionID(name);
+      if(id >= 0){
+	auto HC = dynamic_cast<PDHitsCollection*>(HCE->GetHC(id));
+	for(G4int i=0, n=HC->entries(); i<n; ++i){
+	  auto hit = (*HC)[i];
+	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kPD2Y] = true;
+	  SetHitData((*HC)[i]);
+	}
+	SetNhits(name, HC->entries());
+      }
+    }
+    {
+      G4String name = "PD2Z";
+      static const auto id = SDMan->GetCollectionID(name);
+      if(id >= 0){
+	auto HC = dynamic_cast<PDHitsCollection*>(HCE->GetHC(id));
+	for(G4int i=0, n=HC->entries(); i<n; ++i){
+	  auto hit = (*HC)[i];
+	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kPD2Z] = true;
+	  SetHitData((*HC)[i]);
+	}
+	SetNhits(name, HC->entries());
+      }
+    }
+  }
   {
     // G4cout << "Acc eff." << G4endl;
     auto particle = event.hits.at("PRM").at(0);
@@ -398,6 +531,9 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   {
     for(G4int i=0; i<kTriggerFlagSize; ++i){
       event.trig[i] = trigger_flag[i];
+    }
+    for(G4int i=0; i<kRCTriggerFlagSize; ++i){ //[seong]
+      event.rctrig[i] = rc_trigger_flag[i];
     }
   }
 
@@ -457,6 +593,19 @@ void S2SAnaManager::DefineTree()
   m_tree->Branch("theta0",&event.theta0, "theta0/D");
   m_tree->Branch("p0",&event.p0,   "p0/D");
   m_tree->Branch("pB",&event.pB,   "pB/D");
+
+  // E63 for weak pi
+#if 0
+  m_tree->Branch("rctrig", &event.rctrig);
+  m_tree->Branch("x1",  &event.x1,  "x1/D"); // [mm]
+  m_tree->Branch("y1",  &event.y1,  "y1/D");
+  m_tree->Branch("z1",  &event.z1,  "z1/D");
+  m_tree->Branch("px1", &event.px1, "px1/D"); // [MeV/c]
+  m_tree->Branch("py1", &event.py1, "py1/D");
+  m_tree->Branch("pz1", &event.pz1, "pz1/D");
+  m_tree->Branch("p1",  &event.p1,  "p1/D");  // [MeV/c]
+  m_tree->Branch("t1",  &event.t1,  "t1/D");  // [MeV]
+#endif
 
   return;
   //  m_tree->Branch("t0",&event.t0,   "t0/D");
