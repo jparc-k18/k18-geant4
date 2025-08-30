@@ -105,6 +105,7 @@ S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   case 6301: GenerateE63_7LambdaLi(anEvent, 7); break;
   case 6302: GenerateE63_7LambdaLi(anEvent, 10); break;
   case 6303: GenerateE63_7LambdaLi(anEvent, 12); break;
+  case 9001: GenerateE90_SigmaNCusp(anEvent); break;
   default:
     G4cerr << " * Generator number error : " << m_generator << G4endl;
     break;
@@ -1157,4 +1158,152 @@ S2SPrimaryGeneratorAction::GenerateE63_7LambdaLi(G4Event* anEvent, G4int MassNum
     }
   } // if weak decay particle
   
+}
+
+// E90
+void // 9001 E90 d(K-,pi-)SigmaN Cusp
+S2SPrimaryGeneratorAction::GenerateE90_SigmaNCusp(G4Event* anEvent)
+{
+  // definition
+  // ===================================
+  m_particleGun = new G4ParticleGun(1);
+
+  static const auto k_minus = particleTable->FindParticle("kaon-");
+  static const auto p_minus = particleTable->FindParticle("pi-");
+  static const auto deuteron   = particleTable->FindParticle("deuteron");
+  static const auto lambda     = particleTable->FindParticle("lambda");
+  static const auto proton     = particleTable->FindParticle("proton");
+  static const auto neutron    = particleTable->FindParticle("neutron");
+  static const auto sigma_zero = particleTable->FindParticle("sigma0");
+
+  static const G4double M_K    = k_minus->GetPDGMass();
+  static const G4double M_Pi   = p_minus->GetPDGMass();
+  static const G4double M_D    = deuteron->GetPDGMass();
+  static const G4double M_L    = lambda->GetPDGMass();
+  static const G4double M_P    = proton->GetPDGMass();
+  static const G4double M_N    = neutron->GetPDGMass();
+  static const G4double M_S0   = sigma_zero->GetPDGMass();
+
+  // 2. 初期状態（ビームとターゲット）を設定
+  // ============================================
+  static const G4double p_beam_val = 1.4 * GeV;
+  const G4LorentzVector beam_lv(0., 0., p_beam_val, std::sqrt(p_beam_val*p_beam_val + M_K*M_K));
+  const G4LorentzVector target_lv(0., 0., 0., M_D);
+  const G4LorentzVector W_total = beam_lv + target_lv; // 反応全体の4元運動量
+
+  // 反応点 (Vertex) の位置をターゲット内でランダムに決定
+  static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
+  static const auto& target_size = sizeMan.GetSize("Target")*mm/2;
+  G4double vertex_z = G4RandFlat::shoot(-target_size.z(), target_size.z());
+  // 簡単化のため、ビームプロファイルは考慮せず中心に入射
+  G4ThreeVector vertex_pos(target_pos.x(), target_pos.y(), target_pos.z() + vertex_z);
+
+  // 3. イベント生成ループ (角度カットなどを満たすまで繰り返す)
+  // ==============================================================
+  while (true) {
+    // 3.1. カスプ状態の質量をサンプリング
+    // ----------------------------------------
+    // NOTE: 提供されたコードの "FdComplex::f_single" の実装が必要です。
+    // ここでは、その関数をユーザーが実装するまでの仮の措置として、
+    // Σ0+n の閾値付近の ±100 MeV の範囲で一様乱数を生成します。
+    // 実際には、物理モデルに基づいたRejection Methodを実装してください。
+    G4double CuspM = 0.;
+    G4double fcusp_max = 1.0; // NOTE: これは実際の最大値に置き換えてください
+    while(true){
+        G4double MM = G4RandFlat::shoot((M_S0 + M_N - 100.*MeV), (M_S0 + M_N + 100.*MeV));
+        // double ds_MM = Your_FdComplex_f_single(MM, ...); // NOTE: ここで実際の分布関数を呼び出す
+        // if(G4RandFlat::shoot(0., fcusp_max) <= ds_MM){
+        //   CuspM = MM;
+        //   break;
+        // }
+        CuspM = MM; // 仮実装: 一様分布をそのまま使用
+        break;
+    }
+
+
+    // 3.2. Step 1: d(K-, pi-)Cusp の2体崩壊
+    // ---------------------------------------
+    G4double p_cm1 = CalMomCM(W_total.m(), M_Pi, CuspM);
+    if (std::isnan(p_cm1)) continue; // 運動学的に生成不可ならやり直し
+
+    G4ThreeVector dir_cm1 = G4RandomDirection(); // 重心系で等方的に崩壊
+    G4LorentzVector pi_lv_cm(p_cm1 * dir_cm1, std::sqrt(p_cm1*p_cm1 + M_Pi*M_Pi));
+    G4LorentzVector cusp_lv_cm(-p_cm1 * dir_cm1, std::sqrt(p_cm1*p_cm1 + CuspM*CuspM));
+
+    // ラボ系へブースト
+    pi_lv_cm.boost(W_total.boostVector());
+    cusp_lv_cm.boost(W_total.boostVector());
+    G4LorentzVector& scat_pi_lv = pi_lv_cm;
+    G4LorentzVector& cusp_lv    = cusp_lv_cm;
+
+    // 散乱pi-の角度カット
+    if (scat_pi_lv.theta() > 10.0*deg) {
+      continue;
+    }
+
+    // 3.3. Step 2: Cusp -> Lambda + p の2体崩壊
+    // ---------------------------------------------
+    G4double p_cm2 = CalMomCM(cusp_lv.m(), M_L, M_P);
+    if (std::isnan(p_cm2)) continue;
+
+    G4ThreeVector dir_cm2 = G4RandomDirection();
+    G4LorentzVector lambda_lv_cm(p_cm2 * dir_cm2, std::sqrt(p_cm2*p_cm2 + M_L*M_L));
+    G4LorentzVector spectator_p_lv_cm(-p_cm2 * dir_cm2, std::sqrt(p_cm2*p_cm2 + M_P*M_P));
+
+    lambda_lv_cm.boost(cusp_lv.boostVector());
+    spectator_p_lv_cm.boost(cusp_lv.boostVector());
+    G4LorentzVector& lambda_lv = lambda_lv_cm;
+    G4LorentzVector& spectator_p_lv = spectator_p_lv_cm;
+
+    // 3.4. Step 3: Lambda -> p + pi- の2体崩壊
+    // ---------------------------------------------
+    G4double p_cm3 = CalMomCM(lambda_lv.m(), M_P, M_Pi);
+    if (std::isnan(p_cm3)) continue; // 通常は起こらない
+
+    G4ThreeVector dir_cm3 = G4RandomDirection();
+    G4LorentzVector decay_p_lv_cm(p_cm3 * dir_cm3, std::sqrt(p_cm3*p_cm3 + M_P*M_P));
+    G4LorentzVector decay_pi_lv_cm(-p_cm3 * dir_cm3, std::sqrt(p_cm3*p_cm3 + M_Pi*M_Pi));
+
+    decay_p_lv_cm.boost(lambda_lv.boostVector());
+    decay_pi_lv_cm.boost(lambda_lv.boostVector());
+    G4LorentzVector& decay_p_lv = decay_p_lv_cm;
+    G4LorentzVector& decay_pi_lv = decay_pi_lv_cm;
+
+    // 4. Primary Particleを生成
+    // ===============================
+    // 最終状態の粒子をすべて同一バーテックスから生成する
+
+    // (1) 散乱 pi-
+    m_particleGun->SetParticleDefinition(pion_minus);
+    m_particleGun->SetParticleMomentumDirection(scat_pi_lv.vect().unit());
+    m_particleGun->SetParticleEnergy(scat_pi_lv.e() - M_Pi);
+    m_particleGun->SetParticlePosition(vertex_pos);
+    m_particleGun->GeneratePrimaryVertex(anEvent);
+    // anaMan にも情報を保存 (必要に応じて)
+    // anaMan.SetPrimaryParticle(0, pion_minus->GetPDGEncoding(), scat_pi_lv, G4LorentzVector(vertex_pos, 0));
+
+    // (2) スペクテーター p
+    m_particleGun->SetParticleDefinition(proton);
+    m_particleGun->SetParticleMomentumDirection(spectator_p_lv.vect().unit());
+    m_particleGun->SetParticleEnergy(spectator_p_lv.e() - M_P);
+    m_particleGun->SetParticlePosition(vertex_pos);
+    m_particleGun->GeneratePrimaryVertex(anEvent);
+
+    // (3) Lambda崩壊からの p
+    m_particleGun->SetParticleDefinition(proton);
+    m_particleGun->SetParticleMomentumDirection(decay_p_lv.vect().unit());
+    m_particleGun->SetParticleEnergy(decay_p_lv.e() - M_P);
+    m_particleGun->SetParticlePosition(vertex_pos);
+    m_particleGun->GeneratePrimaryVertex(anEvent);
+
+    // (4) Lambda崩壊からの pi-
+    m_particleGun->SetParticleDefinition(pion_minus);
+    m_particleGun->SetParticleMomentumDirection(decay_pi_lv.vect().unit());
+    m_particleGun->SetParticleEnergy(decay_pi_lv.e() - M_Pi);
+    m_particleGun->SetParticlePosition(vertex_pos);
+    m_particleGun->GeneratePrimaryVertex(anEvent);
+
+
+    break; // イベント生成に成功したのでループを抜ける
+  }
 }
