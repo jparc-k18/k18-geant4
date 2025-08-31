@@ -102,9 +102,9 @@ MaterialList::MaterialList()
   Pb    = new G4Material( "Pb",   82.,207.2     *g/mole,11.35  * g/cm3 );
 
   //---------------LH2
-  LH = new G4Material("LiquidH", 1., 1.00749*g/mole, 70.8*mg/cm3);
+  LH = new G4Material("LH2", 1., 1.00749*g/mole, 70.8*mg/cm3);
   //---------------LD2
-  LD = new G4Material("LiquidD", 1., 2.0140*g/mole, 169.0*mg/cm3);
+  LD = new G4Material("LD2", 1., 2.0140*g/mole, 169.0*mg/cm3);
 
   material_map["Vacuum"] = new G4Material("Vacuum", CLHEP::universe_mean_density, 2);
   material_map["Vacuum"]->AddElement( elN, 70.*perCent );

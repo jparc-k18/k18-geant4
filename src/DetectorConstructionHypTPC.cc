@@ -42,6 +42,7 @@
 #include "DetSizeMan.hh"
 #include "MaterialList.hh"
 
+#include "FuncName.hh"
 #include "HTOFSD.hh"
 #include "TPCPadHelper.hh"
 #include "TPCSD.hh"
@@ -668,4 +669,86 @@ void S2SDetectorConstruction::ConstructHypTPC()
   new G4PVPlacement(rotdead2, G4ThreeVector(0., 0.*mm, -300.1*mm),
                     dead_lv, "DeadPV2", p10_lv, true, 1, m_check_overlaps);
   dead_lv->SetVisAttributes(G4Colour::Gray());
+}
+
+//_____________________________________________________________________________
+void S2SDetectorConstruction::ConstructTargetE90()
+{
+  using CLHEP::mm;
+  using CLHEP::deg;
+  // auto target_sd = new TargetSD("TGT");
+  // AddNewDetector(target_sd);
+  const auto target_pos = gGeom.GetGlobalPosition("Target")*mm;
+  const auto target_size = gSize.GetSize("Target")*mm/2.;
+  G4VSolid* target_solid;
+  auto rot = new G4RotationMatrix;
+  switch (m_experiment) {
+  case 42: {
+    target_solid = new G4Box("Target", target_size.x(),
+                             target_size.y(), target_size.z());
+  }
+    break;
+  case 45: case 27: {
+    G4double target_r = gSize.Get("Target", G4ThreeVector::X);
+    G4double target_z = gSize.Get("Target", G4ThreeVector::Z);
+    target_solid = new G4Tubs("TargetSolid", 0.*mm,
+                              target_r*mm, target_z*mm, 0., 360*deg);
+    rot->rotateX(90.*deg);
+    break;
+  }
+  case 90: {
+    if (gConf.Get<G4bool>("TargetVP")) {
+      target_solid = new G4Box("TargetSolid",
+                               target_size[1],
+                               0.001*mm,
+                               target_size[2]);
+    } else {
+      target_solid = new G4Tubs("TargetSolid",
+                                target_size[0],
+                                target_size[1],
+                                target_size[2],
+                                0.*deg, 360.*deg);
+    }
+    rot->rotateX(90.*deg);
+    const auto kapton_size = gSize.GetSize("TargetKapton")*mm/2.;
+    const auto gfrp_size = gSize.GetSize("TargetGFRP")*mm/2.;
+    auto kapton = new G4Tubs("TargetKapton",
+                             kapton_size[0],
+                             kapton_size[1],
+                             kapton_size[2],
+                             0.*deg, 360.*deg);
+    auto kapton_lv = new G4LogicalVolume(kapton,
+                                         mat("Kapton"),
+                                         "TargetKaptonLV");
+    kapton_lv->SetVisAttributes(G4Colour::Red());
+    new G4PVPlacement(rot, target_pos, kapton_lv, "TargetKaptonPV",
+                      m_world_lv, true, 0, m_check_overlaps);
+    auto gfrp = new G4Tubs("TargetGFRP",
+                           gfrp_size[0],
+                           gfrp_size[1],
+                           gfrp_size[2],
+                           0.*deg, 360.*deg);
+    auto gfrp_lv = new G4LogicalVolume(gfrp,
+                                       mat("G10"),
+                                       "TargetGFRPLV");
+    gfrp_lv->SetVisAttributes(G4Colour::Green());
+    new G4PVPlacement(rot, target_pos, gfrp_lv, "TargetGFRPPV",
+                      m_world_lv, true, 0, m_check_overlaps);
+  }
+    break;
+  default:
+    G4Exception(FUNC_NAME,
+                "Invalid experiment", FatalException,
+                ("Found invalid experiment "+std::to_string(m_experiment)
+                 +" in "+gConf.Get<G4String>("CONF")).c_str());
+    return;
+  }
+  auto target_lv = new G4LogicalVolume(target_solid,
+                                       mat("Target"),
+                                       "TargetLV");
+  // target_lv->SetSensitiveDetector(target_sd);
+  target_lv->SetVisAttributes(G4Colour::Blue());
+  new G4PVPlacement(rot, target_pos,
+                    target_lv, "TargetPV",
+                    m_world_lv, true, 0, m_check_overlaps);
 }
