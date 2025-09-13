@@ -440,6 +440,7 @@ S2SDetectorConstruction::ConstructTarget()
   else if(Target == "AFT"){
     TargetMater = mlist.at("Air");}
   else if(Target == "Air") { TargetMater = mat("Air"); }
+  else if(Target == "LD2") { TargetMater = mat("LD2"); }
   else{
     G4cout << " Sorry, Target: " << Target
            << " is not defined. So Air will be used. " << G4endl;
@@ -448,6 +449,7 @@ S2SDetectorConstruction::ConstructTarget()
 
   switch(m_experiment){
   case 90:
+    ConstructTargetE90();
     break;
   default:
     auto TargetBox = new G4Box

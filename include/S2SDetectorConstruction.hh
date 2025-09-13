@@ -22,6 +22,7 @@ struct MaterialList;
 class S2SDetectorConstruction : public G4VUserDetectorConstruction
 {
 public:
+  static G4String ClassName();
   S2SDetectorConstruction();
   ~S2SDetectorConstruction();
 
@@ -60,9 +61,18 @@ private:
 
   void ConstructHTOF();
   void ConstructHypTPC();
+  void ConstructTargetE90();
 
   void ConstructRC(G4int i);
   void ConstructPD(G4int i, G4String YZ);
 };
+
+//_____________________________________________________________________________
+inline G4String
+S2SDetectorConstruction::ClassName()
+{
+  static G4String s_name("S2SDetectorConstruction");
+  return s_name;
+}
 
 #endif

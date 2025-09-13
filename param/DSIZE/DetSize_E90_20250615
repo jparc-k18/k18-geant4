@@ -15,9 +15,6 @@
 #
 World		15000	12000	12000
 
-Target	 	110.0	55.0	110.0
-#Target	 	100.0	50.0	100.0
-
 ### Mylars
 HeBagMylarThickness		0.016
 AlMylarThickness        	0.050    # 50um
@@ -104,3 +101,7 @@ TpcPadCenterZ		-143.0 # upstream from HypTPC center
 TpcPadLengthIn		9.0
 TpcPadLengthOut		12.5
 TpcPadGap		0.5
+
+Target	 	0.0	80.0	100.0
+TargetKapton 	80.0	80.5	100.0
+TargetGFRP	94.0	97.0	100.0
