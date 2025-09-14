@@ -68,6 +68,11 @@ MaterialList::MaterialList()
   material_map["G10"]->AddElement(elO , 2);
   material_map["G10"]->AddElement(elC , 3);
   material_map["G10"]->AddElement(elH , 3);
+  material_map["Kapton"] = new G4Material("Kapton", 1.42*g/cm3, 4);
+  material_map["Kapton"]->AddElement(elH, 0.0273);
+  material_map["Kapton"]->AddElement(elC, 0.7213);
+  material_map["Kapton"]->AddElement(elN, 0.0765);
+  material_map["Kapton"]->AddElement(elO, 0.1749);
 
   // Etane Gas
   material_map["EthaneGas"] = new G4Material("EthanGas", 1.342*mg/cm3, 2, kStateGas);

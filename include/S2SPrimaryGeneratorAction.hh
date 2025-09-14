@@ -58,7 +58,10 @@ private:
   void GenerateRich7XiHSpectrum(G4Event* anEvent);
   void GenerateKH7XiHSpectrum(G4Event* anEvent);
   void GenerateE63_7LambdaLi(G4Event* anEvent, G4int MassNum);
-  void GenerateE90_SigmaNCusp(G4Event* anEvent);
+  void GenerateSigmaNCusp(G4Event* anEvent);
+  void GenerateQFLambda(G4Event* anEvent);
+  void GenerateQFSigmaZ(G4Event* anEvent);
+  void GenerateQFSigmaP(G4Event* anEvent);
 };
 
 //_____________________________________________________________________________

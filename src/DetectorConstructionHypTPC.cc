@@ -744,7 +744,7 @@ void S2SDetectorConstruction::ConstructTargetE90()
     return;
   }
   auto target_lv = new G4LogicalVolume(target_solid,
-                                       mat("Target"),
+                                       mat("LD2"),
                                        "TargetLV");
   // target_lv->SetSensitiveDetector(target_sd);
   target_lv->SetVisAttributes(G4Colour::Blue());
