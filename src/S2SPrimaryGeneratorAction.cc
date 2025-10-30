@@ -1232,9 +1232,8 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
 
     Double_t masses[2] = { M_PiM/CLHEP::GeV, CuspM/CLHEP::GeV }; // GeV
     TGenPhaseSpace event;
-    event.SetDecay(W, 2, masses);
 
-    if (event.Generate() == 0) continue;
+    if (!event.SetDecay(W, 2, masses) || event.Generate() == 0) continue;
 
     TLorentzVector *pi_lv = event.GetDecay(0); // GeV
     TLorentzVector *X_lv  = event.GetDecay(1); // GeV
@@ -1267,18 +1266,12 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
-    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
-                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
-                                              pi_lv->E()*CLHEP::GeV), // MeV
-                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
 
     //--- X -> Lambda + p ---
     Double_t masses_X[2] = { M_Lambda/CLHEP::GeV, M_Proton/CLHEP::GeV }; // GeV
     TGenPhaseSpace event_X;
-    event_X.SetDecay(*X_lv, 2, masses_X);
-    if(event_X.Generate() == 0) continue;
+
+    if (!event_X.SetDecay(*X_lv, 2, masses_X) || event_X.Generate() == 0) continue;
 
     TLorentzVector *lambda_lv = event_X.GetDecay(0); // GeV
     TLorentzVector *p_lv      = event_X.GetDecay(1); // GeV
@@ -1294,6 +1287,13 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     m_particleGun->SetParticleEnergy(p_lv->E()*CLHEP::GeV - M_Proton); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
+
+    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
+                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
+                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
+                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
+                                              pi_lv->E()*CLHEP::GeV), // MeV
+                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
 
     break; 
   }
@@ -1337,10 +1337,9 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
 
     Double_t masses[2] = { M_Lambda/CLHEP::GeV, M_PiM/CLHEP::GeV }; // GeV
     TGenPhaseSpace event;
-    event.SetDecay(W, 2, masses);
 
-    if (event.Generate() == 0) continue;
-    
+    if (!event.SetDecay(W, 2, masses) || event.Generate() == 0) continue;
+
     TLorentzVector *lambda_lv = event.GetDecay(0); // GeV
     TLorentzVector *pi_lv     = event.GetDecay(1); // GeV
     
@@ -1367,15 +1366,9 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     //--- scattering pion  ---
     m_particleGun->SetParticleDefinition(pi_minus);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(pi_lv->Px(), pi_lv->Py(), pi_lv->Pz()).unit());
-    m_particleGun->SetParticleEnergy(pi_lv->E() - M_PiM); // MeV
+    m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
-    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
-                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
-                                              pi_lv->E()*CLHEP::GeV), // MeV
-                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
     
     //--- Lambda ---
     m_particleGun->SetParticleDefinition(lambda);
@@ -1395,6 +1388,13 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     m_particleGun->SetParticleEnergy(E_spectator - M_Proton); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
+
+    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
+                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
+                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
+                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
+                                              pi_lv->E()*CLHEP::GeV), // MeV
+                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
     
     break; 
   }
@@ -1436,9 +1436,8 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
 
     Double_t masses[2] = { M_Sigma0/CLHEP::GeV, M_PiM/CLHEP::GeV }; // GeV
     TGenPhaseSpace event;
-    event.SetDecay(W, 2, masses);
 
-    if (event.Generate() == 0) continue; 
+    if (!event.SetDecay(W, 2, masses) || event.Generate() == 0) continue;
     
     TLorentzVector *sigma0_lv = event.GetDecay(0); // GeV
     TLorentzVector *pi_lv     = event.GetDecay(1); // GeV
@@ -1468,12 +1467,6 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
-    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
-                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
-                                              pi_lv->E()*CLHEP::GeV), // MeV
-                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
     
     //--- Sigma0 ---
     m_particleGun->SetParticleDefinition(sigma0);
@@ -1493,6 +1486,13 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     m_particleGun->SetParticleEnergy(E_spectator - M_Proton); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
+
+    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
+                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
+                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
+                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
+                                              pi_lv->E()*CLHEP::GeV), // MeV
+                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
     
     break; 
   }
@@ -1535,9 +1535,8 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
 
     Double_t masses[2] = { M_SigmaP/CLHEP::GeV, M_PiM/CLHEP::GeV }; // GeV
     TGenPhaseSpace event;
-    event.SetDecay(W, 2, masses);
 
-    if (event.Generate() == 0) continue; 
+    if (!event.SetDecay(W, 2, masses) || event.Generate() == 0) continue;
     
     TLorentzVector *sigma_plus_lv = event.GetDecay(0); // GeV
     TLorentzVector *pi_lv     = event.GetDecay(1); // GeV
@@ -1567,12 +1566,6 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
-    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
-                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
-                                              pi_lv->E()*CLHEP::GeV), // MeV
-                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
     
     //--- Sigma+ ---
     m_particleGun->SetParticleDefinition(sigma_plus);
@@ -1592,6 +1585,13 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     m_particleGun->SetParticleEnergy(E_spectator - M_Neutron); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
+
+    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
+                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
+                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
+                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
+                                              pi_lv->E()*CLHEP::GeV), // MeV
+                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
     
     break; 
   }
