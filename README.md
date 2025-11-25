@@ -51,7 +51,7 @@ export PATH=$G4WORKDIR/bin/Linux-g++:$PATH
 then
 
 ```shell
-git clone ssh://sks@www-online.kek.jp:8022/~/public_html/git/k18geant4.git
+git clone git@github.com:jparc-k18/k18-geant4.git
 cd k18geant4
 git checkout s2s
 ./build.sh
