@@ -1221,8 +1221,8 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
 
     //========== Kinematics ==========
     //--- 1. K- + d -> pi- + X ---
-    G4double beam_mom_mean = 1.4 * CLHEP::GeV; // MeV/c
-    G4double beam_mom_sigma = beam_mom_mean * 3.3e-4 / 2.355; // MeV/c
+    G4double beam_mom_mean = 1.4 * CLHEP::GeV;   // MeV/c
+    G4double beam_mom_sigma = 0.0 * CLHEP::GeV;; // MeV/c
     G4double beam_mom_gev = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma) / CLHEP::GeV; // GeV/c
     TLorentzVector beam_lv(0, 0, beam_mom_gev, sqrt(beam_mom_gev*beam_mom_gev + (M_Kaon/CLHEP::GeV)*(M_Kaon/CLHEP::GeV))); // GeV
     TVector3 p_fermi_vec = FermiMotion::GetMomentum(); // GeV/c
@@ -1246,13 +1246,14 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
 
     G4double target_radius = target_size.y() / 2.0 * mm;
     G4double target_height_half = target_size.z() / 2.0 * mm;
-
-    G4double r_vtx_x, r_vtx_y, r_vtx_z;
-    G4double beam_x_sigma = 0.2 * CLHEP::mm;
-    G4double beam_y_sigma = 0.2 * CLHEP::mm;
+    G4double r_vtx_x, r_vtx_y, r_vtx_z;       // mm
+    G4double beam_x_mean = -14.5 * CLHEP::mm; // mm
+    G4double beam_y_mean = 1.3 * CLHEP::mm;   // mm
+    G4double beam_x_sigma = 24.3 * CLHEP::mm; // mm
+    G4double beam_y_sigma = 4.2 * CLHEP::mm;  // mm
     while (true) {
-        r_vtx_x = G4RandGauss::shoot(0, beam_x_sigma);
-        r_vtx_y = G4RandGauss::shoot(0, beam_y_sigma);
+        r_vtx_x = G4RandGauss::shoot(beam_x_mean, beam_x_sigma);
+        r_vtx_y = G4RandGauss::shoot(beam_y_mean, beam_y_sigma);
         r_vtx_z = G4RandFlat::shoot(-target_radius, target_radius);
         if (r_vtx_x*r_vtx_x + r_vtx_z*r_vtx_z < target_radius*target_radius && r_vtx_y < target_height_half && r_vtx_y > -target_height_half) break;
     }
@@ -1295,7 +1296,7 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
                                               pi_lv->E()*CLHEP::GeV), // MeV
                               G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
 
-    break; 
+    break;
   }
 }
 
@@ -1314,10 +1315,10 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
   const auto lambda     = pTable->FindParticle("lambda");
 
   const G4double M_Kaon     = kaon_minus->GetPDGMass(); // MeV
-  const G4double M_PiM      = pi_minus->GetPDGMass(); // MeV
-  const G4double M_Proton   = proton->GetPDGMass(); // MeV
-  const G4double M_Neutron  = neutron->GetPDGMass(); // MeV
-  const G4double M_Lambda   = lambda->GetPDGMass(); // MeV
+  const G4double M_PiM      = pi_minus->GetPDGMass();   // MeV
+  const G4double M_Proton   = proton->GetPDGMass();     // MeV
+  const G4double M_Neutron  = neutron->GetPDGMass();    // MeV
+  const G4double M_Lambda   = lambda->GetPDGMass();     // MeV
 
   // loop until proper event is generated
   while(true){
@@ -1328,8 +1329,8 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     
     //========== Kinematics ==========
     //--- 1. K- + "n" -> Λ + pi- ---
-    G4double beam_mom_mean = 1.4 * CLHEP::GeV; // MeV/c
-    G4double beam_mom_sigma = beam_mom_mean * 3.3e-4 / 2.355; // MeV/c
+    G4double beam_mom_mean = 1.4 * CLHEP::GeV;  // MeV/c
+    G4double beam_mom_sigma = 0.0 * CLHEP::GeV; // MeV/c
     G4double beam_mom_gev = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma)/CLHEP::GeV; // GeV/c
     TLorentzVector beam_lv(0, 0, beam_mom_gev, sqrt(beam_mom_gev*beam_mom_gev + (M_Kaon/CLHEP::GeV)*(M_Kaon/CLHEP::GeV))); // GeV
     
@@ -1348,12 +1349,13 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     //========== Calculate Vertex position ==========
     static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm; // mm
     static const auto& target_size = sizeMan.GetSize("Target"); // mm
-    G4double target_radius = target_size.y() / 2.0 * mm; // mm
-    G4double target_height_half = target_size.z() / 2.0 * mm; // mm
-
-    G4double r_vtx_x, r_vtx_y, r_vtx_z; // mm
-    G4double beam_x_sigma = 0.2 * CLHEP::mm; // mm
-    G4double beam_y_sigma = 0.2 * CLHEP::mm; // mm
+    G4double target_radius = target_size.y() / 2.0 * mm;        // mm
+    G4double target_height_half = target_size.z() / 2.0 * mm;   // mm
+    G4double r_vtx_x, r_vtx_y, r_vtx_z;       // mm
+    G4double beam_x_mean = -14.5 * CLHEP::mm; // mm
+    G4double beam_y_mean = 1.3 * CLHEP::mm;   // mm
+    G4double beam_x_sigma = 24.3 * CLHEP::mm; // mm
+    G4double beam_y_sigma = 4.2 * CLHEP::mm;  // mm
     while (true) {
         r_vtx_x = G4RandGauss::shoot(0, beam_x_sigma); // mm
         r_vtx_y = G4RandGauss::shoot(0, beam_y_sigma); // mm
@@ -1367,14 +1369,14 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     m_particleGun->SetParticleDefinition(pi_minus);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(pi_lv->Px(), pi_lv->Py(), pi_lv->Pz()).unit());
     m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
-    m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
+    m_particleGun->SetParticlePosition(primary_vertex_pos);          // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
     
     //--- Lambda ---
     m_particleGun->SetParticleDefinition(lambda);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(lambda_lv->Px(), lambda_lv->Py(), lambda_lv->Pz()).unit());
     m_particleGun->SetParticleEnergy(lambda_lv->E()*CLHEP::GeV - M_Lambda); // MeV
-    m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
+    m_particleGun->SetParticlePosition(primary_vertex_pos);                 // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
     //--- spectator proton   ---
@@ -1386,14 +1388,14 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     m_particleGun->SetParticleDefinition(proton);
     m_particleGun->SetParticleMomentumDirection(spectator_mom.unit());
     m_particleGun->SetParticleEnergy(E_spectator - M_Proton); // MeV
-    m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
+    m_particleGun->SetParticlePosition(primary_vertex_pos);   // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
     anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
-                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
-                                              pi_lv->E()*CLHEP::GeV), // MeV
+                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV,  // MeV/c
+                                              pi_lv->Py()*CLHEP::GeV,  // MeV/c
+                                              pi_lv->Pz()*CLHEP::GeV,  // MeV/c
+                                              pi_lv->E()*CLHEP::GeV),  // MeV
                               G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
     
     break; 
@@ -1415,10 +1417,10 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
   const auto sigma0     = pTable->FindParticle("sigma0");
 
   const G4double M_Kaon     = kaon_minus->GetPDGMass(); // MeV
-  const G4double M_PiM      = pi_minus->GetPDGMass(); // MeV
-  const G4double M_Proton   = proton->GetPDGMass(); // MeV
-  const G4double M_Neutron  = neutron->GetPDGMass(); // MeV
-  const G4double M_Sigma0   = sigma0->GetPDGMass(); // MeV
+  const G4double M_PiM      = pi_minus->GetPDGMass();   // MeV
+  const G4double M_Proton   = proton->GetPDGMass();     // MeV
+  const G4double M_Neutron  = neutron->GetPDGMass();    // MeV
+  const G4double M_Sigma0   = sigma0->GetPDGMass();     // MeV
 
   // loop until proper event is generated
   while(true){
@@ -1428,8 +1430,8 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     
     //========== Kinematics ==========
     //--- 1. K- + "n" -> Σ0 + pi- ---
-    G4double beam_mom_mean = 1.4 * CLHEP::GeV; // MeV/c
-    G4double beam_mom_sigma = beam_mom_mean * 3.3e-4 / 2.355; // MeV/c
+    G4double beam_mom_mean = 1.4 * CLHEP::GeV;  // MeV/c
+    G4double beam_mom_sigma = 0.0 * CLHEP::GeV; // MeV/c
     G4double beam_mom_gev = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma)/CLHEP::GeV; // GeV/c
     TLorentzVector beam_lv(0, 0, beam_mom_gev, sqrt(beam_mom_gev*beam_mom_gev + (M_Kaon/CLHEP::GeV)*(M_Kaon/CLHEP::GeV))); // GeV
     TLorentzVector W = beam_lv + target_lv;
@@ -1449,9 +1451,11 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     static const auto& target_size = sizeMan.GetSize("Target"); // mm
     G4double target_radius = target_size.y() / 2.0 * mm; // mm
     G4double target_height_half = target_size.z() / 2.0 * mm; // mm
-    G4double r_vtx_x, r_vtx_y, r_vtx_z; // mm
-    G4double beam_x_sigma = 0.2 * CLHEP::mm; // mm
-    G4double beam_y_sigma = 0.2 * CLHEP::mm; // mm
+    G4double r_vtx_x, r_vtx_y, r_vtx_z;       // mm
+    G4double beam_x_mean = -14.5 * CLHEP::mm; // mm
+    G4double beam_y_mean =   1.3 * CLHEP::mm; // mm
+    G4double beam_x_sigma = 24.3 * CLHEP::mm; // mm
+    G4double beam_y_sigma =  4.2 * CLHEP::mm; // mm
     while (true) {
         r_vtx_x = G4RandGauss::shoot(0, beam_x_sigma); // mm
         r_vtx_y = G4RandGauss::shoot(0, beam_y_sigma); // mm
@@ -1528,7 +1532,7 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     //========== Kinematics ==========
     //--- 1. K- + "p" -> Σ+ + pi- ---
     G4double beam_mom_mean = 1.4 * CLHEP::GeV; // MeV/c
-    G4double beam_mom_sigma = beam_mom_mean * 3.3e-4 / 2.355; // MeV/c
+    G4double beam_mom_sigma = 0.0 * CLHEP::GeV; // MeV/c
     G4double beam_mom_gev = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma)/CLHEP::GeV; // GeV/c
     TLorentzVector beam_lv(0, 0, beam_mom_gev, sqrt(beam_mom_gev*beam_mom_gev + (M_Kaon/CLHEP::GeV)*(M_Kaon/CLHEP::GeV))); // GeV
     TLorentzVector W = beam_lv + target_lv;
@@ -1548,9 +1552,11 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     static const auto& target_size = sizeMan.GetSize("Target"); // mm
     G4double target_radius = target_size.y() / 2.0 * mm; // mm
     G4double target_height_half = target_size.z() / 2.0 * mm; // mm
-    G4double r_vtx_x, r_vtx_y, r_vtx_z; // mm
-    G4double beam_x_sigma = 0.2 * CLHEP::mm; // mm
-    G4double beam_y_sigma = 0.2 * CLHEP::mm; // mm
+    G4double r_vtx_x, r_vtx_y, r_vtx_z;       // mm
+    G4double beam_x_mean = -14.5 * CLHEP::mm; // mm
+    G4double beam_y_mean = 1.3 * CLHEP::mm;   // mm
+    G4double beam_x_sigma = 24.3 * CLHEP::mm; // mm
+    G4double beam_y_sigma = 4.2 * CLHEP::mm;  // mm
     while (true) {
         r_vtx_x = G4RandGauss::shoot(0, beam_x_sigma); // mm
         r_vtx_y = G4RandGauss::shoot(0, beam_y_sigma); // mm
