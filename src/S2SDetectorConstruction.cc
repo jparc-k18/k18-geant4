@@ -313,6 +313,9 @@ void
 S2SDetectorConstruction::ConstructSAC()
 {
   if(m_experiment != 90) return;
+  auto sac_sd = new ACSD("SAC");
+  // sac_sd->SetRefractiveIndex(1.05);
+  G4SDManager::GetSDMpointer()->AddNewDetector(sac_sd);
   const auto& ra2 = geomMan.GetRotAngle2("SAC") * deg;
   const auto& frame_size = sizeMan.GetSize("SacFrame") * 0.5 * mm;
   const auto& radiator_size = sizeMan.GetSize("SacRadiator") * 0.5 * mm;
@@ -349,7 +352,7 @@ S2SDetectorConstruction::ConstructSAC()
   auto radiator_lv = new G4LogicalVolume(radiator_solid,
                                          mlist.Aerogel,
                                          "SacRadiatorLV");
-  //radiator_lv->SetSensitiveDetector(ac1_sd);
+  radiator_lv->SetSensitiveDetector(sac_sd);
   radiator_lv->SetVisAttributes(G4Color::Magenta());
   // pos.set(0., 0., -frame_size.z()+0.6*mm + radiator_size.z());
   new G4PVPlacement(nullptr, pos, radiator_lv,
