@@ -1,0 +1,12 @@
+# --- TPCView.mac ---
+
+/vis/open OGL
+/vis/drawVolume
+
+/vis/viewer/set/viewpointThetaPhi 269. -90
+/vis/viewer/zoom 12
+
+/vis/viewer/panTo 1500 -3750 mm
+
+/vis/scene/add/trajectories
+# --------------------------
