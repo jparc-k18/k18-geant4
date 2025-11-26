@@ -33,6 +33,7 @@
 #include "DCHit.hh"
 #include "TOFHit.hh"
 #include "HTOFHit.hh"
+#include "TPCHit.hh"
 #include "ACHit.hh"
 #include "WCHit.hh"
 #include "VPHit.hh"
@@ -109,6 +110,12 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
   }
   if(experiment == 90){
     for(const auto& sd_name : std::vector<G4String>{"HTOF"})
+    {
+      G4cout << "   make branch : " << sd_name << G4endl;
+      MakeBranch(sd_name);
+      MakeHistogram(sd_name);
+    }
+    for(const auto& sd_name : std::vector<G4String>{"TPC"})
     {
       G4cout << "   make branch : " << sd_name << G4endl;
       MakeBranch(sd_name);
@@ -322,6 +329,17 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
           SetHitData(hit);
         }
         SetNhits("HTOF", HC->entries());
+      }
+    }
+    {
+      static const auto id = SDMan->GetCollectionID("TPC");
+      if(id >= 0){
+        auto HC = dynamic_cast<TPCHitsCollection*>(HCE->GetHC(id));
+        for(G4int i=0, n=HC->entries(); i<n; ++i){
+          auto hit = (*HC)[i];
+          SetHitData(hit);
+        }
+        SetNhits("TPC", HC->entries());
       }
     }
     {

@@ -49,6 +49,7 @@ TPCHit::operator=(const TPCHit& right)
 }
 
 //_____________________________________________________________________________
+using TPCHitsCollection = G4THitsCollection<TPCHit>;
 // externally instanciated.
 extern G4Allocator<TPCHit> TPCHitAllocator;
 
