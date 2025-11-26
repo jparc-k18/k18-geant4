@@ -16,7 +16,8 @@ HTOFSD::HTOFSD(const G4String& name)
   : G4VSensitiveDetector(name),
     m_hits_collection()
 {
-  collectionName.insert("hit");
+  // collectionName.insert("hit");
+  collectionName.insert(name);
 }
 
 //_____________________________________________________________________________

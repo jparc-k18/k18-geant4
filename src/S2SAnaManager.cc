@@ -32,6 +32,7 @@
 #include "FuncName.hh"
 #include "DCHit.hh"
 #include "TOFHit.hh"
+#include "HTOFHit.hh"
 #include "ACHit.hh"
 #include "WCHit.hh"
 #include "VPHit.hh"
@@ -107,6 +108,12 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
     }
   }
   if(experiment == 90){
+    for(const auto& sd_name : std::vector<G4String>{"HTOF"})
+    {
+      G4cout << "   make branch : " << sd_name << G4endl;
+      MakeBranch(sd_name);
+      MakeHistogram(sd_name);
+    }
     for(const auto& sd_name : std::vector<G4String>{"SAC"})
     {
       G4cout << "   make branch : " << sd_name << G4endl;
@@ -306,15 +313,28 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
 
   if (experiment == 90)
   {
-    static const auto id = SDMan->GetCollectionID("SAC");
-    if(id >= 0){
-      auto HC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(id));
-      for(G4int i=0, n=HC->entries(); i<n; ++i){
-        auto hit = (*HC)[i];
-        // if(hit->Is("pi-") && hit->IsPrimary()) trigger_flag[kSAC] = true;
-        SetHitData(hit);
+    {
+      static const auto id = SDMan->GetCollectionID("HTOF");
+      if(id >= 0){
+        auto HC = dynamic_cast<HTOFHitsCollection*>(HCE->GetHC(id));
+        for(G4int i=0, n=HC->entries(); i<n; ++i){
+          auto hit = (*HC)[i];
+          SetHitData(hit);
+        }
+        SetNhits("HTOF", HC->entries());
       }
-      SetNhits("SAC", HC->entries());
+    }
+    {
+      static const auto id = SDMan->GetCollectionID("SAC");
+      if(id >= 0){
+        auto HC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(id));
+        for(G4int i=0, n=HC->entries(); i<n; ++i){
+          auto hit = (*HC)[i];
+          // if(hit->Is("pi-") && hit->IsPrimary()) trigger_flag[kSAC] = true;
+          SetHitData(hit);
+        }
+        SetNhits("SAC", HC->entries());
+      }
     }
   }
   {

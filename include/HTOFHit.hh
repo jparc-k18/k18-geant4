@@ -48,6 +48,7 @@ HTOFHit::operator =(const HTOFHit& right)
 }
 
 //_____________________________________________________________________________
+using HTOFHitsCollection = G4THitsCollection<HTOFHit>;
 // externally instanciated.
 extern G4Allocator<HTOFHit> HTOFHitAllocator;
 
