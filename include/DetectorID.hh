@@ -56,6 +56,9 @@ enum ETriggerFlag
     kTOF,
     kAC1,
     kWC,
+    kE90TOF,
+    kE90SAC,
+    kE90AC1,
     kTriggerFlagSize
   };
 
@@ -96,6 +99,9 @@ const std::vector<TString> TriggerFlag =
     "TOF",
     "AC1",
     "WC",
+    "E90TOF",
+    "E90SAC",
+    "E90AC1",
   };
 
 
