@@ -89,12 +89,33 @@ struct Event
   double t1;
 
   // E90 reactions
-  double cusp_p_mom;
-  double cusp_p_theta;
-  double lambda_p_mom;
-  double lambda_p_theta;
-  double lambda_pi_mom;
-  double lambda_pi_theta;
+  double SigmaNCusp_cusp_p_mom;
+  double SigmaNCusp_cusp_p_theta;
+  double SigmaNCusp_lambda_p_mom;
+  double SigmaNCusp_lambda_p_theta;
+  double SigmaNCusp_lambda_pi_mom;
+  double SigmaNCusp_lambda_pi_theta;
+
+  double QFLambda_spec_p_mom;
+  double QFLambda_spec_p_theta;
+  double QFLambda_decay_p_mom;
+  double QFLambda_decay_p_theta;
+  double QFLambda_decay_pi_mom;
+  double QFLambda_decay_pi_theta;
+
+  double QFSigma0_spec_p_mom;
+  double QFSigma0_spec_p_theta;
+  double QFSigma0_decay_p_mom;
+  double QFSigma0_decay_p_theta;
+  double QFSigma0_decay_pi_mom;
+  double QFSigma0_decay_pi_theta;
+
+  double QFSigmaP_spec_n_mom;
+  double QFSigmaP_spec_n_theta;
+  double QFSigmaP_decay_p_mom;
+  double QFSigmaP_decay_p_theta;
+  double QFSigmaP_decay_pi_mom;
+  double QFSigmaP_decay_pi_theta;
   
   G4int nP, nN, nL, nSm, nSz, nSp, nXm, nXz, nXsm, nXsz;
   G4int nPim, nPiz, nPip, nKm, nKp;
@@ -213,9 +234,18 @@ public:
   void SetSecondaryData(G4double x1, G4double y1, G4double z1,
 			G4double px1, G4double py1, G4double pz1,
 			G4double p1, G4double t1); // E63 for weak pi
-  void SetCuspCascadeData(G4double cusp_p_mom, G4double cusp_p_theta,
-			    G4double lambda_p_mom, G4double lambda_p_theta,
-			    G4double lambda_pi_mom, G4double lambda_pi_theta); // for E90 SigmaNCusp reaction
+  void SetSigmaNCuspCascadeData(G4double cusp_p_mom, G4double cusp_p_theta,
+			 G4double lambda_p_mom, G4double lambda_p_theta,
+			 G4double lambda_pi_mom, G4double lambda_pi_theta); // for E90 SigmaN Cusp
+  void SetQFLambdaCascadeData(G4double spec_mom, G4double spec_theta,
+			      G4double decay_p_mom, G4double decay_p_theta,
+			      G4double decay_pi_mom, G4double decay_pi_theta);
+  void SetQFSigma0CascadeData(G4double spec_mom, G4double spec_theta,
+			      G4double decay_p_mom, G4double decay_p_theta,
+			      G4double decay_pi_mom, G4double decay_pi_theta);
+  void SetQFSigmaPCascadeData(G4double spec_mom, G4double spec_theta,
+			      G4double decay_p_mom, G4double decay_p_theta,
+			      G4double decay_pi_mom, G4double decay_pi_theta);
   void SetProcessData(G4int nP, G4int nN, G4int nL,
 		      G4int nSm, G4int nSz, G4int nSp,
 		      G4int nXm, G4int nXz, G4int nXsm,
