@@ -1407,9 +1407,8 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
     //--- spectator proton   ---
-    G4ThreeVector total_mom_before = G4ThreeVector(beam_lv.Px(), beam_lv.Py(), beam_lv.Pz()) + G4ThreeVector(target_lv.Px(), target_lv.Py(), target_lv.Pz()); // GeV/c
-    G4ThreeVector total_mom_after_reaction = G4ThreeVector(pi_lv->Px(), pi_lv->Py(), pi_lv->Pz()) + G4ThreeVector(lambda_lv->Px(), lambda_lv->Py(), lambda_lv->Pz()); // GeV/c
-    G4ThreeVector spectator_mom = total_mom_before - total_mom_after_reaction; // GeV/c
+    const TVector3 spectator_vec = -p_fermi_vec; // GeV/c
+    const G4ThreeVector spectator_mom(spectator_vec.X(), spectator_vec.Y(), spectator_vec.Z()); // GeV/c
 
     G4double E_spectator = sqrt(M_Proton*M_Proton + spectator_mom.mag2()*(CLHEP::GeV*CLHEP::GeV)); // MeV
     m_particleGun->SetParticleDefinition(proton);
@@ -1535,9 +1534,8 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
     //--- spectator proton   ---
-    G4ThreeVector total_mom_before = G4ThreeVector(beam_lv.Px(), beam_lv.Py(), beam_lv.Pz()) + G4ThreeVector(target_lv.Px(), target_lv.Py(), target_lv.Pz()); // GeV/c
-    G4ThreeVector total_mom_after_reaction = G4ThreeVector(pi_lv->Px(), pi_lv->Py(), pi_lv->Pz()) + G4ThreeVector(sigma0_lv->Px(), sigma0_lv->Py(), sigma0_lv->Pz()); // GeV/c
-    G4ThreeVector spectator_mom = total_mom_before - total_mom_after_reaction; // GeV/c
+    const TVector3 spectator_vec = -p_fermi_vec; // GeV/c
+    const G4ThreeVector spectator_mom(spectator_vec.X(), spectator_vec.Y(), spectator_vec.Z()); // GeV/c
 
     G4double E_spectator = sqrt(M_Proton*M_Proton + spectator_mom.mag2()*(CLHEP::GeV*CLHEP::GeV)); // MeV
     m_particleGun->SetParticleDefinition(proton);
@@ -1620,7 +1618,7 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
 
     //--- Generate Fermi momentum for the target "p" ---
     TVector3 p_fermi_vec = FermiMotion::GetMomentum();
-    TLorentzVector target_lv(p_fermi_vec, sqrt(M_Proton*M_Proton + p_fermi_vec.Mag2()));
+    TLorentzVector target_lv(p_fermi_vec, sqrt((M_Proton/CLHEP::GeV)*(M_Proton/CLHEP::GeV) + p_fermi_vec.Mag2()));
     
     //========== Kinematics ==========
     //--- 1. K- + "p" -> Σ+ + pi- ---
@@ -1674,9 +1672,8 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
     //--- spectator neutron   ---
-    G4ThreeVector total_mom_before = G4ThreeVector(beam_lv.Px(), beam_lv.Py(), beam_lv.Pz()) + G4ThreeVector(target_lv.Px(), target_lv.Py(), target_lv.Pz()); // GeV/c
-    G4ThreeVector total_mom_after_reaction = G4ThreeVector(pi_lv->Px(), pi_lv->Py(), pi_lv->Pz()) + G4ThreeVector(sigma_plus_lv->Px(), sigma_plus_lv->Py(), sigma_plus_lv->Pz()); // GeV/c
-    G4ThreeVector spectator_mom = total_mom_before - total_mom_after_reaction; // GeV/c
+    const TVector3 spectator_vec = -p_fermi_vec; // GeV/c
+    const G4ThreeVector spectator_mom(spectator_vec.X(), spectator_vec.Y(), spectator_vec.Z()); // GeV/c
     
     G4double E_spectator = sqrt(M_Neutron*M_Neutron + spectator_mom.mag2()*(CLHEP::GeV*CLHEP::GeV)); // MeV
     m_particleGun->SetParticleDefinition(neutron);
