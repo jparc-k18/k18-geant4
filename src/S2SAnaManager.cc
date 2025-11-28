@@ -119,6 +119,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
   for(auto& h: hmap){
     h.second->Reset();
   }
+  InitializeEvent();
   n_acc.clear();
   n_acc.resize(kTriggerFlagSize);
 }
@@ -264,6 +265,20 @@ S2SAnaManager::SetSecondaryData(double x1, double y1, double z1,
   event.t1   = t1; // Kinetic energy
   //  event.Id = ParIdNb;
   //  G4cout<<"setPrimaryData"<<G4endl;
+}
+
+//_____________________________________________________________________________
+void
+S2SAnaManager::SetCuspCascadeData(G4double cusp_p_mom, G4double cusp_p_theta,
+                                  G4double lambda_p_mom, G4double lambda_p_theta,
+                                  G4double lambda_pi_mom, G4double lambda_pi_theta)
+{
+  event.cusp_p_mom = cusp_p_mom;
+  event.cusp_p_theta = cusp_p_theta * TMath::RadToDeg();
+  event.lambda_p_mom = lambda_p_mom;
+  event.lambda_p_theta = lambda_p_theta * TMath::RadToDeg();
+  event.lambda_pi_mom = lambda_pi_mom;
+  event.lambda_pi_theta = lambda_pi_theta * TMath::RadToDeg();
 }
 
 //_____________________________________________________________________________
@@ -626,6 +641,12 @@ void S2SAnaManager::InitializeEvent()
   for(auto& pair: event.hits){
     pair.second.clear();
   }
+  event.cusp_p_mom = qnan;
+  event.cusp_p_theta = qnan;
+  event.lambda_p_mom = qnan;
+  event.lambda_p_theta = qnan;
+  event.lambda_pi_mom = qnan;
+  event.lambda_pi_theta = qnan;
 }
 
 void S2SAnaManager::DefineTree()
@@ -656,6 +677,15 @@ void S2SAnaManager::DefineTree()
   m_tree->Branch("p1",  &event.p1,  "p1/D");  // [MeV/c]
   m_tree->Branch("t1",  &event.t1,  "t1/D");  // [MeV]
 #endif
+
+  if(confMan.Get<G4int>("Experiment") == 90){
+    m_tree->Branch("cusp_p_mom", &event.cusp_p_mom, "cusp_p_mom/D");
+    m_tree->Branch("cusp_p_theta", &event.cusp_p_theta, "cusp_p_theta/D");
+    m_tree->Branch("lambda_p_mom", &event.lambda_p_mom, "lambda_p_mom/D");
+    m_tree->Branch("lambda_p_theta", &event.lambda_p_theta, "lambda_p_theta/D");
+    m_tree->Branch("lambda_pi_mom", &event.lambda_pi_mom, "lambda_pi_mom/D");
+    m_tree->Branch("lambda_pi_theta", &event.lambda_pi_theta, "lambda_pi_theta/D");
+  }
 
   return;
   //  m_tree->Branch("t0",&event.t0,   "t0/D");

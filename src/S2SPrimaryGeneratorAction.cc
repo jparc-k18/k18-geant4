@@ -1223,8 +1223,8 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     //--- 1. K- + d -> pi- + X ---
     G4double beam_mom_mean = 1.4 * CLHEP::GeV;   // MeV/c
     G4double beam_mom_sigma = 0.0 * CLHEP::GeV;; // MeV/c
-    G4double beam_mom_gev = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma) / CLHEP::GeV; // GeV/c
-    TLorentzVector beam_lv(0, 0, beam_mom_gev, sqrt(beam_mom_gev*beam_mom_gev + (M_Kaon/CLHEP::GeV)*(M_Kaon/CLHEP::GeV))); // GeV
+    G4double beam_mom = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma) / CLHEP::GeV; // GeV/c
+    TLorentzVector beam_lv(0, 0, beam_mom, sqrt(beam_mom*beam_mom + (M_Kaon/CLHEP::GeV)*(M_Kaon/CLHEP::GeV))); // GeV 
     TVector3 p_fermi_vec = FermiMotion::GetMomentum(); // GeV/c
     TLorentzVector target_lv(p_fermi_vec, sqrt((M_Deuteron/CLHEP::GeV)*(M_Deuteron/CLHEP::GeV) + p_fermi_vec.Mag2()));
     
@@ -1257,7 +1257,6 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
         r_vtx_z = G4RandFlat::shoot(-target_radius, target_radius);
         if (r_vtx_x*r_vtx_x + r_vtx_z*r_vtx_z < target_radius*target_radius && r_vtx_y < target_height_half && r_vtx_y > -target_height_half) break;
     }
-
     G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z);
 
     //========== Particle Generation ==========
@@ -1267,7 +1266,7 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
-
+    
     //--- X -> Lambda + p ---
     Double_t masses_X[2] = { M_Lambda/CLHEP::GeV, M_Proton/CLHEP::GeV }; // GeV
     TGenPhaseSpace event_X;
@@ -1289,12 +1288,40 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
+    const auto qnan = TMath::QuietNaN();
+    const auto cusp_p_vec = G4ThreeVector(p_lv->Px(), p_lv->Py(), p_lv->Pz());
+    auto cusp_p_mom = cusp_p_vec.mag();
+    auto cusp_p_theta = cusp_p_vec.theta();
+    auto lambda_p_mom = qnan;
+    auto lambda_p_theta = qnan;
+    auto lambda_pi_mom = qnan;
+    auto lambda_pi_theta = qnan;
+    {
+      Double_t decay_masses[2] = { M_Proton/CLHEP::GeV, M_PiM/CLHEP::GeV };
+      TGenPhaseSpace lambda_decay;
+      if(lambda_decay.SetDecay(*lambda_lv, 2, decay_masses) && lambda_decay.Generate()!=0){
+        const auto decay_p = lambda_decay.GetDecay(0);
+        const auto decay_pi = lambda_decay.GetDecay(1);
+        lambda_p_mom = decay_p->P();
+        lambda_p_theta = decay_p->Theta();
+        lambda_pi_mom = decay_pi->P();
+        lambda_pi_theta = decay_pi->Theta();
+      }
+    }
+
     anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
                               G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
                                               pi_lv->Py()*CLHEP::GeV, // MeV/c
                                               pi_lv->Pz()*CLHEP::GeV, // MeV/c
                                               pi_lv->E()*CLHEP::GeV), // MeV
                               G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
+
+    anaMan.SetPrimaryData(primary_vertex_pos.x(), primary_vertex_pos.y(), primary_vertex_pos.z(),
+                          qnan, qnan, qnan, qnan, beam_mom * CLHEP::GeV, beam_lv.E() * CLHEP::GeV - M_Kaon, 9999); // x0,y0,z0,u0,v0,0.,0.,p0,p0,ParIdNb
+
+    anaMan.SetCuspCascadeData(cusp_p_mom, cusp_p_theta,
+                                lambda_p_mom, lambda_p_theta,
+                                lambda_pi_mom, lambda_pi_theta);
 
     break;
   }
