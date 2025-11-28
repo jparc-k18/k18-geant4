@@ -274,12 +274,12 @@ S2SAnaManager::SetSigmaNCuspCascadeData(G4double cusp_p_mom, G4double cusp_p_the
                                         G4double lambda_p_mom, G4double lambda_p_theta,
                                         G4double lambda_pi_mom, G4double lambda_pi_theta)
 {
-  event.SigmaNCusp_cusp_p_mom = cusp_p_mom;
-  event.SigmaNCusp_cusp_p_theta = cusp_p_theta * TMath::RadToDeg();
-  event.SigmaNCusp_lambda_p_mom = lambda_p_mom;
-  event.SigmaNCusp_lambda_p_theta = lambda_p_theta * TMath::RadToDeg();
-  event.SigmaNCusp_lambda_pi_mom = lambda_pi_mom;
-  event.SigmaNCusp_lambda_pi_theta = lambda_pi_theta * TMath::RadToDeg();
+  event.cusp_decay_p_mom = cusp_p_mom;
+  event.cusp_decay_p_theta = cusp_p_theta * TMath::RadToDeg();
+  event.lambda_decay_p_mom = lambda_p_mom;
+  event.lambda_decay_p_theta = lambda_p_theta * TMath::RadToDeg();
+  event.decay_pi_mom = lambda_pi_mom;
+  event.decay_pi_theta = lambda_pi_theta * TMath::RadToDeg();
 }
 
 //_____________________________________________________________________________
@@ -288,12 +288,12 @@ S2SAnaManager::SetQFLambdaCascadeData(G4double spec_p_mom, G4double spec_p_theta
                                       G4double decay_p_mom, G4double decay_p_theta,
                                       G4double decay_pi_mom, G4double decay_pi_theta)
 {
-  event.QFLambda_spec_p_mom = spec_p_mom;
-  event.QFLambda_spec_p_theta = spec_p_theta * TMath::RadToDeg();
-  event.QFLambda_decay_p_mom = decay_p_mom;
-  event.QFLambda_decay_p_theta = decay_p_theta * TMath::RadToDeg();
-  event.QFLambda_decay_pi_mom = decay_pi_mom;
-  event.QFLambda_decay_pi_theta = decay_pi_theta * TMath::RadToDeg();
+  event.spec_p_mom = spec_p_mom;
+  event.spec_p_theta = spec_p_theta * TMath::RadToDeg();
+  event.decay_p_mom = decay_p_mom;
+  event.decay_p_theta = decay_p_theta * TMath::RadToDeg();
+  event.decay_pi_mom = decay_pi_mom;
+  event.decay_pi_theta = decay_pi_theta * TMath::RadToDeg();
 }
 
 //_____________________________________________________________________________
@@ -302,12 +302,12 @@ S2SAnaManager::SetQFSigma0CascadeData(G4double spec_p_mom, G4double spec_p_theta
                                       G4double decay_p_mom, G4double decay_p_theta,
                                       G4double decay_pi_mom, G4double decay_pi_theta)
 {
-  event.QFSigma0_spec_p_mom = spec_p_mom;
-  event.QFSigma0_spec_p_theta = spec_p_theta * TMath::RadToDeg();
-  event.QFSigma0_decay_p_mom = decay_p_mom;
-  event.QFSigma0_decay_p_theta = decay_p_theta * TMath::RadToDeg();
-  event.QFSigma0_decay_pi_mom = decay_pi_mom;
-  event.QFSigma0_decay_pi_theta = decay_pi_theta * TMath::RadToDeg();
+  event.spec_p_mom = spec_p_mom;
+  event.spec_p_theta = spec_p_theta * TMath::RadToDeg();
+  event.decay_p_mom = decay_p_mom;
+  event.decay_p_theta = decay_p_theta * TMath::RadToDeg();
+  event.decay_pi_mom = decay_pi_mom;
+  event.decay_pi_theta = decay_pi_theta * TMath::RadToDeg();
 }
 
 //_____________________________________________________________________________
@@ -316,12 +316,12 @@ S2SAnaManager::SetQFSigmaPCascadeData(G4double spec_n_mom, G4double spec_n_theta
                                       G4double decay_p_mom, G4double decay_p_theta,
                                       G4double decay_pi_mom, G4double decay_pi_theta)
 {
-  event.QFSigmaP_spec_n_mom = spec_n_mom;
-  event.QFSigmaP_spec_n_theta = spec_n_theta * TMath::RadToDeg();
-  event.QFSigmaP_decay_p_mom = decay_p_mom;
-  event.QFSigmaP_decay_p_theta = decay_p_theta * TMath::RadToDeg();
-  event.QFSigmaP_decay_pi_mom = decay_pi_mom;
-  event.QFSigmaP_decay_pi_theta = decay_pi_theta * TMath::RadToDeg();
+  event.spec_n_mom = spec_n_mom;
+  event.spec_n_theta = spec_n_theta * TMath::RadToDeg();
+  event.decay_p_mom = decay_p_mom;
+  event.decay_p_theta = decay_p_theta * TMath::RadToDeg();
+  event.decay_pi_mom = decay_pi_mom;
+  event.decay_pi_theta = decay_pi_theta * TMath::RadToDeg();
 }
 
 //_____________________________________________________________________________
@@ -684,30 +684,18 @@ void S2SAnaManager::InitializeEvent()
   for(auto& pair: event.hits){
     pair.second.clear();
   }
-  event.SigmaNCusp_cusp_p_mom = qnan;
-  event.SigmaNCusp_cusp_p_theta = qnan;
-  event.SigmaNCusp_lambda_p_mom = qnan;
-  event.SigmaNCusp_lambda_p_theta = qnan;
-  event.SigmaNCusp_lambda_pi_mom = qnan;
-  event.SigmaNCusp_lambda_pi_theta = qnan;
-  event.QFLambda_spec_p_mom = qnan;
-  event.QFLambda_spec_p_theta = qnan;
-  event.QFLambda_decay_p_mom = qnan;
-  event.QFLambda_decay_p_theta = qnan;
-  event.QFLambda_decay_pi_mom = qnan;
-  event.QFLambda_decay_pi_theta = qnan;
-  event.QFSigma0_spec_p_mom = qnan;
-  event.QFSigma0_spec_p_theta = qnan;
-  event.QFSigma0_decay_p_mom = qnan;
-  event.QFSigma0_decay_p_theta = qnan;
-  event.QFSigma0_decay_pi_mom = qnan;
-  event.QFSigma0_decay_pi_theta = qnan;
-  event.QFSigmaP_spec_n_mom = qnan;
-  event.QFSigmaP_spec_n_theta = qnan;
-  event.QFSigmaP_decay_p_mom = qnan;
-  event.QFSigmaP_decay_p_theta = qnan;
-  event.QFSigmaP_decay_pi_mom = qnan;
-  event.QFSigmaP_decay_pi_theta = qnan;
+  event.cusp_decay_p_mom = qnan;
+  event.cusp_decay_p_theta = qnan;
+  event.lambda_decay_p_mom = qnan;
+  event.lambda_decay_p_theta = qnan;
+  event.decay_pi_mom = qnan;
+  event.decay_pi_theta = qnan;
+  event.spec_p_mom = qnan;
+  event.spec_p_theta = qnan;
+  event.decay_p_mom = qnan;
+  event.decay_p_theta = qnan;
+  event.spec_n_mom = qnan;
+  event.spec_n_theta = qnan;
 }
 
 void S2SAnaManager::DefineTree()
@@ -742,36 +730,36 @@ void S2SAnaManager::DefineTree()
   if(confMan.Get<G4int>("Experiment") == 90){
     const auto generator = confMan.Get<G4int>("Generator");
     if(generator == 9001){
-      m_tree->Branch("SigmaNCusp_cusp_p_mom", &event.SigmaNCusp_cusp_p_mom, "SigmaNCusp_cusp_p_mom/D");
-      m_tree->Branch("SigmaNCusp_cusp_p_theta", &event.SigmaNCusp_cusp_p_theta, "SigmaNCusp_cusp_p_theta/D");
-      m_tree->Branch("SigmaNCusp_lambda_p_mom", &event.SigmaNCusp_lambda_p_mom, "SigmaNCusp_lambda_p_mom/D");
-      m_tree->Branch("SigmaNCusp_lambda_p_theta", &event.SigmaNCusp_lambda_p_theta, "SigmaNCusp_lambda_p_theta/D");
-      m_tree->Branch("SigmaNCusp_lambda_pi_mom", &event.SigmaNCusp_lambda_pi_mom, "SigmaNCusp_lambda_pi_mom/D");
-      m_tree->Branch("SigmaNCusp_lambda_pi_theta", &event.SigmaNCusp_lambda_pi_theta, "SigmaNCusp_lambda_pi_theta/D");
+      m_tree->Branch("cusp_decay_p_mom", &event.cusp_decay_p_mom, "cusp_decay_p_mom/D");
+      m_tree->Branch("cusp_decay_p_theta", &event.cusp_decay_p_theta, "cusp_decay_p_theta/D");
+      m_tree->Branch("lambda_decay_p_mom", &event.lambda_decay_p_mom, "lambda_decay_p_mom/D");
+      m_tree->Branch("lambda_decay_p_theta", &event.lambda_decay_p_theta, "lambda_decay_p_theta/D");
+      m_tree->Branch("decay_pi_mom", &event.decay_pi_mom, "decay_pi_mom/D");
+      m_tree->Branch("decay_pi_theta", &event.decay_pi_theta, "decay_pi_theta/D");
     }
     if(generator == 9002){
-      m_tree->Branch("QFLambda_spec_p_mom", &event.QFLambda_spec_p_mom, "QFLambda_spec_p_mom/D");
-      m_tree->Branch("QFLambda_spec_p_theta", &event.QFLambda_spec_p_theta, "QFLambda_spec_p_theta/D");
-      m_tree->Branch("QFLambda_decay_p_mom", &event.QFLambda_decay_p_mom, "QFLambda_decay_p_mom/D");
-      m_tree->Branch("QFLambda_decay_p_theta", &event.QFLambda_decay_p_theta, "QFLambda_decay_p_theta/D");
-      m_tree->Branch("QFLambda_decay_pi_mom", &event.QFLambda_decay_pi_mom, "QFLambda_decay_pi_mom/D");
-      m_tree->Branch("QFLambda_decay_pi_theta", &event.QFLambda_decay_pi_theta, "QFLambda_decay_pi_theta/D");
+      m_tree->Branch("spec_p_mom", &event.spec_p_mom, "spec_p_mom/D");
+      m_tree->Branch("spec_p_theta", &event.spec_p_theta, "spec_p_theta/D");
+      m_tree->Branch("decay_p_mom", &event.decay_p_mom, "decay_p_mom/D");
+      m_tree->Branch("decay_p_theta", &event.decay_p_theta, "decay_p_theta/D");
+      m_tree->Branch("decay_pi_mom", &event.decay_pi_mom, "decay_pi_mom/D");
+      m_tree->Branch("decay_pi_theta", &event.decay_pi_theta, "decay_pi_theta/D");
     }
     if(generator == 9003){
-      m_tree->Branch("QFSigma0_spec_p_mom", &event.QFSigma0_spec_p_mom, "QFSigma0_spec_p_mom/D");
-      m_tree->Branch("QFSigma0_spec_p_theta", &event.QFSigma0_spec_p_theta, "QFSigma0_spec_p_theta/D");
-      m_tree->Branch("QFSigma0_decay_p_mom", &event.QFSigma0_decay_p_mom, "QFSigma0_decay_p_mom/D");
-      m_tree->Branch("QFSigma0_decay_p_theta", &event.QFSigma0_decay_p_theta, "QFSigma0_decay_p_theta/D");
-      m_tree->Branch("QFSigma0_decay_pi_mom", &event.QFSigma0_decay_pi_mom, "QFSigma0_decay_pi_mom/D");
-      m_tree->Branch("QFSigma0_decay_pi_theta", &event.QFSigma0_decay_pi_theta, "QFSigma0_decay_pi_theta/D");
+      m_tree->Branch("spec_p_mom", &event.spec_p_mom, "spec_p_mom/D");
+      m_tree->Branch("spec_p_theta", &event.spec_p_theta, "spec_p_theta/D");
+      m_tree->Branch("decay_p_mom", &event.decay_p_mom, "decay_p_mom/D");
+      m_tree->Branch("decay_p_theta", &event.decay_p_theta, "decay_p_theta/D");
+      m_tree->Branch("decay_pi_mom", &event.decay_pi_mom, "decay_pi_mom/D");
+      m_tree->Branch("decay_pi_theta", &event.decay_pi_theta, "decay_pi_theta/D");
     }
     if(generator == 9004){
-      m_tree->Branch("QFSigmaP_spec_n_mom", &event.QFSigmaP_spec_n_mom, "QFSigmaP_spec_n_mom/D");
-      m_tree->Branch("QFSigmaP_spec_n_theta", &event.QFSigmaP_spec_n_theta, "QFSigmaP_spec_n_theta/D");
-      m_tree->Branch("QFSigmaP_decay_p_mom", &event.QFSigmaP_decay_p_mom, "QFSigmaP_decay_p_mom/D");
-      m_tree->Branch("QFSigmaP_decay_p_theta", &event.QFSigmaP_decay_p_theta, "QFSigmaP_decay_p_theta/D");
-      m_tree->Branch("QFSigmaP_decay_pi_mom", &event.QFSigmaP_decay_pi_mom, "QFSigmaP_decay_pi_mom/D");
-      m_tree->Branch("QFSigmaP_decay_pi_theta", &event.QFSigmaP_decay_pi_theta, "QFSigmaP_decay_pi_theta/D");
+      m_tree->Branch("spec_n_mom", &event.spec_n_mom, "spec_n_mom/D");
+      m_tree->Branch("spec_n_theta", &event.spec_n_theta, "spec_n_theta/D");
+      m_tree->Branch("decay_p_mom", &event.decay_p_mom, "decay_p_mom/D");
+      m_tree->Branch("decay_p_theta", &event.decay_p_theta, "decay_p_theta/D");
+      m_tree->Branch("decay_pi_mom", &event.decay_pi_mom, "decay_pi_mom/D");
+      m_tree->Branch("decay_pi_theta", &event.decay_pi_theta, "decay_pi_theta/D");
     }
   }
 
