@@ -109,19 +109,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
     }
   }
   if(experiment == 90){
-    for(const auto& sd_name : std::vector<G4String>{"HTOF"})
-    {
-      G4cout << "   make branch : " << sd_name << G4endl;
-      MakeBranch(sd_name);
-      MakeHistogram(sd_name);
-    }
-    for(const auto& sd_name : std::vector<G4String>{"TPC"})
-    {
-      G4cout << "   make branch : " << sd_name << G4endl;
-      MakeBranch(sd_name);
-      MakeHistogram(sd_name);
-    }
-    for(const auto& sd_name : std::vector<G4String>{"SAC"})
+    for(const auto& sd_name : std::vector<G4String>{"TPC", "HTOF", "SAC"})
     {
       G4cout << "   make branch : " << sd_name << G4endl;
       MakeBranch(sd_name);
@@ -318,43 +306,6 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   if(experiment == 63) particle_name = "pi-"; //for E63
   //G4String particle_name = "kaon-"; //for E63
 
-  if (experiment == 90)
-  {
-    {
-      static const auto id = SDMan->GetCollectionID("HTOF");
-      if(id >= 0){
-        auto HC = dynamic_cast<HTOFHitsCollection*>(HCE->GetHC(id));
-        for(G4int i=0, n=HC->entries(); i<n; ++i){
-          auto hit = (*HC)[i];
-          SetHitData(hit);
-        }
-        SetNhits("HTOF", HC->entries());
-      }
-    }
-    {
-      static const auto id = SDMan->GetCollectionID("TPC");
-      if(id >= 0){
-        auto HC = dynamic_cast<TPCHitsCollection*>(HCE->GetHC(id));
-        for(G4int i=0, n=HC->entries(); i<n; ++i){
-          auto hit = (*HC)[i];
-          SetHitData(hit);
-        }
-        SetNhits("TPC", HC->entries());
-      }
-    }
-    {
-      static const auto id = SDMan->GetCollectionID("SAC");
-      if(id >= 0){
-        auto HC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(id));
-        for(G4int i=0, n=HC->entries(); i<n; ++i){
-          auto hit = (*HC)[i];
-          // if(hit->Is("pi-") && hit->IsPrimary()) trigger_flag[kSAC] = true;
-          SetHitData(hit);
-        }
-        SetNhits("SAC", HC->entries());
-      }
-    }
-  }
   {
     //G4String name = "SDC"+std::to_string(k);
     G4String name = "SDC1";
@@ -556,6 +507,45 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       }
     }
   }
+
+  if (experiment == 90)
+  {
+    {
+      static const auto id = SDMan->GetCollectionID("HTOF");
+      if(id >= 0){
+        auto HC = dynamic_cast<HTOFHitsCollection*>(HCE->GetHC(id));
+        for(G4int i=0, n=HC->entries(); i<n; ++i){
+          auto hit = (*HC)[i];
+          SetHitData(hit);
+        }
+        SetNhits("HTOF", HC->entries());
+      }
+    }
+    {
+      static const auto id = SDMan->GetCollectionID("TPC");
+      if(id >= 0){
+        auto HC = dynamic_cast<TPCHitsCollection*>(HCE->GetHC(id));
+        for(G4int i=0, n=HC->entries(); i<n; ++i){
+          auto hit = (*HC)[i];
+          SetHitData(hit);
+        }
+        SetNhits("TPC", HC->entries());
+      }
+    }
+    {
+      static const auto id = SDMan->GetCollectionID("SAC");
+      if(id >= 0){
+        auto HC = dynamic_cast<ACHitsCollection*>(HCE->GetHC(id));
+        for(G4int i=0, n=HC->entries(); i<n; ++i){
+          auto hit = (*HC)[i];
+          // if(hit->Is("pi-") && hit->IsPrimary()) trigger_flag[kSAC] = true;
+          SetHitData(hit);
+        }
+        SetNhits("SAC", HC->entries());
+      }
+    }
+  }
+
   {
     // G4cout << "Acc eff." << G4endl;
     auto particle = event.hits.at("PRM").at(0);
