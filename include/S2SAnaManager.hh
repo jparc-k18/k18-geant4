@@ -103,6 +103,7 @@ struct Event
   double decay_pi_theta;
   double spec_n_mom;
   double spec_n_theta;
+  Int_t  TPCMt;
   
   G4int nP, nN, nL, nSm, nSz, nSp, nXm, nXz, nXsm, nXsz;
   G4int nPim, nPiz, nPip, nKm, nKp;

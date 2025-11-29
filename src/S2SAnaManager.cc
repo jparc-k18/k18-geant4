@@ -25,6 +25,8 @@
 #include <cmath>
 #include <sstream>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "ConfMan.hh"
 #include "DCGeomMan.hh"
@@ -586,11 +588,53 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       static const auto id = SDMan->GetCollectionID("TPC");
       if(id >= 0){
         auto HC = dynamic_cast<TPCHitsCollection*>(HCE->GetHC(id));
-        for(G4int i=0, n=HC->entries(); i<n; ++i){
-          auto hit = (*HC)[i];
-          SetHitData(hit);
+        if(HC){
+          struct TrackInfo
+          {
+            G4int hits = 0;
+            bool charged = false;
+          };
+          const auto isHyperon = [](G4int pdg){
+            switch(pdg){
+            case 3122: // Lambda
+            case 3112: // Sigma-
+            case 3212: // Sigma0
+            case 3222: // Sigma+
+              return true;
+            default:
+              return false;
+            }
+          };
+          const auto isScatPi = [](const VHitInfo* hit){
+            return hit->Is("pi-") && hit->IsPrimary();
+          };
+
+          std::unordered_map<G4int, TrackInfo> summary;
+          std::unordered_set<G4int> suppressed;
+          for(G4int i=0, n=HC->entries(); i<n; ++i){
+            auto hit = (*HC)[i];
+            SetHitData(hit);
+            const auto trackId = hit->GetTrackID();
+            if(suppressed.count(trackId)) continue;
+            if(isScatPi(hit) || isHyperon(hit->GetPDGEncoding())){
+              suppressed.insert(trackId);
+              summary.erase(trackId);
+              continue;
+            }
+            auto& info = summary[trackId];
+            info.hits++;
+            if(std::abs(hit->GetCharge()) > 0.) info.charged = true;
+          }
+
+          G4int multiplicity = 0;
+          for(const auto& [trackId, info] : summary){
+            if(suppressed.count(trackId)) continue;
+            if(info.charged && info.hits >= 4) ++multiplicity;
+          }
+          event.TPCMt = multiplicity;
+
+          SetNhits("TPC", HC->entries());
         }
-        SetNhits("TPC", HC->entries());
       }
     }
     {
@@ -699,6 +743,7 @@ void S2SAnaManager::InitializeEvent()
   event.decay_p_theta = qnan;
   event.spec_n_mom = qnan;
   event.spec_n_theta = qnan;
+  event.TPCMt = 0;
 }
 
 void S2SAnaManager::DefineTree()
@@ -764,6 +809,7 @@ void S2SAnaManager::DefineTree()
       m_tree->Branch("decay_pi_mom", &event.decay_pi_mom, "decay_pi_mom/D");
       m_tree->Branch("decay_pi_theta", &event.decay_pi_theta, "decay_pi_theta/D");
     }
+    m_tree->Branch("multiplicity", &event.TPCMt, "multiplicity/I");
   }
 
   return;
