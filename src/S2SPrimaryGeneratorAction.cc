@@ -1315,9 +1315,14 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
                                               pi_lv->Pz()*CLHEP::GeV, // MeV/c
                                               pi_lv->E()*CLHEP::GeV), // MeV
                               G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
-
+    const auto theta_pi = pi_lv->Theta();
+    const auto phi_pi = pi_lv->Phi();
+    const auto u0 = std::tan(theta_pi) * std::cos(phi_pi);
+    const auto v0 = std::tan(theta_pi) * std::sin(phi_pi);
+    const auto p0 = pi_lv->P() * CLHEP::GeV; // MeV/c
+    const auto pB = beam_mom * CLHEP::GeV; // beam K- momentum (MeV/c)
     anaMan.SetPrimaryData(primary_vertex_pos.x(), primary_vertex_pos.y(), primary_vertex_pos.z(),
-                          qnan, qnan, qnan, qnan, beam_mom * CLHEP::GeV, beam_lv.E() * CLHEP::GeV - M_Kaon, 9999); // x0,y0,z0,u0,v0,0.,0.,p0,p0,ParIdNb
+                          u0, v0, phi_pi, theta_pi, p0, pB, 9999); // x0,y0,z0,u0,v0,phi,theta,p0,pB,ParIdNb
 
     anaMan.SetSigmaNCuspCascadeData(cusp_decay_p_mom, cusp_decay_p_theta,
                              lambda_decay_p_mom, lambda_decay_p_theta,
@@ -1444,8 +1449,14 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
                                               pi_lv->Pz()*CLHEP::GeV,  // MeV/c
                                               pi_lv->E()*CLHEP::GeV),  // MeV
                               G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
+    const auto theta_pi = pi_lv->Theta();
+    const auto phi_pi = pi_lv->Phi();
+    const auto u0 = std::tan(theta_pi) * std::cos(phi_pi);
+    const auto v0 = std::tan(theta_pi) * std::sin(phi_pi);
+    const auto p0 = pi_lv->P() * CLHEP::GeV; // MeV/c
+    const auto pB = beam_mom_gev * CLHEP::GeV; // beam K- momentum (MeV/c)
     anaMan.SetPrimaryData(primary_vertex_pos.x(), primary_vertex_pos.y(), primary_vertex_pos.z(),
-                          qnan, qnan, qnan, qnan, beam_mom_gev * CLHEP::GeV, beam_lv.E()*CLHEP::GeV - M_Kaon, 9999); // x0,y0,z0,u0,v0,0.,0.,p0,p0,ParIdNb
+                          u0, v0, phi_pi, theta_pi, p0, pB, 9999); // x0,y0,z0,u0,v0,phi,theta,p0,pB,ParIdNb
     anaMan.SetQFLambdaCascadeData(spec_p_mom, spec_p_theta,
                                   decay_p_mom, decay_p_theta,
                                   decay_pi_mom, decay_pi_theta);
@@ -1581,13 +1592,19 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
                                               pi_lv->Pz()*CLHEP::GeV, // MeV/c
                                               pi_lv->E()*CLHEP::GeV), // MeV
                               G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
+    const auto theta_pi = pi_lv->Theta();
+    const auto phi_pi = pi_lv->Phi();
+    const auto u0 = std::tan(theta_pi) * std::cos(phi_pi);
+    const auto v0 = std::tan(theta_pi) * std::sin(phi_pi);
+    const auto p0 = pi_lv->P() * CLHEP::GeV; // MeV/c
+    const auto pB = beam_mom_gev * CLHEP::GeV; // beam K- momentum (MeV/c)
     anaMan.SetPrimaryData(primary_vertex_pos.x(), primary_vertex_pos.y(), primary_vertex_pos.z(),
-                          qnan, qnan, qnan, qnan, beam_mom_gev * CLHEP::GeV, beam_lv.E()*CLHEP::GeV - M_Kaon, 9999); // x0,y0,z0,u0,v0,0.,0.,p0,p0,ParIdNb
+                          u0, v0, phi_pi, theta_pi, p0, pB, 9999); // x0,y0,z0,u0,v0,phi,theta,p0,pB,ParIdNb
     anaMan.SetQFSigma0CascadeData(spec_p_mom, spec_p_theta,
                                   decay_p_mom, decay_p_theta,
                                   decay_pi_mom, decay_pi_theta);
 
-    break; 
+    break;
   }
 }
 
@@ -1709,8 +1726,14 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
                                               pi_lv->Pz()*CLHEP::GeV, // MeV/c
                                               pi_lv->E()*CLHEP::GeV), // MeV
                               G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
+    const auto theta_pi = pi_lv->Theta();
+    const auto phi_pi = pi_lv->Phi();
+    const auto u0 = std::tan(theta_pi) * std::cos(phi_pi);
+    const auto v0 = std::tan(theta_pi) * std::sin(phi_pi);
+    const auto p0 = pi_lv->P() * CLHEP::GeV; // MeV/c
+    const auto pB = beam_mom_gev * CLHEP::GeV; // beam K- momentum (MeV/c)
     anaMan.SetPrimaryData(primary_vertex_pos.x(), primary_vertex_pos.y(), primary_vertex_pos.z(),
-                          qnan, qnan, qnan, qnan, beam_mom_gev * CLHEP::GeV, beam_lv.E()*CLHEP::GeV - M_Kaon, 9999); // x0,y0,z0,u0,v0,0.,0.,p0,p0,ParIdNb
+                          u0, v0, phi_pi, theta_pi, p0, pB, 9999); // x0,y0,z0,u0,v0,phi,theta,p0,pB,ParIdNb
     anaMan.SetQFSigmaPCascadeData(spec_n_mom, spec_n_theta,
                                   decay_p_mom, decay_p_theta,
                                   decay_pi_mom, decay_pi_theta);
