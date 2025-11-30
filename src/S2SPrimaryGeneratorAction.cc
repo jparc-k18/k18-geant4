@@ -1167,12 +1167,13 @@ S2SPrimaryGeneratorAction::GenerateE63_7LambdaLi(G4Event* anEvent, G4int MassNum
   
 }
 
-void // 9001 E90 SigmaN Cusp Scattering
-S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
+//_____________________________________________________________________________
+// 9001 E90 SigmaN Cusp Scattering
+void S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
 {
   m_particleGun = new G4ParticleGun();
 
-  //========== Define particles ==========
+  // Particle definitions
   const auto pTable = G4ParticleTable::GetParticleTable();
   const auto kaon_minus = pTable->FindParticle("kaon-");
   const auto pi_minus   = pTable->FindParticle("pi-");
@@ -1190,7 +1191,7 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
   const G4double M_SigmaP   = sigma_plus->GetPDGMass(); // MeV
   const G4double M_Neutron  = neutron->GetPDGMass();    // MeV
 
-  //========== Calculate maximum ΣN cusp mass ==========
+  // ΣN cusp sampling window
   const G4double scat_a = 2.06;
   const G4double scat_b = 4.64;
   const G4double threshold_mass = M_SigmaP + M_Neutron; // MeV
@@ -1204,29 +1205,25 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     if(val > fcusp_max) fcusp_max = val;
   }
 
-  // loop until proper event is generated
   while(true){
 
-    //--- Generate ΣN (X) mass ---
+    // Sample ΣN (X) mass
     G4double CuspM = 0.; // MeV
     while(true){
-      G4double MM = G4RandFlat::shoot(mass_min, mass_max); // MeV
-      G4double ds_MM = FdComplex::f_single(MM/CLHEP::MeV, scat_a, scat_b, 186.);
-      G4double Rand = G4RandFlat::shoot(0., fcusp_max * 1.3);
+      const G4double MM = G4RandFlat::shoot(mass_min, mass_max); // MeV
+      const G4double ds_MM = FdComplex::f_single(MM/CLHEP::MeV, scat_a, scat_b, 186.);
+      const G4double Rand = G4RandFlat::shoot(0., fcusp_max * 1.3);
       if(Rand <= ds_MM){
         CuspM = MM; // MeV
         break;
       }
     }
 
-    //========== Kinematics ==========
-    //--- 1. K- + d -> pi- + X ---
-    G4double beam_mom_mean = 1.4 * CLHEP::GeV;   // MeV/c
-    G4double beam_mom_sigma = 0.0 * CLHEP::GeV;; // MeV/c
-    G4double beam_mom = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma) / CLHEP::GeV; // GeV/c
+    // K- + d -> π- + X
+    const G4double beam_mom_mean = 1.4 * CLHEP::GeV;   // MeV/c
+    const G4double beam_mom_sigma = 0.0 * CLHEP::GeV;; // MeV/c
+    const G4double beam_mom = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma) / CLHEP::GeV; // GeV/c
     TLorentzVector beam_lv(0, 0, beam_mom, sqrt(beam_mom*beam_mom + (M_Kaon/CLHEP::GeV)*(M_Kaon/CLHEP::GeV))); // GeV 
-    // TVector3 p_fermi_vec = FermiMotion::GetMomentum(); // GeV/c
-    // TLorentzVector target_lv(p_fermi_vec, sqrt((M_Deuteron/CLHEP::GeV)*(M_Deuteron/CLHEP::GeV) + p_fermi_vec.Mag2())); // GeV
     TLorentzVector target_lv(0., 0., 0., M_Deuteron/CLHEP::GeV); // GeV
     TLorentzVector W = beam_lv + target_lv; // GeV
 
@@ -1238,36 +1235,35 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     TLorentzVector *pi_lv = event.GetDecay(0); // GeV
     TLorentzVector *X_lv  = event.GetDecay(1); // GeV
     
-    if (pi_lv->Theta() > 15. * CLHEP::deg) continue; // S2s acceptance cut
+    if (pi_lv->Theta() > 15. * CLHEP::deg) continue;
 
-    //========== Calculate Vertex position ==========
+    // Target vertex
     static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm;
     static const auto& target_size = sizeMan.GetSize("Target");
 
-    G4double target_radius = target_size.y() / 2.0 * mm;
-    G4double target_height_half = target_size.z() / 2.0 * mm;
-    G4double r_vtx_x, r_vtx_y, r_vtx_z;       // mm
-    G4double beam_x_mean = -14.5 * CLHEP::mm; // mm
-    G4double beam_y_mean = 1.3 * CLHEP::mm;   // mm
-    G4double beam_x_sigma = 24.3 * CLHEP::mm; // mm
-    G4double beam_y_sigma = 4.2 * CLHEP::mm;  // mm
+    const G4double target_radius = target_size.y() / 2.0 * mm;
+    const G4double target_height_half = target_size.z() / 2.0 * mm;
+    G4double r_vtx_x, r_vtx_y, r_vtx_z;
+    const G4double beam_x_mean = -14.5 * CLHEP::mm;
+    const G4double beam_y_mean = 1.3 * CLHEP::mm;
+    const G4double beam_x_sigma = 24.3 * CLHEP::mm;
+    const G4double beam_y_sigma = 4.2 * CLHEP::mm;
     while (true) {
         r_vtx_x = G4RandGauss::shoot(beam_x_mean, beam_x_sigma);
         r_vtx_y = G4RandGauss::shoot(beam_y_mean, beam_y_sigma);
         r_vtx_z = G4RandFlat::shoot(-target_radius, target_radius);
         if (r_vtx_x*r_vtx_x + r_vtx_z*r_vtx_z < target_radius*target_radius && r_vtx_y < target_height_half && r_vtx_y > -target_height_half) break;
     }
-    G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z);
+    const G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z);
 
-    //========== Particle Generation ==========
-    //--- scattering pion  ---
+    // Primary π-
     m_particleGun->SetParticleDefinition(pi_minus);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(pi_lv->Px(), pi_lv->Py(), pi_lv->Pz()).unit());
     m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
-    
-    //--- X -> Lambda + p ---
+
+    // X -> Λ + p
     Double_t masses_X[2] = { M_Lambda/CLHEP::GeV, M_Proton/CLHEP::GeV }; // GeV
     TGenPhaseSpace event_X;
 
@@ -1288,6 +1284,7 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
+    // Record observables
     const auto qnan = TMath::QuietNaN();
     const auto cusp_decay_p_vec = G4ThreeVector(p_lv->Px(), p_lv->Py(), p_lv->Pz());
     auto cusp_decay_p_mom = cusp_decay_p_vec.mag();
@@ -1333,39 +1330,38 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
 }
 
 //_____________________________________________________________________________
-void // 9002 E90 QF Lambda reaction
-S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
+// 9002 E90 QF Lambda reaction
+void S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
 {
   m_particleGun = new G4ParticleGun();
 
-  //========== Define particles ==========
+  // Particle definitions
   const auto pTable = G4ParticleTable::GetParticleTable();
   const auto kaon_minus = pTable->FindParticle("kaon-");
   const auto pi_minus   = pTable->FindParticle("pi-");
   const auto proton     = pTable->FindParticle("proton");
-  const auto neutron    = pTable->FindParticle("neutron");
   const auto lambda     = pTable->FindParticle("lambda");
+  const auto deuteron   = pTable->FindParticle("deuteron");
 
   const G4double M_Kaon     = kaon_minus->GetPDGMass(); // MeV
   const G4double M_PiM      = pi_minus->GetPDGMass();   // MeV
   const G4double M_Proton   = proton->GetPDGMass();     // MeV
-  const G4double M_Neutron  = neutron->GetPDGMass();    // MeV
   const G4double M_Lambda   = lambda->GetPDGMass();     // MeV
+  const G4double M_Deuteron = deuteron->GetPDGMass();   // MeV
 
-  // loop until proper event is generated
   while(true){
-
-    //--- Generate Fermi momentum for the target "n" ---
+    // Fermi motion for the struck neutron
     TVector3 p_fermi_vec = FermiMotion::GetMomentum(); // GeV/c
-    TLorentzVector target_lv(p_fermi_vec, sqrt((M_Neutron/CLHEP::GeV)*(M_Neutron/CLHEP::GeV) + p_fermi_vec.Mag2())); // GeV
-    
-    //========== Kinematics ==========
-    //--- 1. K- + "n" -> Λ + pi- ---
+    G4double E_spectator_fermi = sqrt((M_Proton/CLHEP::GeV)*(M_Proton/CLHEP::GeV) + p_fermi_vec.Mag2()); // GeV
+    G4double E_target = (M_Deuteron/CLHEP::GeV) - E_spectator_fermi; // GeV
+    TLorentzVector target_lv(p_fermi_vec, E_target); // GeV
+
+    // K- + "n" -> Λ + π-
     G4double beam_mom_mean = 1.4 * CLHEP::GeV;  // MeV/c
     G4double beam_mom_sigma = 0.0 * CLHEP::GeV; // MeV/c
     G4double beam_mom_gev = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma)/CLHEP::GeV; // GeV/c
     TLorentzVector beam_lv(0, 0, beam_mom_gev, sqrt(beam_mom_gev*beam_mom_gev + (M_Kaon/CLHEP::GeV)*(M_Kaon/CLHEP::GeV))); // GeV
-    
+
     TLorentzVector W = beam_lv + target_lv;
 
     Double_t masses[2] = { M_Lambda/CLHEP::GeV, M_PiM/CLHEP::GeV }; // GeV
@@ -1376,9 +1372,9 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     TLorentzVector *lambda_lv = event.GetDecay(0); // GeV
     TLorentzVector *pi_lv     = event.GetDecay(1); // GeV
     
-    if (pi_lv->Theta() > 15. * CLHEP::deg) continue; // S2s acceptance cut
-    
-    //========== Calculate Vertex position ==========
+    if (pi_lv->Theta() > 15. * CLHEP::deg) continue;
+
+    // Target vertex
     static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm; // mm
     static const auto& target_size = sizeMan.GetSize("Target"); // mm
     G4double target_radius = target_size.y() / 2.0 * mm;        // mm
@@ -1396,22 +1392,21 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     }
     G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z); // mm
 
-    //========== Particle Generation ==========
-    //--- scattering pion  ---
+    // Primary π-
     m_particleGun->SetParticleDefinition(pi_minus);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(pi_lv->Px(), pi_lv->Py(), pi_lv->Pz()).unit());
     m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos);          // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
     
-    //--- Lambda ---
+    // Λ
     m_particleGun->SetParticleDefinition(lambda);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(lambda_lv->Px(), lambda_lv->Py(), lambda_lv->Pz()).unit());
     m_particleGun->SetParticleEnergy(lambda_lv->E()*CLHEP::GeV - M_Lambda); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos);                 // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
-    //--- spectator proton   ---
+    // Spectator proton
     const TVector3 spectator_vec = -p_fermi_vec; // GeV/c
     const G4ThreeVector spectator_mom(spectator_vec.X(), spectator_vec.Y(), spectator_vec.Z()); // GeV/c
 
@@ -1422,6 +1417,7 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     m_particleGun->SetParticlePosition(primary_vertex_pos);   // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
+    // Capture Λ decay to pπ-
     const auto qnan = TMath::QuietNaN();
     const auto spec_p_vec = spectator_mom;
     auto spec_p_mom = spec_p_vec.mag();
@@ -1466,35 +1462,35 @@ S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
 }
 
 //_____________________________________________________________________________
-void // 9003 E90 QF Sigma0 reaction
-S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
+// 9003 E90 QF Sigma0 reaction
+void S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
 {
   m_particleGun = new G4ParticleGun();
 
-  //========== Define particles ==========
+  // Particle definitions
   const auto pTable = G4ParticleTable::GetParticleTable();
   const auto kaon_minus = pTable->FindParticle("kaon-");
   const auto pi_minus   = pTable->FindParticle("pi-");
   const auto proton     = pTable->FindParticle("proton");
-  const auto neutron    = pTable->FindParticle("neutron");
   const auto sigma0     = pTable->FindParticle("sigma0");
   const auto lambda     = pTable->FindParticle("lambda");
+  const auto deuteron   = pTable->FindParticle("deuteron");
 
   const G4double M_Kaon     = kaon_minus->GetPDGMass(); // MeV
   const G4double M_PiM      = pi_minus->GetPDGMass();   // MeV
   const G4double M_Proton   = proton->GetPDGMass();     // MeV
-  const G4double M_Neutron  = neutron->GetPDGMass();    // MeV
   const G4double M_Sigma0   = sigma0->GetPDGMass();     // MeV
   const G4double M_Lambda   = lambda->GetPDGMass();     // MeV
+  const G4double M_Deuteron = deuteron->GetPDGMass();   // MeV
 
-  // loop until proper event is generated
   while(true){
-    //--- Generate Fermi momentum for the target "n" ---
+    // Fermi motion for the struck neutron
     TVector3 p_fermi_vec = FermiMotion::GetMomentum(); // GeV/c
-    TLorentzVector target_lv(p_fermi_vec, sqrt((M_Neutron/CLHEP::GeV)*(M_Neutron/CLHEP::GeV) + p_fermi_vec.Mag2())); // GeV
+    G4double E_spectator_fermi = sqrt((M_Proton/CLHEP::GeV)*(M_Proton/CLHEP::GeV) + p_fermi_vec.Mag2()); // GeV
+    G4double E_target = (M_Deuteron/CLHEP::GeV) - E_spectator_fermi; // GeV
+    TLorentzVector target_lv(p_fermi_vec, E_target); // GeV
     
-    //========== Kinematics ==========
-    //--- 1. K- + "n" -> Σ0 + pi- ---
+    // K- + "n" -> Σ0 + π-
     G4double beam_mom_mean = 1.4 * CLHEP::GeV;  // MeV/c
     G4double beam_mom_sigma = 0.0 * CLHEP::GeV; // MeV/c
     G4double beam_mom_gev = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma)/CLHEP::GeV; // GeV/c
@@ -1509,9 +1505,9 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     TLorentzVector *sigma0_lv = event.GetDecay(0); // GeV
     TLorentzVector *pi_lv     = event.GetDecay(1); // GeV
 
-    if (pi_lv->Theta() > 15. * CLHEP::deg) continue; // S2s acceptance cut
-    
-    //========== Calculate Vertex position ==========
+    if (pi_lv->Theta() > 15. * CLHEP::deg) continue;
+
+    // Target vertex
     static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm; // mm
     static const auto& target_size = sizeMan.GetSize("Target"); // mm
     G4double target_radius = target_size.y() / 2.0 * mm; // mm
@@ -1529,22 +1525,21 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     }
     G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z);
 
-    //========== Particle Generation ==========
-    //--- scattering pion  ---
+    // Primary π-
     m_particleGun->SetParticleDefinition(pi_minus);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(pi_lv->Px(), pi_lv->Py(), pi_lv->Pz()).unit());
     m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
     
-    //--- Sigma0 ---
+    // Σ0
     m_particleGun->SetParticleDefinition(sigma0);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(sigma0_lv->Px(), sigma0_lv->Py(), sigma0_lv->Pz()).unit());
     m_particleGun->SetParticleEnergy(sigma0_lv->E()*CLHEP::GeV - M_Sigma0); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
-    //--- spectator proton   ---
+    // Spectator proton
     const TVector3 spectator_vec = -p_fermi_vec; // GeV/c
     const G4ThreeVector spectator_mom(spectator_vec.X(), spectator_vec.Y(), spectator_vec.Z()); // GeV/c
 
@@ -1555,6 +1550,7 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
+    // Σ0 -> Λγ, Λ -> pπ-
     const auto qnan = TMath::QuietNaN();
     const auto spec_p_vec = spectator_mom;
     auto spec_p_mom = spec_p_vec.mag();
@@ -1609,12 +1605,12 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
 }
 
 //_____________________________________________________________________________
-void // 9004 E90 QF Sigma+ reaction
-S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
+// 9004 E90 QF Sigma+ reaction
+void S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
 {
   m_particleGun = new G4ParticleGun();
 
-  //========== Define particles ==========
+  // Particle definitions
   const auto pTable = G4ParticleTable::GetParticleTable();
   const auto kaon_minus = pTable->FindParticle("kaon-");
   const auto pi_minus   = pTable->FindParticle("pi-");
@@ -1622,6 +1618,7 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
   const auto sigma_plus = pTable->FindParticle("sigma+");
   const auto proton     = pTable->FindParticle("proton");
   const auto neutron    = pTable->FindParticle("neutron");
+  const auto deuteron   = pTable->FindParticle("deuteron");
 
   const G4double M_Kaon     = kaon_minus->GetPDGMass(); // MeV
   const G4double M_PiM      = pi_minus->GetPDGMass(); // MeV
@@ -1629,16 +1626,17 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
   const G4double M_Pi0      = pi_zero->GetPDGMass();    // MeV
   const G4double M_Proton   = proton->GetPDGMass(); // MeV
   const G4double M_Neutron  = neutron->GetPDGMass(); // MeV
+  const G4double M_Deuteron = deuteron->GetPDGMass(); // MeV
 
-  // loop until proper event is generated
   while(true){
 
-    //--- Generate Fermi momentum for the target "p" ---
+    // Fermi motion for the struck proton
     TVector3 p_fermi_vec = FermiMotion::GetMomentum();
-    TLorentzVector target_lv(p_fermi_vec, sqrt((M_Proton/CLHEP::GeV)*(M_Proton/CLHEP::GeV) + p_fermi_vec.Mag2()));
+    G4double E_spectator_fermi = sqrt((M_Neutron/CLHEP::GeV)*(M_Neutron/CLHEP::GeV) + p_fermi_vec.Mag2()); // GeV
+    G4double E_target = (M_Deuteron/CLHEP::GeV) - E_spectator_fermi; // GeV
+    TLorentzVector target_lv(p_fermi_vec, E_target); //GeV
     
-    //========== Kinematics ==========
-    //--- 1. K- + "p" -> Σ+ + pi- ---
+    // K- + "p" -> Σ+ + π-
     G4double beam_mom_mean = 1.4 * CLHEP::GeV; // MeV/c
     G4double beam_mom_sigma = 0.0 * CLHEP::GeV; // MeV/c
     G4double beam_mom_gev = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma)/CLHEP::GeV; // GeV/c
@@ -1653,9 +1651,9 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     TLorentzVector *sigma_plus_lv = event.GetDecay(0); // GeV
     TLorentzVector *pi_lv     = event.GetDecay(1); // GeV
     
-    if (pi_lv->Theta() > 15. * CLHEP::deg) continue; // S2s acceptance cut
-    
-    //========== Calculate Vertex position ==========
+    if (pi_lv->Theta() > 15. * CLHEP::deg) continue;
+
+    // Target vertex
     static const auto& target_pos = geomMan.GetGlobalPosition("Target")*mm; // mm
     static const auto& target_size = sizeMan.GetSize("Target"); // mm
     G4double target_radius = target_size.y() / 2.0 * mm; // mm
@@ -1673,22 +1671,21 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     }
     G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z);
 
-    //========== Particle Generation ==========
-    //--- scattering pion  ---
+    // Primary π-
     m_particleGun->SetParticleDefinition(pi_minus);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(pi_lv->Px(), pi_lv->Py(), pi_lv->Pz()).unit());
     m_particleGun->SetParticleEnergy(pi_lv->E()*CLHEP::GeV - M_PiM); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
     
-    //--- Sigma+ ---
+    // Σ+
     m_particleGun->SetParticleDefinition(sigma_plus);
     m_particleGun->SetParticleMomentumDirection(G4ThreeVector(sigma_plus_lv->Px(), sigma_plus_lv->Py(), sigma_plus_lv->Pz()).unit());
     m_particleGun->SetParticleEnergy(sigma_plus_lv->E()*CLHEP::GeV - M_SigmaP); // MeV
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
-    //--- spectator neutron   ---
+    // Spectator neutron
     const TVector3 spectator_vec = -p_fermi_vec; // GeV/c
     const G4ThreeVector spectator_mom(spectator_vec.X(), spectator_vec.Y(), spectator_vec.Z()); // GeV/c
     
@@ -1699,6 +1696,7 @@ S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
+    // Σ+ -> pπ0
     const auto qnan = TMath::QuietNaN();
     const auto spec_n_vec = spectator_mom;
     auto spec_n_mom = spec_n_vec.mag();
