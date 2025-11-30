@@ -20,6 +20,7 @@
 #include "TCanvas.h"
 #include "TFile.h"
 #include "TH2Poly.h"
+#include "TEllipse.h"
 #include "TLatex.h"
 #include "TLine.h"
 #include "TMath.h"
@@ -42,7 +43,7 @@ TString dcgeom_path = "../param/DCGEO/DCGeomParam_E90_20250615";
 TString dsize_path = "../param/DSIZE/DetSize_E90_20250615";
 Double_t gTargetZ_Global = 0.0;
 Double_t gTpcPadCenterZ = 0.0;
-Double_t gTargetRadius = 80.0;
+Double_t gTargetRadius = 0.0;
 
 inline TVector3 LocalToWorld(Double_t x_local, Double_t y_local, Double_t z_local)
 {
@@ -188,7 +189,7 @@ void draw_track(Int_t n_rand)
     h_tpc_2d->Draw("colz");
 
     const auto targetCoords = ProjectToDisplay(TVector3(0., 0., gTpcPadCenterZ));
-    auto* targetCircle = new TEllipse(targetCoords.first, targetCoords.second, gTargetRadius, gTargetRadius);
+    TEllipse* targetCircle = new TEllipse(targetCoords.first, targetCoords.second, gTargetRadius);
     targetCircle->SetFillStyle(0);
     targetCircle->SetLineColor(kRed);
     targetCircle->SetLineWidth(3);
