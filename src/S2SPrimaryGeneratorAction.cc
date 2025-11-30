@@ -1225,9 +1225,9 @@ S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     G4double beam_mom_sigma = 0.0 * CLHEP::GeV;; // MeV/c
     G4double beam_mom = G4RandGauss::shoot(beam_mom_mean, beam_mom_sigma) / CLHEP::GeV; // GeV/c
     TLorentzVector beam_lv(0, 0, beam_mom, sqrt(beam_mom*beam_mom + (M_Kaon/CLHEP::GeV)*(M_Kaon/CLHEP::GeV))); // GeV 
-    TVector3 p_fermi_vec = FermiMotion::GetMomentum(); // GeV/c
-    TLorentzVector target_lv(p_fermi_vec, sqrt((M_Deuteron/CLHEP::GeV)*(M_Deuteron/CLHEP::GeV) + p_fermi_vec.Mag2()));
-    
+    // TVector3 p_fermi_vec = FermiMotion::GetMomentum(); // GeV/c
+    // TLorentzVector target_lv(p_fermi_vec, sqrt((M_Deuteron/CLHEP::GeV)*(M_Deuteron/CLHEP::GeV) + p_fermi_vec.Mag2())); // GeV
+    TLorentzVector target_lv(0., 0., 0., M_Deuteron/CLHEP::GeV); // GeV
     TLorentzVector W = beam_lv + target_lv; // GeV
 
     Double_t masses[2] = { M_PiM/CLHEP::GeV, CuspM/CLHEP::GeV }; // GeV
