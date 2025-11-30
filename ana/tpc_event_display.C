@@ -58,7 +58,7 @@ inline std::pair<Double_t, Double_t> ProjectToDisplay(const TVector3& local)
 {
     const auto lab = LocalToWorld(local.X(), local.Y(), local.Z());
     const Double_t z_disp = -(lab.Z() + gTpcPadCenterZ);
-    const Double_t x_disp = -lab.X();
+    const Double_t x_disp = lab.X();
     return {z_disp, x_disp};
 }
 
@@ -125,12 +125,12 @@ void TPC_pad_template(TH2Poly* h)
             y_std[4] = (cRad - (pLength / 2.)) * TMath::Sin(j * dTheta + sTheta);
             y_std[0] = y_std[4];
 
-            // Rotation 180 deg around center: (z, x) -> (-z, -x)
+            // Rotation 180 deg around center: (z, x) -> (-z, +x) after axis flip
             for (Int_t k = 0; k < 5; ++k) {
                 Double_t z_temp = x_std[k] + gTpcPadCenterZ;
                 Double_t x_temp = y_std[k];
                 X[k] = -1.0 * z_temp;
-                Y[k] = -1.0 * x_temp;
+                Y[k] = x_temp;
             }
 
             h->AddBin(5, X, Y);
