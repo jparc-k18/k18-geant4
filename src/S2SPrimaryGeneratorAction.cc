@@ -26,6 +26,7 @@
 #include "FdComplex.hh"
 #include "FermiMotion.hh"
 #include "CMSMomentum.hh"
+#include "GeneratorParticleBranches.hh"
 
 
 namespace
@@ -42,6 +43,55 @@ namespace
   const auto particleTable = G4ParticleTable::GetParticleTable();
   const auto& zK18Target = geomMan.LocalZ("K18Target");
   BeamInfo beam;
+  namespace GenBranch = GeneratorParticleBranches;
+
+  G4LorentzVector ToG4Lorentz(const TLorentzVector& lv)
+  {
+    return G4LorentzVector(lv.Px()*CLHEP::GeV,
+                           lv.Py()*CLHEP::GeV,
+                           lv.Pz()*CLHEP::GeV,
+                           lv.E()*CLHEP::GeV);
+  }
+
+  G4LorentzVector ToG4Lorentz(const TVector3& vec, G4double energy_mev)
+  {
+    return G4LorentzVector(vec.X()*CLHEP::GeV,
+                           vec.Y()*CLHEP::GeV,
+                           vec.Z()*CLHEP::GeV,
+                           energy_mev);
+  }
+
+  inline G4int ToGeneratorId(GenBranch::ParticleId id)
+  {
+    return static_cast<G4int>(id);
+  }
+
+  void RecordGeneratedParticle(const G4String& branch,
+                               GenBranch::ParticleId mother_id,
+                               G4int pdg,
+                               const TLorentzVector& lv,
+                               const G4LorentzVector& vertex)
+  {
+    anaMan.SetGeneratedParticle(branch,
+                                ToGeneratorId(mother_id),
+                                pdg,
+                                ToG4Lorentz(lv),
+                                vertex);
+  }
+
+  void RecordGeneratedParticle(const G4String& branch,
+                               GenBranch::ParticleId mother_id,
+                               G4int pdg,
+                               const TVector3& vec,
+                               G4double energy_mev,
+                               const G4LorentzVector& vertex)
+  {
+    anaMan.SetGeneratedParticle(branch,
+                                ToGeneratorId(mother_id),
+                                pdg,
+                                ToG4Lorentz(vec, energy_mev),
+                                vertex);
+  }
 }
 
 //_____________________________________________________________________________
@@ -1182,7 +1232,7 @@ void S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
   const auto lambda     = pTable->FindParticle("lambda");
   const auto sigma_plus = pTable->FindParticle("sigma+");
   const auto neutron    = pTable->FindParticle("neutron");
-  
+
   const G4double M_Kaon     = kaon_minus->GetPDGMass(); // MeV
   const G4double M_PiM      = pi_minus->GetPDGMass();   // MeV
   const G4double M_Proton   = proton->GetPDGMass();     // MeV
@@ -1190,6 +1240,9 @@ void S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
   const G4double M_Lambda   = lambda->GetPDGMass();     // MeV
   const G4double M_SigmaP   = sigma_plus->GetPDGMass(); // MeV
   const G4double M_Neutron  = neutron->GetPDGMass();    // MeV
+  const auto pdg_pi_minus = pi_minus->GetPDGEncoding();
+  const auto pdg_lambda = lambda->GetPDGEncoding();
+  const auto pdg_proton = proton->GetPDGEncoding();
 
   // ΣN cusp sampling window
   const G4double scat_a = 2.06;
@@ -1255,6 +1308,7 @@ void S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
         if (r_vtx_x*r_vtx_x + r_vtx_z*r_vtx_z < target_radius*target_radius && r_vtx_y < target_height_half && r_vtx_y > -target_height_half) break;
     }
     const G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z);
+    const auto vertex_lv = G4LorentzVector(primary_vertex_pos, 0);
 
     // Primary π-
     m_particleGun->SetParticleDefinition(pi_minus);
@@ -1284,34 +1338,43 @@ void S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
-    // Record observables
-    const auto qnan = TMath::QuietNaN();
-    const auto cusp_decay_p_vec = G4ThreeVector(p_lv->Px(), p_lv->Py(), p_lv->Pz());
-    auto cusp_decay_p_mom = cusp_decay_p_vec.mag();
-    auto cusp_decay_p_theta = cusp_decay_p_vec.theta();
-    auto lambda_decay_p_mom = qnan;
-    auto lambda_decay_p_theta = qnan;
-    auto decay_pi_mom = qnan;
-    auto decay_pi_theta = qnan;
+    RecordGeneratedParticle(GenBranch::kPrimPi,
+                            GenBranch::ParticleId::None,
+                            pdg_pi_minus,
+                            *pi_lv,
+                            vertex_lv);
+    RecordGeneratedParticle(GenBranch::kLambda,
+                            GenBranch::ParticleId::None,
+                            pdg_lambda,
+                            *lambda_lv,
+                            vertex_lv);
+    RecordGeneratedParticle(GenBranch::kPrimProt,
+                            GenBranch::ParticleId::None,
+                            pdg_proton,
+                            *p_lv,
+                            vertex_lv);
     {
       Double_t decay_masses[2] = { M_Proton/CLHEP::GeV, M_PiM/CLHEP::GeV };
       TGenPhaseSpace lambda_decay;
       if(lambda_decay.SetDecay(*lambda_lv, 2, decay_masses) && lambda_decay.Generate()!=0){
         const auto decay_p = lambda_decay.GetDecay(0);
         const auto decay_pi = lambda_decay.GetDecay(1);
-        lambda_decay_p_mom = decay_p->P();
-        lambda_decay_p_theta = decay_p->Theta();
-        decay_pi_mom = decay_pi->P();
-        decay_pi_theta = decay_pi->Theta();
+        RecordGeneratedParticle(GenBranch::kDecProt,
+                                GenBranch::ParticleId::Lambda,
+                                pdg_proton,
+                                *decay_p,
+                                vertex_lv);
+        RecordGeneratedParticle(GenBranch::kDecPi,
+                                GenBranch::ParticleId::Lambda,
+                                pdg_pi_minus,
+                                *decay_pi,
+                                vertex_lv);
       }
     }
 
-    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
-                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
-                                              pi_lv->E()*CLHEP::GeV), // MeV
-                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
+    anaMan.SetPrimaryParticle(0, pdg_pi_minus,
+                              ToG4Lorentz(*pi_lv),
+                              vertex_lv);
     const auto theta_pi = pi_lv->Theta();
     const auto phi_pi = pi_lv->Phi();
     const auto u0 = std::tan(theta_pi) * std::cos(phi_pi);
@@ -1320,10 +1383,6 @@ void S2SPrimaryGeneratorAction::GenerateSigmaNCusp(G4Event* anEvent)
     const auto pB = beam_mom * CLHEP::GeV; // beam K- momentum (MeV/c)
     anaMan.SetPrimaryData(primary_vertex_pos.x(), primary_vertex_pos.y(), primary_vertex_pos.z(),
                           u0, v0, phi_pi, theta_pi, p0, pB, 9999); // x0,y0,z0,u0,v0,phi,theta,p0,pB,ParIdNb
-
-    anaMan.SetSigmaNCuspCascadeData(cusp_decay_p_mom, cusp_decay_p_theta,
-                             lambda_decay_p_mom, lambda_decay_p_theta,
-                             decay_pi_mom, decay_pi_theta);
 
     break;
   }
@@ -1348,6 +1407,9 @@ void S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
   const G4double M_Proton   = proton->GetPDGMass();     // MeV
   const G4double M_Lambda   = lambda->GetPDGMass();     // MeV
   const G4double M_Deuteron = deuteron->GetPDGMass();   // MeV
+  const auto pdg_pi_minus = pi_minus->GetPDGEncoding();
+  const auto pdg_lambda = lambda->GetPDGEncoding();
+  const auto pdg_proton = proton->GetPDGEncoding();
 
   while(true){
     // Fermi motion for the struck neutron
@@ -1391,6 +1453,7 @@ void S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
         if (r_vtx_x*r_vtx_x + r_vtx_z*r_vtx_z < target_radius*target_radius && r_vtx_y < target_height_half && r_vtx_y > -target_height_half) break;
     }
     G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z); // mm
+    const auto vertex_lv = G4LorentzVector(primary_vertex_pos, 0);
 
     // Primary π-
     m_particleGun->SetParticleDefinition(pi_minus);
@@ -1417,34 +1480,45 @@ void S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     m_particleGun->SetParticlePosition(primary_vertex_pos);   // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
-    // Capture Λ decay to pπ-
-    const auto qnan = TMath::QuietNaN();
-    const auto spec_p_vec = spectator_mom;
-    auto spec_p_mom = spec_p_vec.mag();
-    auto spec_p_theta = spec_p_vec.theta();
-    auto decay_p_mom = qnan;
-    auto decay_p_theta = qnan;
-    auto decay_pi_mom = qnan;
-    auto decay_pi_theta = qnan;
+    RecordGeneratedParticle(GenBranch::kPrimPi,
+                            GenBranch::ParticleId::None,
+                            pdg_pi_minus,
+                            *pi_lv,
+                            vertex_lv);
+    RecordGeneratedParticle(GenBranch::kLambda,
+                            GenBranch::ParticleId::None,
+                            pdg_lambda,
+                            *lambda_lv,
+                            vertex_lv);
+    RecordGeneratedParticle(GenBranch::kPrimProt,
+                            GenBranch::ParticleId::None,
+                            pdg_proton,
+                            spectator_vec,
+                            E_spectator,
+                            vertex_lv);
+
     {
       Double_t decay_masses[2] = { M_Proton/CLHEP::GeV, M_PiM/CLHEP::GeV };
       TGenPhaseSpace lambda_decay;
       if(lambda_decay.SetDecay(*lambda_lv, 2, decay_masses) && lambda_decay.Generate()!=0){
         const auto decay_p = lambda_decay.GetDecay(0);
         const auto decay_pi = lambda_decay.GetDecay(1);
-        decay_p_mom = decay_p->P();
-        decay_p_theta = decay_p->Theta();
-        decay_pi_mom = decay_pi->P();
-        decay_pi_theta = decay_pi->Theta();
+        RecordGeneratedParticle(GenBranch::kDecProt,
+                                GenBranch::ParticleId::Lambda,
+                                pdg_proton,
+                                *decay_p,
+                                vertex_lv);
+        RecordGeneratedParticle(GenBranch::kDecPi,
+                                GenBranch::ParticleId::Lambda,
+                                pdg_pi_minus,
+                                *decay_pi,
+                                vertex_lv);
       }
     }
   
-    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
-                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV,  // MeV/c
-                                              pi_lv->Py()*CLHEP::GeV,  // MeV/c
-                                              pi_lv->Pz()*CLHEP::GeV,  // MeV/c
-                                              pi_lv->E()*CLHEP::GeV),  // MeV
-                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
+    anaMan.SetPrimaryParticle(0, pdg_pi_minus,
+                              ToG4Lorentz(*pi_lv),
+                              vertex_lv);
     const auto theta_pi = pi_lv->Theta();
     const auto phi_pi = pi_lv->Phi();
     const auto u0 = std::tan(theta_pi) * std::cos(phi_pi);
@@ -1453,10 +1527,6 @@ void S2SPrimaryGeneratorAction::GenerateQFLambda(G4Event* anEvent)
     const auto pB = beam_mom_gev * CLHEP::GeV; // beam K- momentum (MeV/c)
     anaMan.SetPrimaryData(primary_vertex_pos.x(), primary_vertex_pos.y(), primary_vertex_pos.z(),
                           u0, v0, phi_pi, theta_pi, p0, pB, 9999); // x0,y0,z0,u0,v0,phi,theta,p0,pB,ParIdNb
-    anaMan.SetQFLambdaCascadeData(spec_p_mom, spec_p_theta,
-                                  decay_p_mom, decay_p_theta,
-                                  decay_pi_mom, decay_pi_theta);
-
     break; 
   }
 }
@@ -1482,6 +1552,10 @@ void S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
   const G4double M_Sigma0   = sigma0->GetPDGMass();     // MeV
   const G4double M_Lambda   = lambda->GetPDGMass();     // MeV
   const G4double M_Deuteron = deuteron->GetPDGMass();   // MeV
+  const auto pdg_pi_minus = pi_minus->GetPDGEncoding();
+  const auto pdg_sigma0 = sigma0->GetPDGEncoding();
+  const auto pdg_lambda = lambda->GetPDGEncoding();
+  const auto pdg_proton = proton->GetPDGEncoding();
 
   while(true){
     // Fermi motion for the struck neutron
@@ -1524,6 +1598,7 @@ void S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
         if (r_vtx_x*r_vtx_x + r_vtx_z*r_vtx_z < target_radius*target_radius && r_vtx_y < target_height_half && r_vtx_y > -target_height_half) break;
     }
     G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z);
+    const auto vertex_lv = G4LorentzVector(primary_vertex_pos, 0);
 
     // Primary π-
     m_particleGun->SetParticleDefinition(pi_minus);
@@ -1550,44 +1625,58 @@ void S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     m_particleGun->SetParticlePosition(primary_vertex_pos); // mm
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
-    // Σ0 -> Λγ, Λ -> pπ-
-    const auto qnan = TMath::QuietNaN();
-    const auto spec_p_vec = spectator_mom;
-    auto spec_p_mom = spec_p_vec.mag();
-    auto spec_p_theta = spec_p_vec.theta();
-    auto decay_p_mom = qnan;
-    auto decay_p_theta = qnan;
-    auto decay_pi_mom = qnan;
-    auto decay_pi_theta = qnan;
+    TLorentzVector lambda_from_sigma = *sigma0_lv;
     {
-      TLorentzVector lambda_from_sigma;
-      {
-        Double_t sigma_decay_masses[2] = { M_Lambda/CLHEP::GeV, 0.0 };
-        TGenPhaseSpace sigma_decay;
-        if(sigma_decay.SetDecay(*sigma0_lv, 2, sigma_decay_masses) && sigma_decay.Generate()!=0){
-          lambda_from_sigma = *sigma_decay.GetDecay(0);
-        }else{
-          lambda_from_sigma = *sigma0_lv;
-        }
+      Double_t sigma_decay_masses[2] = { M_Lambda/CLHEP::GeV, 0.0 };
+      TGenPhaseSpace sigma_decay;
+      if(sigma_decay.SetDecay(*sigma0_lv, 2, sigma_decay_masses) && sigma_decay.Generate()!=0){
+        lambda_from_sigma = *sigma_decay.GetDecay(0);
       }
+    }
+
+    RecordGeneratedParticle(GenBranch::kPrimPi,
+                            GenBranch::ParticleId::None,
+                            pdg_pi_minus,
+                            *pi_lv,
+                            vertex_lv);
+    RecordGeneratedParticle(GenBranch::kSigma0,
+                            GenBranch::ParticleId::None,
+                            pdg_sigma0,
+                            *sigma0_lv,
+                            vertex_lv);
+    RecordGeneratedParticle(GenBranch::kLambda,
+                            GenBranch::ParticleId::Sigma0,
+                            pdg_lambda,
+                            lambda_from_sigma,
+                            vertex_lv);
+    RecordGeneratedParticle(GenBranch::kPrimProt,
+                            GenBranch::ParticleId::None,
+                            pdg_proton,
+                            spectator_vec,
+                            E_spectator,
+                            vertex_lv);
+    {
       Double_t lambda_decay_masses[2] = { M_Proton/CLHEP::GeV, M_PiM/CLHEP::GeV };
       TGenPhaseSpace lambda_decay;
       if(lambda_decay.SetDecay(lambda_from_sigma, 2, lambda_decay_masses) && lambda_decay.Generate()!=0){
         const auto decay_p = lambda_decay.GetDecay(0);
         const auto decay_pi = lambda_decay.GetDecay(1);
-        decay_p_mom = decay_p->P();
-        decay_p_theta = decay_p->Theta();
-        decay_pi_mom = decay_pi->P();
-        decay_pi_theta = decay_pi->Theta();
+        RecordGeneratedParticle(GenBranch::kDecProt,
+                                GenBranch::ParticleId::Lambda,
+                                pdg_proton,
+                                *decay_p,
+                                vertex_lv);
+        RecordGeneratedParticle(GenBranch::kDecPi,
+                                GenBranch::ParticleId::Lambda,
+                                pdg_pi_minus,
+                                *decay_pi,
+                                vertex_lv);
       }
     }
 
-    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
-                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
-                                              pi_lv->E()*CLHEP::GeV), // MeV
-                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
+    anaMan.SetPrimaryParticle(0, pdg_pi_minus,
+                              ToG4Lorentz(*pi_lv),
+                              vertex_lv);
     const auto theta_pi = pi_lv->Theta();
     const auto phi_pi = pi_lv->Phi();
     const auto u0 = std::tan(theta_pi) * std::cos(phi_pi);
@@ -1596,10 +1685,6 @@ void S2SPrimaryGeneratorAction::GenerateQFSigmaZ(G4Event* anEvent)
     const auto pB = beam_mom_gev * CLHEP::GeV; // beam K- momentum (MeV/c)
     anaMan.SetPrimaryData(primary_vertex_pos.x(), primary_vertex_pos.y(), primary_vertex_pos.z(),
                           u0, v0, phi_pi, theta_pi, p0, pB, 9999); // x0,y0,z0,u0,v0,phi,theta,p0,pB,ParIdNb
-    anaMan.SetQFSigma0CascadeData(spec_p_mom, spec_p_theta,
-                                  decay_p_mom, decay_p_theta,
-                                  decay_pi_mom, decay_pi_theta);
-
     break;
   }
 }
@@ -1627,6 +1712,11 @@ void S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
   const G4double M_Proton   = proton->GetPDGMass(); // MeV
   const G4double M_Neutron  = neutron->GetPDGMass(); // MeV
   const G4double M_Deuteron = deuteron->GetPDGMass(); // MeV
+  const auto pdg_pi_minus = pi_minus->GetPDGEncoding();
+  const auto pdg_sigma_plus = sigma_plus->GetPDGEncoding();
+  const auto pdg_proton = proton->GetPDGEncoding();
+  const auto pdg_neutron = neutron->GetPDGEncoding();
+  const auto pdg_pi_zero = pi_zero->GetPDGEncoding();
 
   while(true){
 
@@ -1670,6 +1760,7 @@ void S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
         if (r_vtx_x*r_vtx_x + r_vtx_z*r_vtx_z < target_radius*target_radius && r_vtx_y < target_height_half && r_vtx_y > -target_height_half) break;
     }
     G4ThreeVector primary_vertex_pos = target_pos + G4ThreeVector(r_vtx_x, r_vtx_y, r_vtx_z);
+    const auto vertex_lv = G4LorentzVector(primary_vertex_pos, 0);
 
     // Primary π-
     m_particleGun->SetParticleDefinition(pi_minus);
@@ -1697,33 +1788,44 @@ void S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     m_particleGun->GeneratePrimaryVertex(anEvent);
 
     // Σ+ -> pπ0
-    const auto qnan = TMath::QuietNaN();
-    const auto spec_n_vec = spectator_mom;
-    auto spec_n_mom = spec_n_vec.mag();
-    auto spec_n_theta = spec_n_vec.theta();
-    auto decay_p_mom = qnan;
-    auto decay_p_theta = qnan;
-    auto decay_pi_mom = qnan;
-    auto decay_pi_theta = qnan;
+    RecordGeneratedParticle(GenBranch::kPrimPi,
+                            GenBranch::ParticleId::None,
+                            pdg_pi_minus,
+                            *pi_lv,
+                            vertex_lv);
+    RecordGeneratedParticle(GenBranch::kSigmaP,
+                            GenBranch::ParticleId::None,
+                            pdg_sigma_plus,
+                            *sigma_plus_lv,
+                            vertex_lv);
+    RecordGeneratedParticle(GenBranch::kPrimNeut,
+                            GenBranch::ParticleId::None,
+                            pdg_neutron,
+                            spectator_vec,
+                            E_spectator,
+                            vertex_lv);
     {
       Double_t decay_masses[2] = { M_Proton/CLHEP::GeV, M_Pi0/CLHEP::GeV };
       TGenPhaseSpace sigma_plus_decay;
       if(sigma_plus_decay.SetDecay(*sigma_plus_lv, 2, decay_masses) && sigma_plus_decay.Generate()!=0){
         const auto decay_p = sigma_plus_decay.GetDecay(0);
         const auto decay_pi = sigma_plus_decay.GetDecay(1);
-        decay_p_mom = decay_p->P();
-        decay_p_theta = decay_p->Theta();
-        decay_pi_mom = decay_pi->P();
-        decay_pi_theta = decay_pi->Theta();
+        RecordGeneratedParticle(GenBranch::kDecProt,
+                                GenBranch::ParticleId::SigmaP,
+                                pdg_proton,
+                                *decay_p,
+                                vertex_lv);
+        RecordGeneratedParticle(GenBranch::kDecPi,
+                                GenBranch::ParticleId::SigmaP,
+                                pdg_pi_zero,
+                                *decay_pi,
+                                vertex_lv);
       }
     }
 
-    anaMan.SetPrimaryParticle(0, pi_minus->GetPDGEncoding(),
-                              G4LorentzVector(pi_lv->Px()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Py()*CLHEP::GeV, // MeV/c
-                                              pi_lv->Pz()*CLHEP::GeV, // MeV/c
-                                              pi_lv->E()*CLHEP::GeV), // MeV
-                              G4LorentzVector(primary_vertex_pos, 0)); // mm, ns
+    anaMan.SetPrimaryParticle(0, pdg_pi_minus,
+                              ToG4Lorentz(*pi_lv),
+                              vertex_lv);
     const auto theta_pi = pi_lv->Theta();
     const auto phi_pi = pi_lv->Phi();
     const auto u0 = std::tan(theta_pi) * std::cos(phi_pi);
@@ -1732,10 +1834,6 @@ void S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
     const auto pB = beam_mom_gev * CLHEP::GeV; // beam K- momentum (MeV/c)
     anaMan.SetPrimaryData(primary_vertex_pos.x(), primary_vertex_pos.y(), primary_vertex_pos.z(),
                           u0, v0, phi_pi, theta_pi, p0, pB, 9999); // x0,y0,z0,u0,v0,phi,theta,p0,pB,ParIdNb
-    anaMan.SetQFSigmaPCascadeData(spec_n_mom, spec_n_theta,
-                                  decay_p_mom, decay_p_theta,
-                                  decay_pi_mom, decay_pi_theta);
-
     break; 
   }
 }

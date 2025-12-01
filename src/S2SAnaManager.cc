@@ -20,6 +20,7 @@
 #include <TSystem.h>
 
 #include "RootHelper.hh"
+#include "GeneratorParticleBranches.hh"
 
 #include <iomanip>
 #include <cmath>
@@ -116,6 +117,13 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
       G4cout << "   make branch : " << sd_name << G4endl;
       MakeBranch(sd_name);
       MakeHistogram(sd_name);
+    }
+  }
+  if(experiment == 90){
+    const auto generator = confMan.Get<G4int>("Generator");
+    for(const auto& branch : GeneratorParticleBranches::BranchList(generator)){
+      G4cout << "   make branch : " << branch << G4endl;
+      MakeBranch(branch);
     }
   }
   for(auto& h: hmap){
@@ -267,63 +275,6 @@ S2SAnaManager::SetSecondaryData(double x1, double y1, double z1,
   event.t1   = t1; // Kinetic energy
   //  event.Id = ParIdNb;
   //  G4cout<<"setPrimaryData"<<G4endl;
-}
-
-// E90 particles
-//_____________________________________________________________________________
-void
-S2SAnaManager::SetSigmaNCuspCascadeData(G4double cusp_p_mom, G4double cusp_p_theta,
-                                        G4double lambda_p_mom, G4double lambda_p_theta,
-                                        G4double lambda_pi_mom, G4double lambda_pi_theta)
-{
-  event.cusp_decay_p_mom = cusp_p_mom;
-  event.cusp_decay_p_theta = cusp_p_theta * TMath::RadToDeg();
-  event.lambda_decay_p_mom = lambda_p_mom;
-  event.lambda_decay_p_theta = lambda_p_theta * TMath::RadToDeg();
-  event.decay_pi_mom = lambda_pi_mom;
-  event.decay_pi_theta = lambda_pi_theta * TMath::RadToDeg();
-}
-
-//_____________________________________________________________________________
-void
-S2SAnaManager::SetQFLambdaCascadeData(G4double spec_p_mom, G4double spec_p_theta,
-                                      G4double decay_p_mom, G4double decay_p_theta,
-                                      G4double decay_pi_mom, G4double decay_pi_theta)
-{
-  event.spec_p_mom = spec_p_mom;
-  event.spec_p_theta = spec_p_theta * TMath::RadToDeg();
-  event.decay_p_mom = decay_p_mom;
-  event.decay_p_theta = decay_p_theta * TMath::RadToDeg();
-  event.decay_pi_mom = decay_pi_mom;
-  event.decay_pi_theta = decay_pi_theta * TMath::RadToDeg();
-}
-
-//_____________________________________________________________________________
-void
-S2SAnaManager::SetQFSigma0CascadeData(G4double spec_p_mom, G4double spec_p_theta,
-                                      G4double decay_p_mom, G4double decay_p_theta,
-                                      G4double decay_pi_mom, G4double decay_pi_theta)
-{
-  event.spec_p_mom = spec_p_mom;
-  event.spec_p_theta = spec_p_theta * TMath::RadToDeg();
-  event.decay_p_mom = decay_p_mom;
-  event.decay_p_theta = decay_p_theta * TMath::RadToDeg();
-  event.decay_pi_mom = decay_pi_mom;
-  event.decay_pi_theta = decay_pi_theta * TMath::RadToDeg();
-}
-
-//_____________________________________________________________________________
-void
-S2SAnaManager::SetQFSigmaPCascadeData(G4double spec_n_mom, G4double spec_n_theta,
-                                      G4double decay_p_mom, G4double decay_p_theta,
-                                      G4double decay_pi_mom, G4double decay_pi_theta)
-{
-  event.spec_n_mom = spec_n_mom;
-  event.spec_n_theta = spec_n_theta * TMath::RadToDeg();
-  event.decay_p_mom = decay_p_mom;
-  event.decay_p_theta = decay_p_theta * TMath::RadToDeg();
-  event.decay_pi_mom = decay_pi_mom;
-  event.decay_pi_theta = decay_pi_theta * TMath::RadToDeg();
 }
 
 //_____________________________________________________________________________
@@ -731,18 +682,6 @@ void S2SAnaManager::InitializeEvent()
   for(auto& pair: event.hits){
     pair.second.clear();
   }
-  event.cusp_decay_p_mom = qnan;
-  event.cusp_decay_p_theta = qnan;
-  event.lambda_decay_p_mom = qnan;
-  event.lambda_decay_p_theta = qnan;
-  event.decay_pi_mom = qnan;
-  event.decay_pi_theta = qnan;
-  event.spec_p_mom = qnan;
-  event.spec_p_theta = qnan;
-  event.decay_p_mom = qnan;
-  event.decay_p_theta = qnan;
-  event.spec_n_mom = qnan;
-  event.spec_n_theta = qnan;
   event.TPCMt = 0;
 }
 
@@ -776,39 +715,6 @@ void S2SAnaManager::DefineTree()
 #endif
 
   if(confMan.Get<G4int>("Experiment") == 90){
-    const auto generator = confMan.Get<G4int>("Generator");
-    if(generator == 9001){
-      m_tree->Branch("cusp_decay_p_mom", &event.cusp_decay_p_mom, "cusp_decay_p_mom/D");
-      m_tree->Branch("cusp_decay_p_theta", &event.cusp_decay_p_theta, "cusp_decay_p_theta/D");
-      m_tree->Branch("lambda_decay_p_mom", &event.lambda_decay_p_mom, "lambda_decay_p_mom/D");
-      m_tree->Branch("lambda_decay_p_theta", &event.lambda_decay_p_theta, "lambda_decay_p_theta/D");
-      m_tree->Branch("decay_pi_mom", &event.decay_pi_mom, "decay_pi_mom/D");
-      m_tree->Branch("decay_pi_theta", &event.decay_pi_theta, "decay_pi_theta/D");
-    }
-    if(generator == 9002){
-      m_tree->Branch("spec_p_mom", &event.spec_p_mom, "spec_p_mom/D");
-      m_tree->Branch("spec_p_theta", &event.spec_p_theta, "spec_p_theta/D");
-      m_tree->Branch("decay_p_mom", &event.decay_p_mom, "decay_p_mom/D");
-      m_tree->Branch("decay_p_theta", &event.decay_p_theta, "decay_p_theta/D");
-      m_tree->Branch("decay_pi_mom", &event.decay_pi_mom, "decay_pi_mom/D");
-      m_tree->Branch("decay_pi_theta", &event.decay_pi_theta, "decay_pi_theta/D");
-    }
-    if(generator == 9003){
-      m_tree->Branch("spec_p_mom", &event.spec_p_mom, "spec_p_mom/D");
-      m_tree->Branch("spec_p_theta", &event.spec_p_theta, "spec_p_theta/D");
-      m_tree->Branch("decay_p_mom", &event.decay_p_mom, "decay_p_mom/D");
-      m_tree->Branch("decay_p_theta", &event.decay_p_theta, "decay_p_theta/D");
-      m_tree->Branch("decay_pi_mom", &event.decay_pi_mom, "decay_pi_mom/D");
-      m_tree->Branch("decay_pi_theta", &event.decay_pi_theta, "decay_pi_theta/D");
-    }
-    if(generator == 9004){
-      m_tree->Branch("spec_n_mom", &event.spec_n_mom, "spec_n_mom/D");
-      m_tree->Branch("spec_n_theta", &event.spec_n_theta, "spec_n_theta/D");
-      m_tree->Branch("decay_p_mom", &event.decay_p_mom, "decay_p_mom/D");
-      m_tree->Branch("decay_p_theta", &event.decay_p_theta, "decay_p_theta/D");
-      m_tree->Branch("decay_pi_mom", &event.decay_pi_mom, "decay_pi_mom/D");
-      m_tree->Branch("decay_pi_theta", &event.decay_pi_theta, "decay_pi_theta/D");
-    }
     m_tree->Branch("multiplicity", &event.TPCMt, "multiplicity/I");
   }
 
@@ -928,6 +834,32 @@ S2SAnaManager::SetPrimaryParticle(G4int id, G4int pdg,
     hmap.at("PRMPThetaGen")->Fill(p.theta()/CLHEP::degree,
                                   p.v().mag()/CLHEP::GeV);
   }
+}
+
+//_____________________________________________________________________________
+void
+S2SAnaManager::SetGeneratedParticle(const G4String& branch_name,
+                                    G4int mother_id, G4int pdg,
+                                    const G4LorentzVector& p,
+                                    const G4LorentzVector& v)
+{
+  const TString key(branch_name.c_str());
+  auto it = event.hits.find(key);
+  if(it == event.hits.end()){
+    G4cerr << FUNC_NAME << " unknown branch : " << branch_name << G4endl;
+    return;
+  }
+  const G4int id1 = (mother_id >= 0) ? 1 : -1;
+  const G4int id2 = mother_id;
+  TParticle particle(pdg,
+                     0,            // fStatus
+                     id1,          // fMother[0]
+                     id2,          // fMother[1]
+                     0,            // fDaughter[0]
+                     0,            // fDaughter[1]
+                     TLorentzVector(p.px(), p.py(), p.pz(), p.e()),
+                     TLorentzVector(v.x(), v.y(), v.z(), v.t()));
+  it->second.push_back(particle);
 }
 
 //_____________________________________________________________________________

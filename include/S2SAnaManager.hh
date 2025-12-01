@@ -88,21 +88,6 @@ struct Event
   double p1;
   double t1;
 
-  // E90 reactions
-  double cusp_decay_p_mom;
-  double cusp_decay_p_theta;
-  double lambda_decay_p_mom;
-  double lambda_decay_p_theta;
-  double lambda_decay_pi_mom;
-  double lambda_decay_pi_theta;
-  double spec_p_mom;
-  double spec_p_theta;
-  double decay_p_mom;
-  double decay_p_theta;
-  double decay_pi_mom;
-  double decay_pi_theta;
-  double spec_n_mom;
-  double spec_n_theta;
   Int_t  TPCMt;
   
   G4int nP, nN, nL, nSm, nSz, nSp, nXm, nXz, nXsm, nXsz;
@@ -215,6 +200,10 @@ public:
                           const G4LorentzVector& p,
                           const G4LorentzVector& v,
                           G4bool is_virtual_beam=false);
+  void SetGeneratedParticle(const G4String& branch_name,
+                            G4int mother_id, G4int pdg,
+                            const G4LorentzVector& p,
+                            const G4LorentzVector& v);
   void SetPrimaryData(G4double x0, G4double y0, G4double z0,
 		      G4double u0, G4double v0, G4double phi,
 		      G4double theta, G4double p0, G4double pB,
@@ -222,18 +211,6 @@ public:
   void SetSecondaryData(G4double x1, G4double y1, G4double z1,
 			G4double px1, G4double py1, G4double pz1,
 			G4double p1, G4double t1); // E63 for weak pi
-  void SetSigmaNCuspCascadeData(G4double cusp_decay_p_mom, G4double cusp_decay_p_theta,
-			 G4double lambda_decay_p_mom, G4double lambda_decay_p_theta,
-			 G4double lambda_decay_pi_mom, G4double lambda_decay_pi_theta); // for E90 SigmaN Cusp
-  void SetQFLambdaCascadeData(G4double spec_p_mom, G4double spec_p_theta,
-			      G4double decay_p_mom, G4double decay_p_theta,
-			      G4double decay_pi_mom, G4double decay_pi_theta);
-  void SetQFSigma0CascadeData(G4double spec_p_mom, G4double spec_p_theta,
-			      G4double decay_p_mom, G4double decay_p_theta,
-			      G4double decay_pi_mom, G4double decay_pi_theta);
-  void SetQFSigmaPCascadeData(G4double spec_n_mom, G4double spec_n_theta,
-			      G4double decay_p_mom, G4double decay_p_theta,
-			      G4double decay_pi_mom, G4double decay_pi_theta);
   void SetProcessData(G4int nP, G4int nN, G4int nL,
 		      G4int nSm, G4int nSz, G4int nSp,
 		      G4int nXm, G4int nXz, G4int nXsm,
