@@ -163,6 +163,7 @@ S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   case 9002: GenerateQFLambda(anEvent); break;
   case 9003: GenerateQFSigmaZ(anEvent); break;
   case 9004: GenerateQFSigmaP(anEvent); break;
+  case 9010: GenerateDebugProton(anEvent); break;
   default:
     G4cerr << " * Generator number error : " << m_generator << G4endl;
     break;
@@ -1836,4 +1837,32 @@ void S2SPrimaryGeneratorAction::GenerateQFSigmaP(G4Event* anEvent)
                           u0, v0, phi_pi, theta_pi, p0, pB, 9999); // x0,y0,z0,u0,v0,phi,theta,p0,pB,ParIdNb
     break; 
   }
+}
+
+//_____________________________________________________________________________
+// 9010 proton beam
+void S2SPrimaryGeneratorAction::GenerateDebugProton(G4Event* anEvent)
+{
+  static const G4int n_particle = 1;
+  m_particleGun = new G4ParticleGun(n_particle);
+
+  const auto proton = particleTable->FindParticle("proton");
+  const auto pdg = proton->GetPDGEncoding();
+  const G4double proton_mass = proton->GetPDGMass();
+  const auto& target_pos = geomMan.GetGlobalPosition("Target") * mm;
+  const G4double momentum = confMan.Get<G4double>("Momentum") * CLHEP::GeV;
+
+  G4LorentzVector p(0, 0, momentum,
+                    std::sqrt(momentum * momentum + proton_mass * proton_mass));
+  G4LorentzVector v(target_pos, 0);
+
+  m_particleGun->SetParticleDefinition(proton);
+  m_particleGun->SetParticleMomentumDirection(G4ThreeVector(0., 0., 1.));
+  m_particleGun->SetParticleEnergy(p.e() - proton_mass);
+  m_particleGun->SetParticlePosition(target_pos);
+  m_particleGun->GeneratePrimaryVertex(anEvent);
+
+  anaMan.SetPrimaryParticle(0, pdg, p, v);
+  anaMan.SetPrimaryData(target_pos.x(), target_pos.y(), target_pos.z(),
+                        0., 0., 0., 0., momentum, momentum, 9999);
 }

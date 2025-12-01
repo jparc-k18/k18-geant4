@@ -62,6 +62,7 @@ private:
   void GenerateQFLambda(G4Event* anEvent);
   void GenerateQFSigmaZ(G4Event* anEvent);
   void GenerateQFSigmaP(G4Event* anEvent);
+  void GenerateDebugProton(G4Event* anEvent);
 };
 
 //_____________________________________________________________________________

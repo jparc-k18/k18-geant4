@@ -715,7 +715,7 @@ void S2SAnaManager::DefineTree()
 #endif
 
   if(confMan.Get<G4int>("Experiment") == 90){
-    m_tree->Branch("multiplicity", &event.TPCMt, "multiplicity/I");
+    m_tree->Branch("Mt", &event.TPCMt, "Mt/I");
   }
 
   return;
