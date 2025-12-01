@@ -44,6 +44,7 @@ TString dsize_path = "../param/DSIZE/DetSize_E90_20250615";
 Double_t gTargetZ_Global = 0.0;
 Double_t gTpcPadCenterZ = 0.0;
 Double_t gTargetRadius = 0.0;
+Double_t gTargetHolderRadius = 0.0;
 
 inline TVector3 LocalToWorld(Double_t x_local, Double_t y_local, Double_t z_local)
 {
@@ -92,10 +93,15 @@ void read_geometry()
             ss >> gTpcPadCenterZ;
             // std::cout << "Info: Read TpcPadCenterZ = " << gTpcPadCenterZ << " mm" << std::endl;
         } else if (name == "Target") {
-            double rin, rout, length;
-            ss >> rin >> rout >> length;
-            gTargetRadius = rout / 2;
+            double trin, trout, tlength;
+            ss >> trin >> trout >> tlength;
+            gTargetRadius = trout / 2;
             // std::cout << "Info: Read Target Radius = " << gTargetRadius << " mm" << std::endl;
+        } else if (name == "TargetGFRP") {
+            double thrin, throut, thlength;
+            ss >> thrin >> throut >> thlength;
+            gTargetHolderRadius = throut / 2;
+            // std::cout << "Info: Read Target Holder Radius = " << gTargetHolderRadius << " mm" << std::endl;
         }
     }
 }
@@ -194,6 +200,13 @@ void draw_track(Int_t n_rand)
     targetCircle->SetLineColor(kRed);
     targetCircle->SetLineWidth(3);
     targetCircle->Draw("same");
+
+    const auto targetHolderCoords = ProjectToDisplay(TVector3(0., 0., gTpcPadCenterZ));
+    TEllipse* targetHolderCircle = new TEllipse(targetHolderCoords.first, targetHolderCoords.second, gTargetHolderRadius);
+    targetHolderCircle->SetFillStyle(0);
+    targetHolderCircle->SetLineColor(kMagenta);
+    targetHolderCircle->SetLineWidth(3);
+    targetHolderCircle->Draw("same");
 
     gPad->Modified();
     gPad->Update();
