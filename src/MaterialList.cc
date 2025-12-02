@@ -68,6 +68,10 @@ MaterialList::MaterialList()
   material_map["G10"]->AddElement(elO , 2);
   material_map["G10"]->AddElement(elC , 3);
   material_map["G10"]->AddElement(elH , 3);
+  material_map["CFRP"]   = new G4Material("CFRP", 1.7*g/cm3, 3); // rough estimation
+  material_map["CFRP"]->AddElement(elO , 0.08);
+  material_map["CFRP"]->AddElement(elC , 0.9);
+  material_map["CFRP"]->AddElement(elH , 0.02);
   material_map["Kapton"] = new G4Material("Kapton", 1.42*g/cm3, 4);
   material_map["Kapton"]->AddElement(elH, 0.0273);
   material_map["Kapton"]->AddElement(elC, 0.7213);

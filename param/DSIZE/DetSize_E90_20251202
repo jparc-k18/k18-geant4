@@ -104,5 +104,5 @@ TpcPadLengthOut		12.5
 TpcPadGap		0.5
 
 Target	 	0.0	54.0	100.0
-TargetKapton 	54.0	54.5	100.0
-TargetGFRP	68.0	68.5	100.0
+TargetMylar 	54.0	54.5	100.0
+TargetCFRP	68.0	68.5	100.0

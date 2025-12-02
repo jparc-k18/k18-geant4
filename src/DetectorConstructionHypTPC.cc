@@ -710,29 +710,29 @@ void S2SDetectorConstruction::ConstructTargetE90()
                                 0.*deg, 360.*deg);
     }
     rot->rotateX(90.*deg);
-    const auto kapton_size = gSize.GetSize("TargetKapton")*mm/2.;
-    const auto gfrp_size = gSize.GetSize("TargetGFRP")*mm/2.;
-    auto kapton = new G4Tubs("TargetKapton",
-                             kapton_size[0],
-                             kapton_size[1],
-                             kapton_size[2],
+    const auto mylar_size = gSize.GetSize("TargetMylar")*mm/2.;
+    const auto cfrp_size = gSize.GetSize("TargetCFRP")*mm/2.;
+    auto mylar = new G4Tubs("TargetMylar",
+                             mylar_size[0],
+                             mylar_size[1],
+                             mylar_size[2],
                              0.*deg, 360.*deg);
-    auto kapton_lv = new G4LogicalVolume(kapton,
-                                         mat("Kapton"),
-                                         "TargetKaptonLV");
-    kapton_lv->SetVisAttributes(G4Colour::Red());
-    new G4PVPlacement(rot, target_pos, kapton_lv, "TargetKaptonPV",
+    auto mylar_lv = new G4LogicalVolume(mylar,
+                                         mat("Mylar"),
+                                         "TargetMylarLV");
+    mylar_lv->SetVisAttributes(G4Colour::Red());
+    new G4PVPlacement(rot, target_pos, mylar_lv, "TargetMylarPV",
                       m_world_lv, true, 0, m_check_overlaps);
-    auto gfrp = new G4Tubs("TargetGFRP",
-                           gfrp_size[0],
-                           gfrp_size[1],
-                           gfrp_size[2],
+    auto cfrp = new G4Tubs("TargetCFRP",
+                           cfrp_size[0],
+                           cfrp_size[1],
+                           cfrp_size[2],
                            0.*deg, 360.*deg);
-    auto gfrp_lv = new G4LogicalVolume(gfrp,
-                                       mat("G10"),
-                                       "TargetGFRPLV");
-    gfrp_lv->SetVisAttributes(G4Colour::Green());
-    new G4PVPlacement(rot, target_pos, gfrp_lv, "TargetGFRPPV",
+    auto cfrp_lv = new G4LogicalVolume(cfrp,
+                                       mat("CFRP"),
+                                       "TargetCFRPLV");
+    cfrp_lv->SetVisAttributes(G4Colour::Green());
+    new G4PVPlacement(rot, target_pos, cfrp_lv, "TargetCFRPPV",
                       m_world_lv, true, 0, m_check_overlaps);
   }
     break;
