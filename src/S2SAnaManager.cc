@@ -540,49 +540,28 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       if(id >= 0){
         auto HC = dynamic_cast<TPCHitsCollection*>(HCE->GetHC(id));
         if(HC){
-          struct TrackInfo
-          {
-            G4int hits = 0;
-            bool charged = false;
-          };
-          const auto isHyperon = [](G4int pdg){
-            switch(pdg){
-            case 3122: // Lambda
-            case 3112: // Sigma-
-            case 3212: // Sigma0
-            case 3222: // Sigma+
-              return true;
-            default:
-              return false;
-            }
-          };
-          const auto isScatPi = [](const VHitInfo* hit){
-            return hit->Is("pi-") && hit->IsPrimary();
-          };
-
-          std::unordered_map<G4int, TrackInfo> summary;
-          std::unordered_set<G4int> suppressed;
+          // count proton or charged-pion tracks in the TPC
+          std::unordered_set<G4int> multiplicityTracks;
+          std::unordered_set<G4int> suppressedTracks;
           for(G4int i=0, n=HC->entries(); i<n; ++i){
             auto hit = (*HC)[i];
             SetHitData(hit);
             const auto trackId = hit->GetTrackID();
-            if(suppressed.count(trackId)) continue;
-            if(isScatPi(hit) || isHyperon(hit->GetPDGEncoding())){
-              suppressed.insert(trackId);
-              summary.erase(trackId);
+
+            // Ignore scattering pi- from the primary beam
+            if(hit->Is("pi-") && hit->IsPrimary()){
+              suppressedTracks.insert(trackId);
+              multiplicityTracks.erase(trackId);
               continue;
             }
-            auto& info = summary[trackId];
-            info.hits++;
-            if(std::abs(hit->GetCharge()) > 0.) info.charged = true;
-          }
 
-          G4int multiplicity = 0;
-          for(const auto& [trackId, info] : summary){
-            if(suppressed.count(trackId)) continue;
-            if(info.charged && info.hits >= 4) ++multiplicity;
+            if(suppressedTracks.count(trackId)) continue;
+            const auto pdg = hit->GetPDGEncoding();
+            if(pdg == 2212 || pdg == 211 || pdg == -211){
+              multiplicityTracks.insert(trackId);
+            }
           }
-          event.TPCMt = multiplicity;
+          event.TPCMt = static_cast<G4int>(multiplicityTracks.size());
 
           SetNhits("TPC", HC->entries());
         }
