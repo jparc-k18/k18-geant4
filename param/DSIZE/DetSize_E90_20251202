@@ -91,7 +91,8 @@ VP6		800	800	0.001
 ### HypTPC
 TpcGasVessel		634	654	620
 TpcGasVesselWindow	246.9	540	0.1
-TargetHolder		107.0	113.0	431
+#TargetHolder		107.0	113.0	431
+TargetHolder		80.0	86.0	431
 TargetHolderWindowPhiDz	32.0	116.0	100.0
 TpcP10Volume		0.0	634.0	606.0
 TpcFieldCage		584.0	586.0	562.0
