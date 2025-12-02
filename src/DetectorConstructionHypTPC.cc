@@ -399,8 +399,8 @@ void S2SDetectorConstruction::ConstructHypTPC()
                                 target_holder_size[0],
                                 target_holder_size[2],
                                 phiStart, phiTotal);
-  G4ThreeVector pos = target_pos;
-  pos.setY(target_holder_yofs + target_holder_thickness*2.);
+  G4ThreeVector pos = (target_pos - tpc_pos);
+  pos.setY(target_holder_yofs);
   pos.rotateX(90.*deg);
   gv_solid = new G4SubtractionSolid("TpcGasVesselSolid",
                                     gv_solid, space_solid,
