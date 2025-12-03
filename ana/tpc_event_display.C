@@ -39,8 +39,8 @@ static TString g_rootfile_path;
 static TCanvas* c_canvas_tpc = nullptr;
 
 // Global geometry parameters
-TString dcgeom_path = "../param/DCGEO/DCGeomParam_E90_20250615";
-TString dsize_path = "../param/DSIZE/DetSize_E90_20250615";
+TString dcgeom_path = "../param/DCGEO/DCGeomParam_E90_20251202";
+TString dsize_path = "../param/DSIZE/DetSize_E90_20251202";
 Double_t gTargetZ_Global = 0.0;
 Double_t gTpcPadCenterZ = 0.0;
 Double_t gTargetRadius = 0.0;
@@ -97,7 +97,7 @@ void read_geometry()
             ss >> trin >> trout >> tlength;
             gTargetRadius = trout / 2;
             // std::cout << "Info: Read Target Radius = " << gTargetRadius << " mm" << std::endl;
-        } else if (name == "TargetGFRP") {
+        } else if (name == "TargetHolder") {
             double thrin, throut, thlength;
             ss >> thrin >> throut >> thlength;
             gTargetHolderRadius = throut / 2;
