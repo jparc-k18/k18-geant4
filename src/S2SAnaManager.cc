@@ -540,24 +540,30 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       if(id >= 0){
         auto HC = dynamic_cast<TPCHitsCollection*>(HCE->GetHC(id));
         if(HC){
-          // count proton or charged-pion tracks in the TPC
-          std::unordered_set<G4int> multiplicityTracks;
-          std::unordered_set<G4int> suppressedTracks;
+          // Count proton or charged-pion tracks in the TPC with >=4 hits.
+          std::unordered_map<G4int, G4int> trackHitCounts;
+          std::unordered_map<G4int, G4int> trackPdg;
+          std::unordered_set<G4int> primaryPiMinusTracks;
           for(G4int i=0, n=HC->entries(); i<n; ++i){
             auto hit = (*HC)[i];
             SetHitData(hit);
             const auto trackId = hit->GetTrackID();
-
-            // Ignore scattering pi- from the primary beam
-            if(hit->Is("pi-") && hit->IsPrimary()){
-              suppressedTracks.insert(trackId);
-              multiplicityTracks.erase(trackId);
-              continue;
-            }
-
-            if(suppressedTracks.count(trackId)) continue;
             const auto pdg = hit->GetPDGEncoding();
-            if(pdg == 2212 || pdg == 211 || pdg == -211){
+            trackHitCounts[trackId]++;       // count TPC hits per track
+            trackPdg.emplace(trackId, pdg);   // store PDG
+            if(pdg == -211 && hit->IsPrimary()){
+              primaryPiMinusTracks.insert(trackId); // reject primary beam pi-
+            }
+          }
+
+          std::unordered_set<G4int> multiplicityTracks;
+          for(const auto& kv : trackHitCounts){
+            const auto trackId = kv.first;
+            const auto nhit = kv.second;
+            const auto pdg = trackPdg.at(trackId);
+            const bool isAcceptedParticle = (pdg == 2212 || pdg == 211 || pdg == -211);
+            const bool isPrimaryPiMinus = primaryPiMinusTracks.count(trackId) > 0;
+            if(isAcceptedParticle && !isPrimaryPiMinus && nhit >= 4){
               multiplicityTracks.insert(trackId);
             }
           }
