@@ -2,29 +2,13 @@
 
 #include "TPCSD.hh"
 
-#include <G4VPhysicalVolume.hh>
 #include <G4Step.hh>
 #include <G4Track.hh>
-#include <G4VTouchable.hh>
-#include <G4TouchableHistory.hh>
-#include <G4PhysicalConstants.hh>
 #include <G4SystemOfUnits.hh>
-#include <G4DynamicParticle.hh>
-#include <G4DecayProducts.hh>
-#include <G4PhysicsLogVector.hh>
-#include <G4ParticleChangeForDecay.hh>
-#include <G4DecayProcessType.hh>
-#include <Randomize.hh>
 
-#include "ConfMan.hh"
 #include "FuncName.hh"
 #include "TPCHit.hh"
-#include "TPCPadHelper.hh"
-
-namespace
-{
-const auto& gConf = ConfMan::GetInstance();
-}
+#include "TPCMlFeature.hh"
 
 //_____________________________________________________________________________
 TPCSD::TPCSD(const G4String& name)
@@ -88,7 +72,14 @@ TPCSD::ProcessHits(G4Step* aStep, G4TouchableHistory* /* ROhist */)
   //   G4cout << momentum_threshold << G4endl;
   // }
 
-  m_hits_collection->insert(new TPCHit(SensitiveDetectorName, aStep));
+  const auto massMeV = aTrack->GetDynamicParticle()->GetMass() / CLHEP::MeV;
+  const auto beta = preStepPoint->GetBeta();
+  const auto dedx = CalculateTPCDedx(massMeV, beta); // MeV/cm
+
+  auto hit = new TPCHit(SensitiveDetectorName, aStep);
+  // Store Bethe-Bloch dE/dx directly (MeV/cm) for downstream ML features.
+  hit->SetEnergyDeposit(dedx);
+  m_hits_collection->insert(hit);
 
   return true;
 }

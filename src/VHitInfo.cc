@@ -11,6 +11,7 @@
 #include <TLorentzVector.h>
 #include <TParticle.h>
 
+#include "ConfMan.hh"
 #include "FuncName.hh"
 #include "PrintHelper.hh"
 
@@ -77,12 +78,14 @@ VHitInfo::VHitInfo(const G4String& name, G4Step* step,
   //                 pre->GetGlobalTime());
   TLorentzVector v(m_lposition.x(), m_lposition.y(), m_lposition.z(),
                    pre->GetGlobalTime());
+  const auto experiment = ConfMan::GetInstance().Get<G4int>("Experiment");
+  const auto status_code = (experiment == 90) ? m_track_id : 0;
   m_particle = new TParticle(m_pdg_encoding,
-                             0, // fStatusCode
-                             m_parent_id, // fMother[0]
-                             m_copy_number, // fMother[1]
-                             0, // fDaughter[0]
-                             0, // fDaughter[1]
+                             status_code,      // // fStatusCode / track id for E90
+                             m_parent_id,      // fMother[0]
+                             m_copy_number,    // fMother[1]
+                             0,                // fDaughter[0]
+                             0,                // fDaughter[1]
                              p, v);
   m_particle->SetWeight(m_energy_deposit);
 }
@@ -91,6 +94,14 @@ VHitInfo::VHitInfo(const G4String& name, G4Step* step,
 VHitInfo::~VHitInfo()
 {
   if (m_particle) delete m_particle;
+}
+
+//_____________________________________________________________________________
+void
+VHitInfo::SetEnergyDeposit(G4double edep)
+{
+  m_energy_deposit = edep;
+  if (m_particle) m_particle->SetWeight(edep);
 }
 
 //_____________________________________________________________________________

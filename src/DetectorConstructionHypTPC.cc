@@ -504,7 +504,7 @@ void S2SDetectorConstruction::ConstructHypTPC()
                     gv_lv, false, 0, m_check_overlaps);
   p10_lv->SetVisAttributes(G4Colour::Yellow());
   // p10_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
-  // p10_lv->SetSensitiveDetector(tpc_sd); #ghost hits
+  // p10_lv->SetSensitiveDetector(tpc_sd);
   // Field Cage
   const G4double rInnerFC[] = { field_cage_size[0], field_cage_size[0] };
   const G4double rOuterFC[] = { field_cage_size[1], field_cage_size[1] };

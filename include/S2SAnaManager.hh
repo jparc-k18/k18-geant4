@@ -77,6 +77,12 @@ struct Event
   double pB;
   double t0;
   int Id;
+  int label;
+  std::vector<float> mlUx;
+  std::vector<float> mlUy;
+  std::vector<float> mlUz;
+  std::vector<Int_t> mlPdg;
+  std::vector<float> mlDedx;
 
   // E63 for weak pi
   double x1;

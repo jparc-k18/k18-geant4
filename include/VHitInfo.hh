@@ -61,6 +61,7 @@ public:
   { return m_vertex_momentum; }
   G4double GetVertexKineticEnergy() const
   { return m_vertex_kinetic_energy; }
+  void     SetEnergyDeposit(G4double edep);
   G4bool   Is(const G4String& particle_name) const;
   G4bool   Is(G4int pdg_encoding) const;
   G4bool   IsPrimary() const;

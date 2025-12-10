@@ -3,6 +3,7 @@
 #include "S2SAnaManager.hh"
 
 #include <bitset>
+#include <algorithm>
 
 #include "G4Run.hh"
 #include "G4Event.hh"
@@ -21,6 +22,7 @@
 
 #include "RootHelper.hh"
 #include "GeneratorParticleBranches.hh"
+#include "TPCMlFeature.hh"
 
 #include <iomanip>
 #include <cmath>
@@ -54,6 +56,7 @@ using CLHEP::ns;
 const auto& confMan = ConfMan::GetInstance();
 const auto& histMan = HistMan::GetInstance();
 const auto qnan = TMath::QuietNaN();
+std::size_t kMlTrackCount = 0;
 Event event;
 std::map<TString, TH1*> hmap;
 std::vector<G4int> n_acc(kTriggerFlagSize, 0);
@@ -79,6 +82,7 @@ void
 S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
 {
   fActive_=true;
+  kMlTrackCount = static_cast<std::size_t>(confMan.Get<G4int>("TPCMt") + 1);
   m_file = new TFile(m_file_name, "recreate");
   //static auto obj = new TNamed("conf", confMan.ConfPath()+confMan.ConfBuf());
   static auto obj = new TNamed("conf", confMan.ConfBuf()); // [seong]
@@ -91,6 +95,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
   event.evnum = -1;
   event.trig.assign(kTriggerFlagSize, false);
   event.rctrig.assign(kRCTriggerFlagSize, false); //[seong]
+  ResetMlFeatures(event, confMan, qnan, kMlTrackCount);
   DefineTree();
   static const G4int experiment = confMan.Get<G4int>("Experiment");
   for(const auto& sd_name : std::vector<G4String>{
@@ -183,6 +188,10 @@ void
 S2SAnaManager::MakeBranch(const G4String& sd_name)
 {
   static const Int_t bufsize = 32000;
+  // Always ensure the container exists for histogram filling.
+  (void)event.hits[sd_name];
+  if (confMan.Get<G4String>("BranchStyle") == "E90ML")
+    return;
   m_tree->Branch(sd_name.data(),
                  "std::vector<TParticle>",
                  &event.hits[sd_name], bufsize, -1);
@@ -313,6 +322,10 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   std::bitset<kTriggerFlagSize> trigger_flag;
   std::bitset<kRCTriggerFlagSize> rc_trigger_flag;
   static const G4int experiment = confMan.Get<G4int>("Experiment");
+  static const G4int requiredTPCMt = confMan.Get<G4int>("TPCMt");
+  static const G4int minTPCPadHits = std::max<G4int>(1, confMan.Get<G4int>("MinHit"));
+  static const G4double truncateRate = confMan.Get<G4double>("Trunc");
+  std::vector<MlTrackFeature> mlTrackFeatures;
   G4String particle_name = "kaon+";
   if(experiment == 63) particle_name = "pi-"; //for E63
   //G4String particle_name = "kaon-"; //for E63
@@ -540,10 +553,10 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
       if(id >= 0){
         auto HC = dynamic_cast<TPCHitsCollection*>(HCE->GetHC(id));
         if(HC){
-          // Count proton or charged-pion tracks in the TPC with >=4 hits.
           std::unordered_map<G4int, G4int> trackHitCounts;
           std::unordered_map<G4int, G4int> trackPdg;
           std::unordered_set<G4int> primaryPiMinusTracks;
+          std::unordered_map<G4int, std::vector<TpcMlHit>> tpcHitMap;
           for(G4int i=0, n=HC->entries(); i<n; ++i){
             auto hit = (*HC)[i];
             SetHitData(hit);
@@ -554,6 +567,16 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
             if(pdg == -211 && hit->IsPrimary()){
               primaryPiMinusTracks.insert(trackId); // reject primary beam pi-
             }
+            TpcMlHit mlhit;
+            mlhit.trackId = trackId;
+            mlhit.pdg     = pdg;
+            const auto* ptcl = hit->GetParticle();
+            mlhit.parentId = ptcl ? ptcl->GetMother(0) : -1;
+            mlhit.time    = hit->GetTime()/ns;
+            mlhit.edep    = hit->GetEnergyDeposit();
+            mlhit.pos     = hit->GetPosition();
+            mlhit.mom     = hit->GetMomentum();
+            tpcHitMap[trackId].push_back(std::move(mlhit));
           }
 
           std::unordered_set<G4int> multiplicityTracks;
@@ -563,11 +586,17 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
             const auto pdg = trackPdg.at(trackId);
             const bool isAcceptedParticle = (pdg == 2212 || pdg == 211 || pdg == -211);
             const bool isPrimaryPiMinus = primaryPiMinusTracks.count(trackId) > 0;
-            if(isAcceptedParticle && !isPrimaryPiMinus && nhit >= 4){
+            if(isAcceptedParticle && !isPrimaryPiMinus && nhit >= minTPCPadHits){
               multiplicityTracks.insert(trackId);
             }
           }
           event.TPCMt = static_cast<G4int>(multiplicityTracks.size());
+
+          for (auto& kv : tpcHitMap) {
+            if (kv.second.size() < static_cast<std::size_t>(minTPCPadHits))
+              continue;
+            mlTrackFeatures.push_back(CalculateMlFeature(kv.second, truncateRate));
+          }
 
           SetNhits("TPC", HC->entries());
         }
@@ -628,7 +657,28 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
     }
   }
 
-  if(confMan.Get<G4bool>("TREE"))
+  bool storeEvent = true;
+  if (experiment == 90) {
+    const bool isPiTrigger = trigger_flag[kE90TOF] && trigger_flag[kE90SAC];
+    const bool hasExpectedTracks = (mlTrackFeatures.size() == kMlTrackCount);
+    if (isPiTrigger && hasExpectedTracks && event.TPCMt == requiredTPCMt) {
+      std::sort(mlTrackFeatures.begin(), mlTrackFeatures.end(),
+                [](const MlTrackFeature& a, const MlTrackFeature& b)
+                { return a.dedx > b.dedx; });
+      for (std::size_t i = 0; i < kMlTrackCount; ++i) {
+        event.mlUx[i]    = static_cast<float>(mlTrackFeatures[i].ux);
+        event.mlUy[i]    = static_cast<float>(mlTrackFeatures[i].uy);
+        event.mlUz[i]    = static_cast<float>(mlTrackFeatures[i].uz);
+        event.mlPdg[i]   = mlTrackFeatures[i].pidCode;
+        event.mlDedx[i]  = static_cast<float>(mlTrackFeatures[i].dedx);
+      }
+      storeEvent = true;
+    } else {
+      storeEvent = false;
+    }
+  }
+
+  if(confMan.Get<G4bool>("TREE") && storeEvent)
     m_tree->Fill();
 
   InitializeEvent();
@@ -667,11 +717,25 @@ void S2SAnaManager::InitializeEvent()
   for(auto& pair: event.hits){
     pair.second.clear();
   }
+  ResetMlFeatures(event, confMan, qnan, kMlTrackCount);
   event.TPCMt = 0;
 }
 
 void S2SAnaManager::DefineTree()
 {
+  if (confMan.Get<G4String>("BranchStyle") == "E90ML") {
+    const auto mlTrackCount = kMlTrackCount; // Mt + (scat pi-)
+    m_tree->Branch("label", &event.label, "label/I");
+    for (std::size_t i = 0; i < mlTrackCount; ++i) {
+      m_tree->Branch(Form("t%zu_ux", i),   &event.mlUx[i],   Form("t%zu_ux/F", i));
+      m_tree->Branch(Form("t%zu_uy", i),   &event.mlUy[i],   Form("t%zu_uy/F", i));
+      m_tree->Branch(Form("t%zu_uz", i),   &event.mlUz[i],   Form("t%zu_uz/F", i));
+      m_tree->Branch(Form("t%zu_pdg", i),  &event.mlPdg[i],  Form("t%zu_pdg/I", i));
+      m_tree->Branch(Form("t%zu_dedx", i), &event.mlDedx[i], Form("t%zu_dedx/F", i));
+    }
+    return;
+  }
+
   m_tree->Branch("evnum", &event.evnum, "evnum/I");
   m_tree->Branch("trig", &event.trig);
   m_tree->Branch("x0",&event.x0In, "x0/D");
@@ -699,9 +763,7 @@ void S2SAnaManager::DefineTree()
   m_tree->Branch("t1",  &event.t1,  "t1/D");  // [MeV]
 #endif
 
-  if(confMan.Get<G4int>("Experiment") == 90){
-    m_tree->Branch("Mt", &event.TPCMt, "Mt/I");
-  }
+  if(confMan.Get<G4int>("Experiment") == 90) m_tree->Branch("Mt", &event.TPCMt, "Mt/I");
 
   return;
   //  m_tree->Branch("t0",&event.t0,   "t0/D");
