@@ -81,8 +81,8 @@ struct Event
   std::vector<float> mlUx;
   std::vector<float> mlUy;
   std::vector<float> mlUz;
-  std::vector<Int_t> mlPdg;
   std::vector<float> mlDedx;
+  // std::vector<Int_t> mlPid;
 
   // E63 for weak pi
   double x1;

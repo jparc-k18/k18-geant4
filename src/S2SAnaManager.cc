@@ -56,10 +56,11 @@ using CLHEP::ns;
 const auto& confMan = ConfMan::GetInstance();
 const auto& histMan = HistMan::GetInstance();
 const auto qnan = TMath::QuietNaN();
-std::size_t kMlTrackCount = 0;
 Event event;
 std::map<TString, TH1*> hmap;
 std::vector<G4int> n_acc(kTriggerFlagSize, 0);
+std::size_t kMlTrackCount = 0;
+const bool noHist = (confMan.Get<G4String>("BranchStyle") == "E90ML");
 }
 
 //_____________________________________________________________________________
@@ -104,7 +105,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
     ){
     G4cout << "   make branch : " << sd_name << G4endl;
     MakeBranch(sd_name);
-    MakeHistogram(sd_name);
+    if (!noHist) MakeHistogram(sd_name);
   }
   if(experiment == 63){
     for(const auto& sd_name : std::vector<G4String>{
@@ -113,7 +114,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
       ){
       G4cout << "   make branch : " << sd_name << G4endl;
       MakeBranch(sd_name);
-      MakeHistogram(sd_name);
+      if (!noHist) MakeHistogram(sd_name);
     }
   }
   if(experiment == 90){
@@ -121,7 +122,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
     {
       G4cout << "   make branch : " << sd_name << G4endl;
       MakeBranch(sd_name);
-      MakeHistogram(sd_name);
+      if (!noHist) MakeHistogram(sd_name);
     }
   }
   if(experiment == 90){
@@ -146,8 +147,10 @@ S2SAnaManager::EndOfRun(const G4Run* /* aRun */)
   m_file->cd();
   if(confMan.Get<G4bool>("TREE"))
     m_tree->Write();
-  for(auto& h: hmap){
-    h.second->Write();
+  if (confMan.Get<G4String>("BranchStyle") != "E90ML") {
+    for (auto& h : hmap) {
+      h.second->Write();
+    }
   }
   m_file->Close();
 }
@@ -201,6 +204,7 @@ S2SAnaManager::MakeBranch(const G4String& sd_name)
 void
 S2SAnaManager::MakeHistogram(const G4String& sd_name)
 {
+  if (noHist) return;
   if(sd_name == "PRM"){
     const auto& params = histMan.Get("PTheta");
     TString key = sd_name + "PThetaGen";
@@ -619,32 +623,32 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   {
     // G4cout << "Acc eff." << G4endl;
     auto particle = event.hits.at("PRM").at(0);
-    for(G4int i=0, n=TriggerFlag.size(); i<n; ++i){
-      if(trigger_flag[i]){
-        n_acc[i]++;
-        hmap.at("PRMPThetaAcc"+TriggerFlag.at(i))->
+    if (!noHist) {
+      for(G4int i=0, n=TriggerFlag.size(); i<n; ++i){
+        if(trigger_flag[i]){
+          n_acc[i]++;
+          hmap.at("PRMPThetaAcc"+TriggerFlag.at(i))->
+            Fill(particle.Theta()/CLHEP::deg, particle.P()/CLHEP::GeV);
+        }
+      }
+
+      if(true
+         && trigger_flag[kVP1]
+         && trigger_flag[kVP2]
+         && trigger_flag[kVP3]
+         && trigger_flag[kVP4]
+         && trigger_flag[kVP5]
+         && trigger_flag[kVP6]
+         && trigger_flag[kVP7]
+         && trigger_flag[kVP8]
+         && trigger_flag[kVP9]
+         && trigger_flag[kVP10]
+         && trigger_flag[kTOF]
+         && trigger_flag[kWC]
+         ){
+        hmap.at("PRMPThetaAcc")->
           Fill(particle.Theta()/CLHEP::deg, particle.P()/CLHEP::GeV);
       }
-      // G4cout << "   " << TriggerFlag.at(i) << "\t"
-      //        << (G4double)n_acc[i]/(event.evnum+1) << G4endl;
-    }
-
-    if(true
-       && trigger_flag[kVP1]
-       && trigger_flag[kVP2]
-       && trigger_flag[kVP3]
-       && trigger_flag[kVP4]
-       && trigger_flag[kVP5]
-       && trigger_flag[kVP6]
-       && trigger_flag[kVP7]
-       && trigger_flag[kVP8]
-       && trigger_flag[kVP9]
-       && trigger_flag[kVP10]
-       && trigger_flag[kTOF]
-       && trigger_flag[kWC]
-       ){
-      hmap.at("PRMPThetaAcc")->
-        Fill(particle.Theta()/CLHEP::deg, particle.P()/CLHEP::GeV);
     }
   }
 
@@ -669,8 +673,8 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
         event.mlUx[i]    = static_cast<float>(mlTrackFeatures[i].ux);
         event.mlUy[i]    = static_cast<float>(mlTrackFeatures[i].uy);
         event.mlUz[i]    = static_cast<float>(mlTrackFeatures[i].uz);
-        event.mlPdg[i]   = mlTrackFeatures[i].pidCode;
         event.mlDedx[i]  = static_cast<float>(mlTrackFeatures[i].dedx);
+        // event.mlPid[i]   = mlTrackFeatures[i].pidCode;
       }
       storeEvent = true;
     } else {
@@ -688,6 +692,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
 void
 S2SAnaManager::SetNhits(const G4String& sd_name, G4int nhits)
 {
+  if (noHist) return;
   hmap[sd_name + "Nhits"]->Fill(nhits);
 }
 
@@ -699,16 +704,18 @@ S2SAnaManager::SetHitData(const VHitInfo* hit)
     const auto& name = hit->GetDetectorName();
     const auto& p = hit->GetParticle();
     event.hits.at(name).push_back(*p);
-    hmap[name + "HitPat"]->Fill(p->GetMother(1));
-    hmap[name + "X"]->Fill(p->Vx());
-    hmap[name + "Y"]->Fill(p->Vy());
-    hmap[name + "Z"]->Fill(p->Vz());
-    hmap[name + "U"]->Fill(p->Px()/p->Pz());
-    hmap[name + "V"]->Fill(p->Py()/p->Pz());
-    hmap[name + "YX"]->Fill(p->Vx(), p->Vy());
-    hmap[name + "VU"]->Fill(p->Px()/p->Pz(), p->Py()/p->Pz());
-    hmap[name + "UX"]->Fill(p->Vx(), p->Px()/p->Pz());
-    hmap[name + "VY"]->Fill(p->Vy(), p->Py()/p->Pz());
+    if (!noHist) {
+      hmap[name + "HitPat"]->Fill(p->GetMother(1));
+      hmap[name + "X"]->Fill(p->Vx());
+      hmap[name + "Y"]->Fill(p->Vy());
+      hmap[name + "Z"]->Fill(p->Vz());
+      hmap[name + "U"]->Fill(p->Px()/p->Pz());
+      hmap[name + "V"]->Fill(p->Py()/p->Pz());
+      hmap[name + "YX"]->Fill(p->Vx(), p->Vy());
+      hmap[name + "VU"]->Fill(p->Px()/p->Pz(), p->Py()/p->Pz());
+      hmap[name + "UX"]->Fill(p->Vx(), p->Px()/p->Pz());
+      hmap[name + "VY"]->Fill(p->Vy(), p->Py()/p->Pz());
+    }
   }
 }
 
@@ -730,8 +737,8 @@ void S2SAnaManager::DefineTree()
       m_tree->Branch(Form("t%zu_ux", i),   &event.mlUx[i],   Form("t%zu_ux/F", i));
       m_tree->Branch(Form("t%zu_uy", i),   &event.mlUy[i],   Form("t%zu_uy/F", i));
       m_tree->Branch(Form("t%zu_uz", i),   &event.mlUz[i],   Form("t%zu_uz/F", i));
-      m_tree->Branch(Form("t%zu_pdg", i),  &event.mlPdg[i],  Form("t%zu_pdg/I", i));
       m_tree->Branch(Form("t%zu_dedx", i), &event.mlDedx[i], Form("t%zu_dedx/F", i));
+      // m_tree->Branch(Form("t%zu_pdg", i),  &event.mlPdg[i],  Form("t%zu_pdg/I", i));
     }
     return;
   }
@@ -877,7 +884,7 @@ S2SAnaManager::SetPrimaryParticle(G4int id, G4int pdg,
                      TLorentzVector(v.x(), v.y(), v.z(), v.t()));
   event.hits.at("PRM").push_back(particle);
 
-  if(id == 0){
+  if(id == 0 && !noHist){
     hmap.at("PRMPThetaGen")->Fill(p.theta()/CLHEP::degree,
                                   p.v().mag()/CLHEP::GeV);
   }

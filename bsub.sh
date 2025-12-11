@@ -77,16 +77,20 @@ for i in $(seq 1 "$JOBS"); do
   ' "$MACRO" > "$MACRO_PATH"
 done
 
-LOG_DIR="${LOG_DIR:-logs/${BASE}}"
-mkdir -p "$LOG_DIR"
+# LOG_DIR="${LOG_DIR:-logs/${BASE}}"
+# mkdir -p "$LOG_DIR"
 
 JOB_NAME="${BASE}_split"
 queue_name="${QUEUE:-s}"
 QUEUE_OPT=(-q "$queue_name")
 
+# If you want logs, uncomment the -oo/-eo lines. Without them we still need the
+# backslash so the command block stays attached to bsub.
+# bsub "${QUEUE_OPT[@]}" -J "${JOB_NAME}[1-${JOBS}]" \
+#   -oo "${LOG_DIR}/${JOB_NAME}.%I.out" \
+#   -eo "${LOG_DIR}/${JOB_NAME}.%I.err" \
+#   bash -lc "set -euo pipefail; idx=\${LSB_JOBINDEX}; out=\"${OUT_DIR}/${BASE}_part\${idx}.root\"; macro=\"${MACRO_DIR}/${MACRO_STEM}_part\${idx}.mac\"; cd \"${script_dir}\"; \"${G4S2S_EXE}\" \"${CONF}\" \"\${out}\" \"\${macro}\""
 bsub "${QUEUE_OPT[@]}" -J "${JOB_NAME}[1-${JOBS}]" \
-  -oo "${LOG_DIR}/${JOB_NAME}.%I.out" \
-  -eo "${LOG_DIR}/${JOB_NAME}.%I.err" \
   bash -lc "set -euo pipefail; idx=\${LSB_JOBINDEX}; out=\"${OUT_DIR}/${BASE}_part\${idx}.root\"; macro=\"${MACRO_DIR}/${MACRO_STEM}_part\${idx}.mac\"; cd \"${script_dir}\"; \"${G4S2S_EXE}\" \"${CONF}\" \"\${out}\" \"\${macro}\""
 
 echo "Submitted ${JOBS} jobs as array ${JOB_NAME}[1-${JOBS}] (total events: ${TOTAL_EVENTS}, chunk: ${CHUNK})."
@@ -112,11 +116,11 @@ if [[ "${AUTO_MERGE:-0}" == "1" ]]; then
   echo "Cleaned macro directory: ${MACRO_DIR}"
 fi
 
-# Schedule cleanup of macro directory after jobs finish (covers AUTO_MERGE=0 case).
-if [[ "${AUTO_MERGE:-0}" != "1" ]]; then
-  bsub "${QUEUE_OPT[@]}" -w "ended(${JOB_NAME})" -J "${JOB_NAME}_cleanup" \
-    -oo "${LOG_DIR}/${JOB_NAME}_cleanup.out" \
-    -eo "${LOG_DIR}/${JOB_NAME}_cleanup.err" \
-    bash -lc "rm -rf \"${MACRO_DIR}\""
-  echo "Cleanup job scheduled to remove ${MACRO_DIR} after array completion."
-fi
+# # Schedule cleanup of macro directory after jobs finish (covers AUTO_MERGE=1 case).
+# if [[ "${AUTO_MERGE:-0}" == "1" ]]; then
+#   bsub "${QUEUE_OPT[@]}" -w "ended(${JOB_NAME})" -J "${JOB_NAME}_cleanup" \
+#     -oo "${LOG_DIR}/${JOB_NAME}_cleanup.out" \
+#     -eo "${LOG_DIR}/${JOB_NAME}_cleanup.err" \
+#     bash -lc "rm -rf \"${MACRO_DIR}\""
+#   echo "Cleanup job scheduled to remove ${MACRO_DIR} after array completion."
+# fi

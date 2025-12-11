@@ -4,57 +4,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 #include "ConfMan.hh"
 #include "S2SAnaManager.hh"
 
-namespace
-{
-
-double DensityEffectCorrection(double betagamma, const double* par)
-{
-  const double constant = 2.0 * std::log(10.0);
-  const double X = std::log10(betagamma);
-  if (X <= par[2])
-    return par[5] * std::pow(10.0, 2.0 * (X - par[2]));
-  else if (par[2] < X && X < par[3])
-    return constant * X - par[4] + par[0] * std::pow((par[3] - X), par[1]);
-  else
-    return constant * X - par[4];
-}
-}
-
-double CalculateTPCDedx(double massMeV, double beta)
-{
-  double rho = std::pow(10., -3) * (0.9 * 1.662 + 0.1 * 0.6672); // g/cm3
-  double ZoverA = 17.2 / 37.6;                                    // mol/g
-  double I = 0.9 * 188.0 + 0.1 * 41.7;                            // eV
-  double density_effect_par[6] = {
-    0.9 * 0.19714 + 0.1 * 0.09253,
-    0.9 * 2.9618 + 0.1 * 3.6257,
-    0.9 * 1.7635 + 0.1 * 1.6263,
-    0.9 * 4.4855 + 0.1 * 3.9716,
-    0.9 * 11.9480 + 0.1 * 9.5243,
-    0.0};
-
-  constexpr double Z = 1.0;
-  constexpr double me = 0.5109989461; // MeV
-  constexpr double K = 0.307075;      // MeV cm2 mol-1
-
-  const double constant = rho * K * ZoverA; // MeV/cm
-  const double beta2 = beta * beta;
-  const double gamma2 = 1.0 / (1.0 - beta2);
-  const double MeVToeV = std::pow(10., 6);
-  const double massRatio = me / massMeV;
-  const double Wmax = 2 * me * beta2 * gamma2 /
-    ((massRatio + 1.) * (massRatio + 1.) + 2 * massRatio * (std::sqrt(gamma2) - 1));
-  const double delta = DensityEffectCorrection(std::sqrt(beta2 * gamma2),
-                                               density_effect_par);
-  const double dedx = constant * Z * Z / beta2 *
-    (0.5 * std::log(2 * me * beta2 * gamma2 * Wmax * MeVToeV * MeVToeV / (I * I))
-     - beta2 - 0.5 * delta);
-  return dedx; // MeV/cm
-}
 
 MlTrackFeature CalculateMlFeature(std::vector<TpcMlHit>& hits, double truncateRate)
 {
@@ -65,6 +19,7 @@ MlTrackFeature CalculateMlFeature(std::vector<TpcMlHit>& hits, double truncateRa
   const auto pDir = hits.front().mom.unit();
   std::vector<double> dedxSamples;
   dedxSamples.reserve(hits.size());
+  std::vector<double> dedxTrunc;
   for (const auto& h : hits) {
     if (h.edep <= 0.0) continue; // dedx is stored directly in edep [MeV/cm]
     dedxSamples.push_back(h.edep);
@@ -79,6 +34,7 @@ MlTrackFeature CalculateMlFeature(std::vector<TpcMlHit>& hits, double truncateRa
     double sum = 0.0;
     for (std::size_t i = 0; i < nUse; ++i)
       sum += dedxSamples[i];
+    dedxTrunc.assign(dedxSamples.begin(), dedxSamples.begin() + nUse);
     dedxVal = sum / static_cast<double>(nUse);
   }
 
@@ -117,13 +73,13 @@ void ResetMlFeatures(Event& event,
     event.mlUx.assign(trackCount, qnanf);
     event.mlUy.assign(trackCount, qnanf);
     event.mlUz.assign(trackCount, qnanf);
-    event.mlPdg.assign(trackCount, -1);
     event.mlDedx.assign(trackCount, qnanf);
+    // event.mlPid.assign(trackCount, -1);
   } else {
     std::fill(event.mlUx.begin(), event.mlUx.end(), qnanf);
     std::fill(event.mlUy.begin(), event.mlUy.end(), qnanf);
     std::fill(event.mlUz.begin(), event.mlUz.end(), qnanf);
-    std::fill(event.mlPdg.begin(), event.mlPdg.end(), -1);
     std::fill(event.mlDedx.begin(),  event.mlDedx.end(),  qnanf);
+    // std::fill(event.mlPid.begin(), event.mlPid.end(), -1);
   }
 }

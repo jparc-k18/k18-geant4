@@ -72,12 +72,11 @@ TPCSD::ProcessHits(G4Step* aStep, G4TouchableHistory* /* ROhist */)
   //   G4cout << momentum_threshold << G4endl;
   // }
 
-  const auto massMeV = aTrack->GetDynamicParticle()->GetMass() / CLHEP::MeV;
-  const auto beta = preStepPoint->GetBeta();
-  const auto dedx = CalculateTPCDedx(massMeV, beta); // MeV/cm
-
+  G4double edep = aStep->GetTotalEnergyDeposit();
+  G4double stepLength = aStep->GetStepLength();
+  G4double dedx = 0.0;
+  if (stepLength > 0.0) dedx = (edep / stepLength) * CLHEP::cm; // MeV/cm
   auto hit = new TPCHit(SensitiveDetectorName, aStep);
-  // Store Bethe-Bloch dE/dx directly (MeV/cm) for downstream ML features.
   hit->SetEnergyDeposit(dedx);
   m_hits_collection->insert(hit);
 

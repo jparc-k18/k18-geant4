@@ -1,9 +1,10 @@
 #
-#  DetSize_E90_20251202
+#  DetSize_E90_ML
 #
 #  note:
 #    The size is not half but full length.
 #    The unit is mm.
+#    TpcPadConfigure is 4 to get de/dx
 #
 #______________________________________________________________________________
 # Name		X	Y	Z
@@ -96,7 +97,7 @@ TargetHolderWindowPhiDz	32.0	116.0	100.0
 TpcP10Volume		0.0	634.0	606.0
 TpcFieldCage		584.0	586.0	562.0
 TpcEffectiveVolume	0.0	500.0	562.0
-TpcPadConfigure		3 # 3: thin pad for tracking analysis / 4: actual pad size to get edep
+TpcPadConfigure		4 # 3: thin pad for tracking analysis / 4: actual pad size to get edep
 TpcPadCenterZ		-143.0 # upstream from HypTPC center
 TpcPadLengthIn		9.0
 TpcPadLengthOut		12.5

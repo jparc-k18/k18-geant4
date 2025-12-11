@@ -585,7 +585,7 @@ void S2SDetectorConstruction::ConstructHypTPC()
     angle[30] = 180. - 23.23;
     angle[31] = 180. - 18.69;
     break;
-  case 3:
+    case 3:
     //for tracking analysis
     //If you need the dE/dx information, it should be modified.
     //Thin sensitive detector is introduced.
@@ -602,6 +602,21 @@ void S2SDetectorConstruction::ConstructHypTPC()
 	angle[i]   = 360.;
       } else {
 	angle[i] = tpc::getsTheta(i);
+      }
+    }
+    break;
+  case 4:
+    //To get energy deposit
+    // pad size is actual size
+    for (G4int i=0; i<NumOfPadTPC; ++i) {
+      G4double pad_radius = tpc::getRadius(i);
+      double pad_halflength = tpc::getLength(i)/2;
+      pad_in[i] = pad_radius-pad_halflength;
+      pad_out[i] = pad_radius + pad_halflength;
+      if (i<NumOfPadTPCIn) {
+	      angle[i] = 360.;
+      } else {
+	      angle[i] = tpc::getsTheta(i);
       }
     }
     break;
