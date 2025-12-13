@@ -40,6 +40,11 @@ void ResetMlFeatures(Event& event,
                      double qnan,
                      std::size_t trackCount);
 
+double CalculateMissingMass(double p_beam,
+                            double p_pi,
+                            double theta_pi,
+                            double phi_pi);
+
 // Bethe-Bloch (P10) -> dE/dx [MeV/cm] without ADC conversion
 double CalculateTPCDedx(double massMeV, double beta);
 

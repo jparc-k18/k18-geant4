@@ -5,9 +5,23 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <TLorentzVector.h>
+#include <G4ParticleTable.hh>
 
 #include "ConfMan.hh"
 #include "S2SAnaManager.hh"
+
+namespace
+{
+constexpr double kInvalidMissingMass = -9999.0;
+
+double GetParticleMass(const G4String& name)
+{
+  auto* table = G4ParticleTable::GetParticleTable();
+  auto* particle = table ? table->FindParticle(name) : nullptr;
+  return particle ? particle->GetPDGMass() : 0.0;
+}
+}
 
 
 MlTrackFeature CalculateMlFeature(std::vector<TpcMlHit>& hits, double truncateRate)
@@ -56,6 +70,34 @@ MlTrackFeature CalculateMlFeature(std::vector<TpcMlHit>& hits, double truncateRa
   return tf;
 }
 
+double CalculateMissingMass(double p_beam,
+                            double p_pi,
+                            double theta_pi,
+                            double phi_pi)
+{
+  if (p_beam <= 0.0 || p_pi <= 0.0)
+    return kInvalidMissingMass;
+
+  const double M_Kaon = GetParticleMass("kaon-");
+  const double M_Deuteron = GetParticleMass("deuteron");
+  const double M_PiM = GetParticleMass("pi-");
+  if (M_Kaon <= 0.0 || M_Deuteron <= 0.0 || M_PiM <= 0.0)
+    return kInvalidMissingMass;
+
+  TLorentzVector beam_lv(0., 0., p_beam, std::sqrt(p_beam * p_beam + M_Kaon * M_Kaon));
+  TLorentzVector target_lv(0., 0., 0., M_Deuteron);
+
+  const double sinTheta = std::sin(theta_pi);
+  const double px = p_pi * sinTheta * std::sin(phi_pi);
+  const double py = p_pi * sinTheta * std::cos(phi_pi);
+  const double pz = p_pi * std::cos(theta_pi);
+  TLorentzVector pi_lv;
+  pi_lv.SetPxPyPzE(px, py, pz, std::sqrt(p_pi * p_pi + M_PiM * M_PiM));
+
+  const TLorentzVector X = beam_lv + target_lv - pi_lv;
+  return X.M(); // [MeV]
+}
+
 void ResetMlFeatures(Event& event,
                      const ConfMan& confMan,
                      double qnan,
@@ -82,4 +124,5 @@ void ResetMlFeatures(Event& event,
     std::fill(event.mlDedx.begin(),  event.mlDedx.end(),  qnanf);
     // std::fill(event.mlPid.begin(), event.mlPid.end(), -1);
   }
+  event.mlMM = qnanf;
 }

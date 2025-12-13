@@ -78,6 +78,7 @@ struct Event
   double t0;
   int Id;
   int label;
+  float mlMM;
   std::vector<float> mlUx;
   std::vector<float> mlUy;
   std::vector<float> mlUz;

@@ -676,6 +676,8 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
         event.mlDedx[i]  = static_cast<float>(mlTrackFeatures[i].dedx);
         // event.mlPid[i]   = mlTrackFeatures[i].pidCode;
       }
+      event.mlMM = static_cast<float>(
+        CalculateMissingMass(event.pB, event.p0, event.theta0, event.phi0));
       storeEvent = true;
     } else {
       storeEvent = false;
@@ -733,6 +735,7 @@ void S2SAnaManager::DefineTree()
   if (confMan.Get<G4String>("BranchStyle") == "E90ML") {
     const auto mlTrackCount = kMlTrackCount; // Mt + (scat pi-)
     m_tree->Branch("label", &event.label, "label/I");
+    m_tree->Branch("mm", &event.mlMM, "mm/F");
     for (std::size_t i = 0; i < mlTrackCount; ++i) {
       m_tree->Branch(Form("t%zu_ux", i),   &event.mlUx[i],   Form("t%zu_ux/F", i));
       m_tree->Branch(Form("t%zu_uy", i),   &event.mlUy[i],   Form("t%zu_uy/F", i));
