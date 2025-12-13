@@ -662,7 +662,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   }
 
   bool storeEvent = true;
-  if (experiment == 90) {
+  if (experiment == 90 && confMan.Get<G4String>("BranchStyle") == "E90ML") {
     const bool isPiTrigger = trigger_flag[kE90TOF] && trigger_flag[kE90SAC];
     const bool hasExpectedTracks = (mlTrackFeatures.size() == kMlTrackCount);
     if (isPiTrigger && hasExpectedTracks && event.TPCMt == requiredTPCMt) {
