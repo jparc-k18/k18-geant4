@@ -5,6 +5,7 @@
 #include <G4String.hh>
 #include <G4Element.hh>
 #include <G4Material.hh>
+#include <G4MaterialPropertiesTable.hh>
 #include <G4SystemOfUnits.hh>
 
 #include "FuncName.hh"
@@ -161,6 +162,17 @@ MaterialList::MaterialList()
   Aerogel->AddElement( elSi, 1 );
   Aerogel->AddElement( elO,  2 );
 
+  AerogelBAC1E63 = new G4Material("AerogelBAC1E63", 0.2000*g/cm3, 2);
+  AerogelBAC1E63->AddElement(elSi, 1);
+  AerogelBAC1E63->AddElement(elO,  2);
+  auto bac1_e63_mpt = new G4MaterialPropertiesTable();
+  G4double bac1_e63_photon_energy[] = { 2.0*eV, 7.0*eV };
+  G4double bac1_e63_rindex[] = { 1.05, 1.05 };
+  bac1_e63_mpt->AddProperty("RINDEX", bac1_e63_photon_energy,
+                            bac1_e63_rindex, 2);
+  AerogelBAC1E63->SetMaterialPropertiesTable(bac1_e63_mpt);
+  material_map["AerogelBAC1E63"] = AerogelBAC1E63;
+
   // PolyStylene
   Scin = new G4Material( "Scintillator", 1.032*g/cm3, 2 );
   Scin->AddElement( elC, 9 );
@@ -256,6 +268,7 @@ MaterialList::~MaterialList()
   delete NaI;
   delete SUS316L;
   delete Aerogel;
+  delete AerogelBAC1E63;
   delete Scin;
   delete Polyethylene;
   delete Acrylic;

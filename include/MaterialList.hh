@@ -78,6 +78,7 @@ public:
   G4Material *NaI;
   G4Material *SUS316L;
   G4Material *Aerogel;
+  G4Material *AerogelBAC1E63;
   G4Material *Scin;
   G4Material *Polyethylene;
   G4Material *Acrylic;

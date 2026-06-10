@@ -65,12 +65,12 @@ enum ETriggerFlag
 // RC
 enum ERCTriggerFlag
   {
-    kPD1Y,
-    kPD1Z,
-    kRC1,
-    kPD2Y,
-    kPD2Z,
-    kRC2,
+    kRCMinusXPDY,
+    kRCMinusXPDZ,
+    kRCMinusX,
+    kRCPlusXPDY,
+    kRCPlusXPDZ,
+    kRCPlusX,
     kRCTriggerFlagSize
   };
 

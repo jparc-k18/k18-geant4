@@ -30,6 +30,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 
 #include "ConfMan.hh"
 #include "DCGeomMan.hh"
@@ -44,6 +45,7 @@
 #include "VPHit.hh"
 #include "HistMan.hh"
 
+#include "GeHit.hh"
 #include "RCHit.hh"
 #include "PDHit.hh"
 
@@ -61,6 +63,41 @@ std::map<TString, TH1*> hmap;
 std::vector<G4int> n_acc(kTriggerFlagSize, 0);
 std::size_t kMlTrackCount = 0;
 const bool noHist = (confMan.Get<G4String>("BranchStyle") == "E90ML");
+
+const std::vector<G4String>&
+e63_branch_names()
+{
+  static const std::vector<G4String> names{
+    "RC-X", "RC+X",
+    "RC-X-PDY", "RC-X-PDZ",
+    "RC+X-PDY", "RC+X-PDZ",
+    "Ge", "BGO"
+  };
+  return names;
+}
+
+const std::vector<std::pair<G4String, ERCTriggerFlag>>&
+e63_rc_collection_names()
+{
+  static const std::vector<std::pair<G4String, ERCTriggerFlag>> names{
+    {"RC-X", kRCMinusX},
+    {"RC+X", kRCPlusX}
+  };
+  return names;
+}
+
+const std::vector<std::pair<G4String, ERCTriggerFlag>>&
+e63_pd_collection_names()
+{
+  static const std::vector<std::pair<G4String, ERCTriggerFlag>> names{
+    {"RC-X-PDY", kRCMinusXPDY},
+    {"RC-X-PDZ", kRCMinusXPDZ},
+    {"RC+X-PDY", kRCPlusXPDY},
+    {"RC+X-PDZ", kRCPlusXPDZ}
+  };
+  return names;
+}
+
 }
 
 //_____________________________________________________________________________
@@ -108,13 +145,11 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
     if (!noHist) MakeHistogram(sd_name);
   }
   if(experiment == 63){
-    for(const auto& sd_name : std::vector<G4String>{
-	"RC1", "RC2", "PD1Y", "PD1Z", "PD2Y", "PD2Z"}
-	  // S2SDetectorConstruction::GetSDList()
-      ){
+    std::vector<G4String> e63_branches = e63_branch_names();
+    for(const auto& sd_name : e63_branches){
       G4cout << "   make branch : " << sd_name << G4endl;
       MakeBranch(sd_name);
-      if (!noHist) MakeHistogram(sd_name);
+      if (!noHist && sd_name != "BGO") MakeHistogram(sd_name);
     }
   }
   if(experiment == 90){
@@ -125,7 +160,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
       if (!noHist) MakeHistogram(sd_name);
     }
   }
-  if(experiment == 90){
+  {
     const auto generator = confMan.Get<G4int>("Generator");
     for(const auto& branch : GeneratorParticleBranches::BranchList(generator)){
       G4cout << "   make branch : " << branch << G4endl;
@@ -460,78 +495,54 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   if(experiment == 63)
   {
     {
-      G4String name = "RC1";
+      G4String name = "Ge";
       static const auto id = SDMan->GetCollectionID(name);
+      if(id >= 0){
+	auto HC = dynamic_cast<GeHitsCollection*>(HCE->GetHC(id));
+	for(G4int i=0, n=HC->entries(); i<n; ++i){
+	  SetHitData((*HC)[i]);
+	}
+	SetNhits(name, HC->entries());
+      }
+    }
+    {
+      G4String name = "BGO";
+      static const auto id = SDMan->GetCollectionID(name);
+      if(id >= 0){
+	auto HC = dynamic_cast<GeHitsCollection*>(HCE->GetHC(id));
+	// BGO is branch-only for veto diagnostics; no histogram template is defined.
+	if(HC){
+	  for(G4int i=0, n=HC->entries(); i<n; ++i){
+	    auto hit = (*HC)[i];
+	    if(hit && hit->GetParticle())
+	      event.hits.at(name).push_back(*hit->GetParticle());
+	  }
+	}
+      }
+    }
+    for(const auto& spec : e63_rc_collection_names()){
+      const auto& name = spec.first;
+      const auto flag = spec.second;
+      const auto id = SDMan->GetCollectionID(name);
       if(id >= 0){
 	auto HC = dynamic_cast<RCHitsCollection*>(HCE->GetHC(id));
 	for(G4int i=0, n=HC->entries(); i<n; ++i){
 	  auto hit = (*HC)[i];
-	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kRC1] = true;
+	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[flag] = true;
 	  SetHitData((*HC)[i]);
 	}
 	SetNhits(name, HC->entries());
       }
     }
-    {
-      G4String name = "RC2";
-      static const auto id = SDMan->GetCollectionID(name);
-      if(id >= 0){
-	auto HC = dynamic_cast<RCHitsCollection*>(HCE->GetHC(id));
-	for(G4int i=0, n=HC->entries(); i<n; ++i){
-	  auto hit = (*HC)[i];
-	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kRC2] = true;
-	  SetHitData((*HC)[i]);
-	}
-	SetNhits(name, HC->entries());
-      }
-    }
-    {
-      G4String name = "PD1Y";
-      static const auto id = SDMan->GetCollectionID(name);
+    for(const auto& spec : e63_pd_collection_names()){
+      const auto& name = spec.first;
+      const auto flag = spec.second;
+      const auto id = SDMan->GetCollectionID(name);
       if(id >= 0){
 	auto HC = dynamic_cast<PDHitsCollection*>(HCE->GetHC(id));
 	for(G4int i=0, n=HC->entries(); i<n; ++i){
 	  auto hit = (*HC)[i];
-	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kPD1Y] = true;
-	  SetHitData((*HC)[i]);
-	}
-	SetNhits(name, HC->entries());
-      }
-    }
-    {
-      G4String name = "PD1Z";
-      static const auto id = SDMan->GetCollectionID(name);
-      if(id >= 0){
-	auto HC = dynamic_cast<PDHitsCollection*>(HCE->GetHC(id));
-	for(G4int i=0, n=HC->entries(); i<n; ++i){
-	  auto hit = (*HC)[i];
-	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kPD1Z] = true;
-	  SetHitData((*HC)[i]);
-	}
-	SetNhits(name, HC->entries());
-      }
-    }
-    {
-      G4String name = "PD2Y";
-      static const auto id = SDMan->GetCollectionID(name);
-      if(id >= 0){
-	auto HC = dynamic_cast<PDHitsCollection*>(HCE->GetHC(id));
-	for(G4int i=0, n=HC->entries(); i<n; ++i){
-	  auto hit = (*HC)[i];
-	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kPD2Y] = true;
-	  SetHitData((*HC)[i]);
-	}
-	SetNhits(name, HC->entries());
-      }
-    }
-    {
-      G4String name = "PD2Z";
-      static const auto id = SDMan->GetCollectionID(name);
-      if(id >= 0){
-	auto HC = dynamic_cast<PDHitsCollection*>(HCE->GetHC(id));
-	for(G4int i=0, n=HC->entries(); i<n; ++i){
-	  auto hit = (*HC)[i];
-	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[kPD2Z] = true;
+	  if(hit->Is(particle_name) && hit->IsWeakPi()) rc_trigger_flag[flag] = true;
 	  SetHitData((*HC)[i]);
 	}
 	SetNhits(name, HC->entries());

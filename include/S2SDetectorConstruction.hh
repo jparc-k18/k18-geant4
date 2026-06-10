@@ -15,6 +15,7 @@ class G4LogicalVolume;
 class G4VPhysicalVolume;
 class G4Material;
 class G4UniformMagField;
+class G4VSensitiveDetector;
 
 struct MaterialList;
 
@@ -63,6 +64,8 @@ private:
   void ConstructHypTPC();
   void ConstructTargetE90();
 
+  void ConstructHBXXGe();
+  void ConstructNaI();
   void ConstructRC(G4int i);
   void ConstructPD(G4int i, G4String YZ);
 };

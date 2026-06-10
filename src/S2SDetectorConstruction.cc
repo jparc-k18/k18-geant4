@@ -2,6 +2,8 @@
 
 #include "S2SDetectorConstruction.hh"
 
+#include <string>
+
 #include <G4FieldManager.hh>
 #include <G4ChordFinder.hh>
 #include <G4TransportationManager.hh>
@@ -65,6 +67,22 @@ G4PVPlacement* physWorld;
 inline G4Material* mat(const G4String& name) {
   return G4Material::GetMaterial(name, /*warning*/ true);
 }
+
+inline G4bool is_e63(G4int experiment)
+{
+  return experiment == 63;
+}
+
+inline G4int generator_id()
+{
+  return confMan.Get<G4int>("Generator");
+}
+
+inline G4bool should_construct_hbxx_ge(G4int experiment)
+{
+  return is_e63(experiment);
+}
+
 }
 
 std::vector<G4String> S2SDetectorConstruction::s_detector_list;
@@ -130,6 +148,11 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
 #if 1
   ConstructTarget();
   ConstructTgtHeBag();
+#endif
+
+#if 1
+  if(should_construct_hbxx_ge(m_experiment))
+    ConstructHBXXGe();
 #endif
 
 #if 1
@@ -204,6 +227,7 @@ S2SDetectorConstruction::ConstructBAC1()
   const auto& ra2 = geomMan.GetRotAngle2("BAC1") * deg;
   const auto& frame_size = sizeMan.GetSize("Bac1Frame") * 0.5 * mm;
   const auto& radiator_size = sizeMan.GetSize("Bac1Radiator") * 0.5 * mm;
+  const G4bool e63_bac_pair = (m_experiment == 63);
   // Mother
   auto mother_solid = new G4Box("Bac1MotherSolid",
                                 frame_size.x() + 5.*mm,
@@ -215,7 +239,9 @@ S2SDetectorConstruction::ConstructBAC1()
   auto rot = new G4RotationMatrix;
   rot->rotateY(-ra2);
   auto pos = geomMan.GetGlobalPosition("BAC1");
-  G4ThreeVector offset(0., 0., frame_size.z()-0.6*mm - radiator_size.z());
+  G4ThreeVector offset(0., 0., 0.);
+  if(!e63_bac_pair)
+    offset.setZ(frame_size.z()-0.6*mm - radiator_size.z());
   offset.rotateY(ra2);
   new G4PVPlacement(rot, pos + offset,
                     "Bac1MotherPHYS", mother_lv, physWorld, false, 0, m_check_overlaps);
@@ -230,81 +256,139 @@ S2SDetectorConstruction::ConstructBAC1()
   pos.setMag(0.);
   new G4PVPlacement(nullptr, pos, frame_lv,
                     "Bac1FramePHYS", mother_lv, false, 0, m_check_overlaps);
-  // Radiator
+  // E13 BAC drawing: BAC1 and BAC2 are adjacent radiators in one frame and
+  // one black-sheet envelope; only the center divider is Teflon.
+  const G4double reflector_thickness = 0.3*mm;
+  const G4double black_sheet_thickness = 0.2*mm;
+  const G4double wrap_clearance = 0.02*mm;
+
   auto radiator_solid = new G4Box("Bac1RadiatorSolid", radiator_size.x(),
                                   radiator_size.y(), radiator_size.z());
+  // E63 BAC keeps the E13/Yamamoto dimensions; only the aerogel index is n=1.05.
+  // The default physics list still has no optical/Cherenkov process enabled.
+  auto radiator_material =
+    (m_experiment == 63) ? mlist.AerogelBAC1E63 : mlist.Aerogel;
   auto radiator_lv = new G4LogicalVolume(radiator_solid,
-                                         mlist.Aerogel,
-                                         "Bac1RadiatorLV");
+                                         radiator_material, "Bac1RadiatorLV");
   //radiator_lv->SetSensitiveDetector(ac1_sd);
   radiator_lv->SetVisAttributes(G4Color::Magenta());
-  pos.set(0., 0., -frame_size.z()+0.6*mm + radiator_size.z());
-  new G4PVPlacement(nullptr, pos, radiator_lv,
-                    "Bac1RadiatorPHYS", frame_lv, false, 0);
+  auto place_rectangular_wrap =
+    [&](const G4String& prefix, G4Material* material, const G4Colour& colour,
+        const G4ThreeVector& center, const G4ThreeVector& inner_half,
+        G4double thickness)
+  {
+    auto x_solid = new G4Box(prefix + "XSideSolid",
+                             0.5*thickness,
+                             inner_half.y() + thickness,
+                             inner_half.z() + thickness);
+    auto y_solid = new G4Box(prefix + "YSideSolid",
+                             inner_half.x(),
+                             0.5*thickness,
+                             inner_half.z() + thickness);
+    auto z_solid = new G4Box(prefix + "ZSideSolid",
+                             inner_half.x(),
+                             inner_half.y(),
+                             0.5*thickness);
+    auto x_lv = new G4LogicalVolume(x_solid, material, prefix + "XSideLV");
+    auto y_lv = new G4LogicalVolume(y_solid, material, prefix + "YSideLV");
+    auto z_lv = new G4LogicalVolume(z_solid, material, prefix + "ZSideLV");
+    x_lv->SetVisAttributes(colour);
+    y_lv->SetVisAttributes(colour);
+    z_lv->SetVisAttributes(colour);
 
-  // Foward Black sheet
-  const auto sheet_thickness = 0.2*mm/2;
-  G4VSolid* solidBlackSheet1;
-  solidBlackSheet1 = new G4Box("solidBac1BlackSheet1",frame_size.x(),
-                               frame_size.y(), sheet_thickness);
-  solidBlackSheet1 = new G4IntersectionSolid("solidBac1BlackSheet1", solidBlackSheet1, frame_solid);
-  auto logicBlackSheet1 = new G4LogicalVolume(solidBlackSheet1, mlist.PVC, "logicBlackSheet1");
-  G4RotationMatrix rot_sheet;
-  logicBlackSheet1->SetVisAttributes(G4Color::Gray());
-  new G4PVPlacement(G4Transform3D(rot_sheet, G4ThreeVector(0, 0, -frame_size.z()+sheet_thickness)),
-                    logicBlackSheet1, "physBac1BlackSheet1", frame_lv, false, 0, m_check_overlaps);
+    for(G4int iside=0; iside<2; ++iside){
+      const G4double sign = (iside == 0) ? -1. : 1.;
+      new G4PVPlacement(
+        nullptr,
+        center + G4ThreeVector(sign*(inner_half.x() + 0.5*thickness),
+                               0.0, 0.0),
+        x_lv, prefix + "XSidePHYS", frame_lv, false, iside,
+        m_check_overlaps);
+      new G4PVPlacement(
+        nullptr,
+        center + G4ThreeVector(0.0,
+                               sign*(inner_half.y() + 0.5*thickness),
+                               0.0),
+        y_lv, prefix + "YSidePHYS", frame_lv, false, iside,
+        m_check_overlaps);
+      new G4PVPlacement(
+        nullptr,
+        center + G4ThreeVector(0.0, 0.0,
+                               sign*(inner_half.z() + 0.5*thickness)),
+        z_lv, prefix + "ZSidePHYS", frame_lv, false, iside,
+        m_check_overlaps);
+    }
+  };
 
-  // Foreward Reflector w/ teflon
-  const G4double reflector_thickness = 0.3*mm/2;
-  const G4ThreeVector reflector1_size(frame_size.x(),
-					frame_size.y(),
-                                  	reflector_thickness);
-  auto reflector1_solid = new G4Box("Bac1Reflector1Solid", reflector1_size.x(),
-                                 reflector1_size.y(), reflector1_size.z());
-  auto reflector1_lv = new G4LogicalVolume(reflector1_solid,
-                                        mlist.Teflon,
-					"Bac1Reflector1LV");
-  reflector1_lv->SetVisAttributes(G4Color::White());
-  pos.set(0.,0., -frame_size.z()+sheet_thickness*2 + reflector_thickness);
-  auto rot_reflector1 = new G4RotationMatrix;
-  new G4PVPlacement(rot_reflector1, pos, reflector1_lv,
-                      "Bac1Reflector1PHYS", frame_lv, false, 0);
+  if(e63_bac_pair){
+    const G4double separator_half_z = 0.5*reflector_thickness;
+    const G4double radiator_center_dz = radiator_size.z() + separator_half_z;
+    new G4PVPlacement(nullptr, G4ThreeVector(0., 0., radiator_center_dz),
+                      radiator_lv, "Bac1RadiatorPHYS", frame_lv, false, 0,
+                      m_check_overlaps);
+    new G4PVPlacement(nullptr, G4ThreeVector(0., 0., -radiator_center_dz),
+                      radiator_lv, "Bac2RadiatorPHYS", frame_lv, false, 1,
+                      m_check_overlaps);
 
-  // Backward Black sheet  w/ PVC
-  const G4ThreeVector triangle_size(frame_size.x(), frame_size.y(), frame_size.z()-radiator_size.z()-0.3*mm);
-  const G4double BlackSheet2_angle = std::atan2(triangle_size.z(),
-                                           triangle_size.y());
-  const G4ThreeVector BlackSheet2_size(triangle_size.x(),
-				  std::hypot(triangle_size.y(),
-                                   triangle_size.z()),
-                                  sheet_thickness);
-  auto solidBlackSheet2 = new G4Box("solidBac1BlackSheet2", BlackSheet2_size.x(),
-                                 BlackSheet2_size.y(), BlackSheet2_size.z());
-  auto logicBlackSheet2 = new G4LogicalVolume(solidBlackSheet2,
-                                        mlist.PVC,
-					"logicBac1BlackSheet2");
-  logicBlackSheet2->SetVisAttributes(G4Color::Gray());
-  pos.set(0.,0., -frame_size.z()+radiator_size.z()*2 + triangle_size.z());
-  auto rot_BlackSheet2 = new G4RotationMatrix;
-  rot_BlackSheet2->rotateX(BlackSheet2_angle);
-  new G4PVPlacement(rot_BlackSheet2, pos, logicBlackSheet2,
-                      "physBac1BlackSheet1", frame_lv, false, 0);
+    auto separator_solid =
+      new G4Box("Bac1ReflectorSeparatorSolid",
+                radiator_size.x() + wrap_clearance,
+                radiator_size.y() + wrap_clearance,
+                separator_half_z);
+    auto separator_lv =
+      new G4LogicalVolume(separator_solid, mlist.Teflon,
+                          "Bac1ReflectorSeparatorLV");
+    separator_lv->SetVisAttributes(G4Color::White());
+    new G4PVPlacement(nullptr, G4ThreeVector(), separator_lv,
+                      "Bac1ReflectorSeparatorPHYS", frame_lv, false, 0,
+                      m_check_overlaps);
 
+    const G4double pair_half_z =
+      2.*radiator_size.z() + separator_half_z;
+    const G4ThreeVector pair_reflector_inner(
+      radiator_size.x() + wrap_clearance,
+      radiator_size.y() + wrap_clearance,
+      pair_half_z + wrap_clearance);
+    place_rectangular_wrap(
+      "Bac1Reflector", mlist.Teflon, G4Color::White(),
+      G4ThreeVector(), pair_reflector_inner,
+      reflector_thickness - wrap_clearance);
 
-  // Backward Reflector  w/ Teflon
-  const G4ThreeVector reflector2_size(triangle_size.x(),
-				  std::hypot(triangle_size.y(),
-                                   triangle_size.z()),
-                                  reflector_thickness);
-  auto reflector2_solid = new G4Box("Bac1Reflector2Solid", reflector2_size.x(),
-                                 reflector2_size.y(), reflector2_size.z());
-  auto reflector2_lv = new G4LogicalVolume(reflector2_solid,
-                                        mlist.Teflon,
-					"Bac1Reflector2LV");
-  reflector2_lv->SetVisAttributes(G4Color::White());
-  pos.set(0.,0., -frame_size.z()+radiator_size.z()*2 + triangle_size.z()-0.5*mm);
-  new G4PVPlacement(rot_BlackSheet2, pos, reflector2_lv,
-                      "Bac1Reflector2PHYS", frame_lv, false, 0);
+    const G4ThreeVector pair_black_inner(
+      radiator_size.x() + reflector_thickness + wrap_clearance,
+      radiator_size.y() + reflector_thickness + wrap_clearance,
+      pair_half_z + reflector_thickness + wrap_clearance);
+    place_rectangular_wrap(
+      "Bac1BlackSheet", mlist.PVC, G4Colour(0.02, 0.02, 0.02),
+      G4ThreeVector(), pair_black_inner,
+      black_sheet_thickness - wrap_clearance);
+
+    G4cout << "[BAC] E63 pair geometry: BAC1/BAC2 radiator centers at local z="
+           << radiator_center_dz/mm << " and "
+           << -radiator_center_dz/mm
+           << " mm, one black-sheet envelope" << G4endl;
+  } else {
+    const G4ThreeVector radiator_pos(
+      0., 0., -frame_size.z()+0.6*mm + radiator_size.z());
+    new G4PVPlacement(nullptr, radiator_pos, radiator_lv,
+                      "Bac1RadiatorPHYS", frame_lv, false, 0,
+                      m_check_overlaps);
+    place_rectangular_wrap(
+      "Bac1Reflector", mlist.Teflon, G4Color::White(),
+      radiator_pos,
+      radiator_size + G4ThreeVector(wrap_clearance,
+                                    wrap_clearance,
+                                    wrap_clearance),
+      reflector_thickness - wrap_clearance);
+
+    place_rectangular_wrap(
+      "Bac1BlackSheet", mlist.PVC, G4Colour(0.02, 0.02, 0.02),
+      radiator_pos,
+      radiator_size + G4ThreeVector(reflector_thickness + wrap_clearance,
+                                    reflector_thickness + wrap_clearance,
+                                    reflector_thickness + wrap_clearance),
+      black_sheet_thickness - wrap_clearance);
+  }
 
 }
 
@@ -444,6 +528,7 @@ S2SDetectorConstruction::ConstructTarget()
     TargetMater = mlist.at("Air");}
   else if(Target == "Air") { TargetMater = mat("Air"); }
   else if(Target == "LD2") { TargetMater = mat("LD2"); }
+  else if(Target == "C") { TargetMater = mlist.at("C"); }
   else{
     G4cout << " Sorry, Target: " << Target
            << " is not defined. So Air will be used. " << G4endl;
@@ -455,20 +540,53 @@ S2SDetectorConstruction::ConstructTarget()
     ConstructTargetE90();
     break;
   default:
+    G4double targetGapHalfZ = 0.0;
+    try {
+      targetGapHalfZ = confMan.Get<G4double>("TargetGapHalfZ") * mm;
+    } catch(...) {
+      targetGapHalfZ = 0.0;
+    }
+    G4RotationMatrix rotTarget;
+    const auto& pos = geomMan.GetGlobalPosition("Target");
+    if (targetGapHalfZ > 0.0) {
+      // 2-block target with central gap (oldli physical setup).
+      // Total target half-z = half_size.z(); each block half-z is reduced by
+      // gapHalfZ. Block centers sit at +/- (gapHalfZ + block_half_z).
+      G4double blockHalfZ = (half_size.z() - targetGapHalfZ) / 2.0;
+      G4double blockCenterOffset = targetGapHalfZ + blockHalfZ;
+      auto TargetBlock1 = new G4Box("TargetBlock1",
+                                    half_size.x(), half_size.y(), blockHalfZ);
+      auto TargetBlock2 = new G4Box("TargetBlock2",
+                                    half_size.x(), half_size.y(), blockHalfZ);
+      auto logTarget1 = new G4LogicalVolume(TargetBlock1, TargetMater, "logTargetBlock1");
+      auto logTarget2 = new G4LogicalVolume(TargetBlock2, TargetMater, "logTargetBlock2");
+      G4ThreeVector pos1(pos.x(), pos.y(), pos.z() - blockCenterOffset);
+      G4ThreeVector pos2(pos.x(), pos.y(), pos.z() + blockCenterOffset);
+      new G4PVPlacement(G4Transform3D(rotTarget, pos1), "physTargetBlock1",
+                        logTarget1, physWorld, false, 0, m_check_overlaps);
+      new G4PVPlacement(G4Transform3D(rotTarget, pos2), "physTargetBlock2",
+                        logTarget2, physWorld, false, 1, m_check_overlaps);
+      logTarget1->SetVisAttributes(G4Color::Gray());
+      logTarget2->SetVisAttributes(G4Color::Gray());
+      // Print summary so the run log records the geometry actually placed.
+      G4cout << "[Target] 2-block geometry: gapHalfZ=" << targetGapHalfZ/mm
+             << " mm, blockHalfZ=" << blockHalfZ/mm << " mm, centers at z="
+             << (pos.z() - blockCenterOffset)/mm << " and "
+             << (pos.z() + blockCenterOffset)/mm << " mm" << G4endl;
+    }
     auto TargetBox = new G4Box
       ("TargetBox", half_size.x(), half_size.y(), half_size.z());
     auto logTarget = new G4LogicalVolume(TargetBox, TargetMater, "logTarget");
-    G4RotationMatrix rotTarget;
-
-    const auto& pos = geomMan.GetGlobalPosition("Target");
-    new G4PVPlacement(G4Transform3D(rotTarget, pos),
-                      "physTarget",
-                      logTarget,
-                      physWorld,
-                      false,
-                      0,
-                      m_check_overlaps);
-    logTarget->SetVisAttributes(G4Color::Gray());
+    if (targetGapHalfZ <= 0.0) {
+      new G4PVPlacement(G4Transform3D(rotTarget, pos),
+                        "physTarget",
+                        logTarget,
+                        physWorld,
+                        false,
+                        0,
+                        m_check_overlaps);
+      logTarget->SetVisAttributes(G4Color::Gray());
+    }
     if(Target == "AFT"){
       // ===== Define fiber targets ================================
       G4Material *Fiber_Core_Material =mlist.Scin;   // Polystylene
@@ -722,7 +840,7 @@ S2SDetectorConstruction::ConstructQ1()
     (solidQ1Pole, mlist.at("Fe"), "logicQ1Pole");
   new G4PVPlacement(G4Transform3D(G4RotationMatrix(), pos),
                     "physQ1Pole", logicQ1Pole, physWorld, false, 0, m_check_overlaps);
-  logicQ1Pole->SetVisAttributes(G4Color::Cyan());
+  logicQ1Pole->SetVisAttributes(G4Colour::Cyan());
   ///// Coil
   G4VSolid* solidQ1Coil = nullptr;
   solidQ1Coil = new G4Box("solidQ1Coil", 1400*mm/2, 1400*mm/2, 180*mm/2);
