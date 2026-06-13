@@ -36,7 +36,7 @@ Sdc5MylarThickness		0.100
 ### Counters
 # E63 BAC keeps the E13/Yamamoto mechanical dimensions; only the aerogel
 # refractive index is changed in MaterialList from n=1.03 to n=1.05.
-Bac1Frame        167.5  149.7  167.2
+BacFrame         167.5  149.7  178.0
 Bac1Radiator     160.0  52.2   66.0
 
 TofSeg		80.0	580.0	30.0

@@ -39,7 +39,7 @@ private:
   void AddNewDetector(G4VSensitiveDetector* sd);
   void ConstructField();
   //     void ConstructCalorimeter();
-  void ConstructBAC1();
+  void ConstructBAC();
   void ConstructSAC();
   void ConstructTarget ();
   void ConstructTgtHeBag();

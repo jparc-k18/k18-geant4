@@ -123,7 +123,7 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
      nullptr, false, 0, m_check_overlaps);
 
 #if 1
-  ConstructBAC1();
+  ConstructBAC();
 #endif
 
 #if 1
@@ -221,56 +221,51 @@ void S2SDetectorConstruction::ConstructField()
 
 //_____________________________________________________________________________
 void
-S2SDetectorConstruction::ConstructBAC1()
+S2SDetectorConstruction::ConstructBAC()
 {
   if(use_Tgthebag) return;
   const auto& ra2 = geomMan.GetRotAngle2("BAC1") * deg;
-  const auto& frame_size = sizeMan.GetSize("Bac1Frame") * 0.5 * mm;
+  const auto& frame_size = sizeMan.GetSize("BacFrame") * 0.5 * mm;
   const auto& radiator_size = sizeMan.GetSize("Bac1Radiator") * 0.5 * mm;
   const G4bool e63_bac_pair = (m_experiment == 63);
   // Mother
-  auto mother_solid = new G4Box("Bac1MotherSolid",
+  auto mother_solid = new G4Box("BacMotherSolid",
                                 frame_size.x() + 5.*mm,
                                 frame_size.y() + 5.*mm,
                                 frame_size.z() + 5.*mm);
   auto mother_lv = new G4LogicalVolume(mother_solid,
                                        mlist.at("Air"),
-                                       "Bac1MotherLV");
+                                       "BacMotherLV");
   auto rot = new G4RotationMatrix;
   rot->rotateY(-ra2);
-  auto pos = geomMan.GetGlobalPosition("BAC1");
+  auto pos = 0.5*(geomMan.GetGlobalPosition("BAC1") + geomMan.GetGlobalPosition("BAC2"));
   G4ThreeVector offset(0., 0., 0.);
   if(!e63_bac_pair)
     offset.setZ(frame_size.z()-0.6*mm - radiator_size.z());
   offset.rotateY(ra2);
   new G4PVPlacement(rot, pos + offset,
-                    "Bac1MotherPHYS", mother_lv, physWorld, false, 0, m_check_overlaps);
+                    "BacMotherPHYS", mother_lv, physWorld, false, 0, m_check_overlaps);
   mother_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
   // Frame
-  auto frame_solid = new G4Box("Bac1FrameSolid", frame_size.x(),
+  auto frame_solid = new G4Box("BacFrameSolid", frame_size.x(),
                                frame_size.y(), frame_size.z());
   auto frame_lv = new G4LogicalVolume(frame_solid,
                                       mlist.at("Air"),
-                                      "Bac1FrameLV");
+                                      "BacFrameLV");
   frame_lv->SetVisAttributes(G4VisAttributes::GetInvisible());
   pos.setMag(0.);
   new G4PVPlacement(nullptr, pos, frame_lv,
-                    "Bac1FramePHYS", mother_lv, false, 0, m_check_overlaps);
-  // E13 BAC drawing: BAC1 and BAC2 are adjacent radiators in one frame and
-  // one black-sheet envelope; only the center divider is Teflon.
+                    "BacFramePHYS", mother_lv, false, 0, m_check_overlaps);
   const G4double reflector_thickness = 0.3*mm;
-  const G4double black_sheet_thickness = 0.2*mm;
+  const G4double black_sheet_thickness = 0.2*mm; // both tmp value
   const G4double wrap_clearance = 0.02*mm;
 
-  auto radiator_solid = new G4Box("Bac1RadiatorSolid", radiator_size.x(),
+  auto radiator_solid = new G4Box("BacRadiatorSolid", radiator_size.x(),
                                   radiator_size.y(), radiator_size.z());
-  // E63 BAC keeps the E13/Yamamoto dimensions; only the aerogel index is n=1.05.
-  // The default physics list still has no optical/Cherenkov process enabled.
   auto radiator_material =
     (m_experiment == 63) ? mlist.AerogelBAC1E63 : mlist.Aerogel;
   auto radiator_lv = new G4LogicalVolume(radiator_solid,
-                                         radiator_material, "Bac1RadiatorLV");
-  //radiator_lv->SetSensitiveDetector(ac1_sd);
+                                         radiator_material, "BacRadiatorLV");
   radiator_lv->SetVisAttributes(G4Color::Magenta());
   auto place_rectangular_wrap =
     [&](const G4String& prefix, G4Material* material, const G4Colour& colour,
@@ -321,52 +316,51 @@ S2SDetectorConstruction::ConstructBAC1()
   };
 
   if(e63_bac_pair){
-    const G4double separator_half_z = 0.5*reflector_thickness;
-    const G4double radiator_center_dz = radiator_size.z() + separator_half_z;
-    new G4PVPlacement(nullptr, G4ThreeVector(0., 0., radiator_center_dz),
+    // The 2mm center gap has a cardboard-like divider in the real detector;
+    // modeled as air in G4.
+    const G4double gap_half = 1.0*mm;
+    const G4double end_offset = 21.0*mm;
+    const G4double radiator_center_dz = gap_half + radiator_size.z();
+
+    // BAC1 (upstream, copy 0) at -z, BAC2 (downstream, copy 1) at +z
+    new G4PVPlacement(nullptr, G4ThreeVector(0., 0., -radiator_center_dz),
                       radiator_lv, "Bac1RadiatorPHYS", frame_lv, false, 0,
                       m_check_overlaps);
-    new G4PVPlacement(nullptr, G4ThreeVector(0., 0., -radiator_center_dz),
+    new G4PVPlacement(nullptr, G4ThreeVector(0., 0., +radiator_center_dz),
                       radiator_lv, "Bac2RadiatorPHYS", frame_lv, false, 1,
                       m_check_overlaps);
 
-    auto separator_solid =
-      new G4Box("Bac1ReflectorSeparatorSolid",
-                radiator_size.x() + wrap_clearance,
-                radiator_size.y() + wrap_clearance,
-                separator_half_z);
-    auto separator_lv =
-      new G4LogicalVolume(separator_solid, mlist.Teflon,
-                          "Bac1ReflectorSeparatorLV");
-    separator_lv->SetVisAttributes(G4Color::White());
-    new G4PVPlacement(nullptr, G4ThreeVector(), separator_lv,
-                      "Bac1ReflectorSeparatorPHYS", frame_lv, false, 0,
-                      m_check_overlaps);
-
-    const G4double pair_half_z =
-      2.*radiator_size.z() + separator_half_z;
-    const G4ThreeVector pair_reflector_inner(
+    // Teflon reflector: one wrap per radiator block (not shared)
+    const G4ThreeVector teflon_inner(
       radiator_size.x() + wrap_clearance,
       radiator_size.y() + wrap_clearance,
-      pair_half_z + wrap_clearance);
+      radiator_size.z() + wrap_clearance);
+
     place_rectangular_wrap(
       "Bac1Reflector", mlist.Teflon, G4Color::White(),
-      G4ThreeVector(), pair_reflector_inner,
+      G4ThreeVector(0., 0., +radiator_center_dz),
+      teflon_inner,
       reflector_thickness - wrap_clearance);
 
-    const G4ThreeVector pair_black_inner(
+    place_rectangular_wrap(
+      "Bac2Reflector", mlist.Teflon, G4Color::White(),
+      G4ThreeVector(0., 0., -radiator_center_dz),
+      teflon_inner,
+      reflector_thickness - wrap_clearance);
+
+    // Black sheet: one envelope covering entire assembly incl. 21mm end offsets
+    const G4double assembly_half_z =
+      radiator_center_dz + radiator_size.z() + end_offset;
+    const G4ThreeVector black_inner(
       radiator_size.x() + reflector_thickness + wrap_clearance,
       radiator_size.y() + reflector_thickness + wrap_clearance,
-      pair_half_z + reflector_thickness + wrap_clearance);
+      assembly_half_z + wrap_clearance);
+
     place_rectangular_wrap(
-      "Bac1BlackSheet", mlist.PVC, G4Colour(0.02, 0.02, 0.02),
-      G4ThreeVector(), pair_black_inner,
+      "BacBlackSheet", mlist.PVC, G4Colour(0.02, 0.02, 0.02),
+      G4ThreeVector(), black_inner,
       black_sheet_thickness - wrap_clearance);
 
-    G4cout << "[BAC] E63 pair geometry: BAC1/BAC2 radiator centers at local z="
-           << radiator_center_dz/mm << " and "
-           << -radiator_center_dz/mm
-           << " mm, one black-sheet envelope" << G4endl;
   } else {
     const G4ThreeVector radiator_pos(
       0., 0., -frame_size.z()+0.6*mm + radiator_size.z());
