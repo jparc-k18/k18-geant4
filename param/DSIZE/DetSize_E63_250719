@@ -41,8 +41,8 @@ WcSegIn         190.0   690.0  140.0
 WcSegOut        230.0   730.0  180.0
 
 ### DCs
-Sdc1Frame       578.0   430.0   136.0
-Sdc1Drift       384.0   264.0   0.001
+Sdc1Frame       560.0   460.0   126.0
+Sdc1Drift       400.0   300.0   0.001
 
 Sdc2Frame       400.0   494.0   65.6
 Sdc2Drift       160.0   300.0   0.001
