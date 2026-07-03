@@ -24,22 +24,22 @@
 #include <G4TessellatedSolid.hh>
 #include <G4TriangularFacet.hh>
 #include <G4Trd.hh>
+#include <G4Torus.hh>
 #include <G4Tubs.hh>
 #include <G4TwoVector.hh>
+#include <G4UnionSolid.hh>
 #include <G4Colour.hh>
 #include <G4VisAttributes.hh>
 #include <G4ios.hh>
 
 #include "ConfMan.hh"
 #include "DCGeomMan.hh"
-#include "DetSizeMan.hh"
 #include "GeSD.hh"
 
 namespace
 {
 const auto& confMan = ConfMan::GetInstance();
 const auto& geomMan = DCGeomMan::GetInstance();
-const auto& sizeMan = DetSizeMan::GetInstance();
 
 struct Axes
 {
@@ -648,19 +648,73 @@ struct SingleGeDimensions
   G4double length = 0.;
 };
 
+const G4double kSingleGeReferenceRadius = (67.8/2.0)*mm;
+const G4double kSingleGeReferenceLength = 76.1*mm;
+const G4double kSingleGeReferenceEdge = 15.*mm;
+const G4double kSingleGeReferenceAnodeRadius = 4.5*mm;
+const G4double kSingleGeReferenceAnodeLength =
+  0.7*kSingleGeReferenceLength;
+const G4double kSingleGeLegacyOriginOffset =
+  0.5*kSingleGeReferenceEdge;
+
 SingleGeDimensions
 single_ge_dimensions()
 {
-  const G4ThreeVector size = sizeMan.GetSize("HBXXSingleGe")*mm;
-  return {size.x(), size.z()};
+  return {2.0*kSingleGeReferenceRadius, kSingleGeReferenceLength};
+}
+
+G4ThreeVector
+single_ge_placement_offset()
+{
+  return G4ThreeVector(0., 0., kSingleGeLegacyOriginOffset);
 }
 
 G4VSolid*
-make_single_ge_solid(const G4String& prefix, const SingleGeDimensions& dim)
+make_single_ge_solid(const G4String& prefix, const SingleGeDimensions&)
 {
-  return new G4Tubs(prefix + "SingleGe",
-                    0.*mm, 0.5*dim.diameter, 0.5*dim.length,
-                    0.*deg, 360.*deg);
+  auto solid_ge1 =
+    new G4Tubs(prefix + "GeDet1",
+               0.*mm, kSingleGeReferenceRadius,
+               0.5*(kSingleGeReferenceLength - kSingleGeReferenceEdge),
+               0.*deg, 360.*deg);
+
+  auto solid_ge2 =
+    new G4Tubs(prefix + "GeDet2",
+               0.*mm, kSingleGeReferenceAnodeRadius,
+               0.5*kSingleGeReferenceAnodeLength,
+               0.*deg, 360.*deg);
+
+  auto solid_ge3 =
+    new G4Tubs(prefix + "GeDet3",
+               0.*mm, kSingleGeReferenceRadius - kSingleGeReferenceEdge,
+               0.05*mm + 0.5*kSingleGeReferenceEdge,
+               0.*deg, 360.*deg);
+
+  auto solid_ge4 =
+    new G4Torus(prefix + "GeDet4",
+                0.*mm,
+                kSingleGeReferenceEdge - 0.001*mm,
+                kSingleGeReferenceRadius - kSingleGeReferenceEdge,
+                0.*deg,
+                360.*deg);
+
+  auto solid_ge_uni1 =
+    new G4UnionSolid(prefix + "GeDet_uni1",
+                     solid_ge1, solid_ge4, nullptr,
+                     G4ThreeVector(0., 0.,
+                                   -0.5*(kSingleGeReferenceLength
+                                          - kSingleGeReferenceEdge)));
+  auto solid_ge_uni2 =
+    new G4UnionSolid(prefix + "GeDet_uni2",
+                     solid_ge_uni1, solid_ge3, nullptr,
+                     G4ThreeVector(0., 0.,
+                                   -0.5*kSingleGeReferenceLength + 0.1*mm));
+  return new G4SubtractionSolid(
+    prefix + "SingleGe",
+    solid_ge_uni2, solid_ge2, nullptr,
+    G4ThreeVector(0., 0.,
+                  0.5*(0.3*kSingleGeReferenceLength
+                       - kSingleGeReferenceEdge) + 0.005*mm));
 }
 
 void
@@ -789,7 +843,8 @@ construct_single_unit(const G4String& prefix, GeSD* ge_sd, GeSD* bgo_sd,
                                    prefix + "SingleGeLV");
   ge_lv->SetSensitiveDetector(ge_sd);
   ge_lv->SetVisAttributes(make_solid_vis(G4Colour(1., 0., 1.)));
-  place(ge_lv, prefix + "SingleGePHYS", G4ThreeVector(), ge_copy_number);
+  place(ge_lv, prefix + "SingleGePHYS", single_ge_placement_offset(),
+        ge_copy_number);
 }
 
 G4ThreeVector
