@@ -2,8 +2,10 @@
 
 #include "S2SAnaManager.hh"
 
-#include <bitset>
 #include <algorithm>
+#include <array>
+#include <bitset>
+#include <cstdlib>
 
 #include "G4Run.hh"
 #include "G4Event.hh"
@@ -22,6 +24,7 @@
 
 #include "RootHelper.hh"
 #include "GeneratorParticleBranches.hh"
+#include "K18RunControl.hh"
 #include "TPCMlFeature.hh"
 
 #include <iomanip>
@@ -63,6 +66,83 @@ std::map<TString, TH1*> hmap;
 std::vector<G4int> n_acc(kTriggerFlagSize, 0);
 std::size_t kMlTrackCount = 0;
 const bool noHist = (confMan.Get<G4String>("BranchStyle") == "E90ML");
+
+G4bool
+RequireReactionBeamTransportMatch()
+{
+  const G4String raw =
+    confMan.Get<G4String>("ReactionRequireBeamTransportMatch");
+  return !raw.empty()
+    && confMan.Get<G4bool>("ReactionRequireBeamTransportMatch");
+}
+
+void
+ValidateReactionBeamTransportMatch()
+{
+  if(!RequireReactionBeamTransportMatch())
+    return;
+  const auto expected_it = event.hits.find(
+    GeneratorParticleBranches::kReactionBeamVertex);
+  const auto transported_it = event.hits.find(
+    GeneratorParticleBranches::kReactionBeamVertexTransport);
+  if(expected_it == event.hits.end()
+     || transported_it == event.hits.end()
+     || expected_it->second.size() != 1
+     || transported_it->second.size() != 1){
+    G4cerr << "Generator 6381 beam-vertex contract failed: evnum="
+           << event.evnum << " ReactionBeamVertex multiplicity="
+           << (expected_it == event.hits.end() ? 0 : expected_it->second.size())
+           << " ReactionBeamVertexTransport multiplicity="
+           << (transported_it == event.hits.end()
+               ? 0 : transported_it->second.size()) << G4endl;
+    std::exit(EXIT_FAILURE);
+  }
+  const auto& expected = expected_it->second.front();
+  const auto& transported = transported_it->second.front();
+  const G4String momentum_raw = confMan.Get<G4String>(
+    "ReactionBeamTransportMatchMomentumTolerance");
+  const G4String position_raw = confMan.Get<G4String>(
+    "ReactionBeamTransportMatchPositionTolerance");
+  const G4double momentum_tolerance = momentum_raw.empty() ? 1.e-6
+    : confMan.Get<G4double>(
+        "ReactionBeamTransportMatchMomentumTolerance");
+  const G4double position_tolerance = position_raw.empty() ? 1.e-6
+    : confMan.Get<G4double>(
+        "ReactionBeamTransportMatchPositionTolerance");
+  const G4double max_momentum_difference = std::max({
+    std::abs(expected.Px() - transported.Px()),
+    std::abs(expected.Py() - transported.Py()),
+    std::abs(expected.Pz() - transported.Pz()),
+    std::abs(expected.Energy() - transported.Energy())});
+  const G4double max_position_difference = std::max({
+    std::abs(expected.Vx() - transported.Vx()),
+    std::abs(expected.Vy() - transported.Vy()),
+    std::abs(expected.Vz() - transported.Vz())});
+  if(expected.GetPdgCode() != transported.GetPdgCode()
+     || max_momentum_difference > momentum_tolerance
+     || max_position_difference > position_tolerance){
+    G4cerr << "Generator 6381 beam-vertex contract failed: evnum="
+           << event.evnum << " max_dP4=" << max_momentum_difference
+           << " MeV max_dX=" << max_position_difference
+           << " mm tolerances=" << momentum_tolerance << " MeV/"
+           << position_tolerance << " mm" << G4endl;
+    std::exit(EXIT_FAILURE);
+  }
+}
+
+const std::array<G4String, 2>&
+k18_dc_branch_names()
+{
+  static const std::array<G4String, 2> names{"K18BFT", "K18BC"};
+  return names;
+}
+
+const std::array<G4String, 2>&
+k18_tof_branch_names()
+{
+  static const std::array<G4String, 2> names{"K18BH1", "K18BH2"};
+  return names;
+}
 
 const std::vector<G4String>&
 e63_branch_names()
@@ -143,6 +223,12 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
     G4cout << "   make branch : " << sd_name << G4endl;
     MakeBranch(sd_name);
     if (!noHist) MakeHistogram(sd_name);
+  }
+  if(confMan.Get<G4bool>("UseK18Beamline")){
+    for(const auto& sd_name : k18_dc_branch_names())
+      MakeBranch(sd_name);
+    for(const auto& sd_name : k18_tof_branch_names())
+      MakeBranch(sd_name);
   }
   if(experiment == 63){
     std::vector<G4String> e63_branches = e63_branch_names();
@@ -306,6 +392,30 @@ S2SAnaManager::SetPrimaryData(double x0, double y0, double z0,
   //  G4cout<<"setPrimaryData"<<G4endl;
 }
 
+//_____________________________________________________________________________
+void
+S2SAnaManager::SetTargetTruthData(G4double x, G4double y, G4double z,
+                                  G4double u, G4double v, G4double phi,
+                                  G4double theta, G4double p, G4double t)
+{
+  event.xTgtTruth = x;
+  event.yTgtTruth = y;
+  event.zTgtTruth = z;
+  event.uTgtTruth = u;
+  event.vTgtTruth = v;
+  event.phiTgtTruth = phi;
+  event.thetaTgtTruth = theta;
+  event.pTgtTruth = p;
+  event.tTgtTruth = t;
+}
+
+//_____________________________________________________________________________
+G4bool
+S2SAnaManager::HasTargetTruth() const
+{
+  return std::isfinite(event.pTgtTruth);
+}
+
 // E63 for weak pi
 //_____________________________________________________________________________
 void
@@ -351,7 +461,7 @@ void S2SAnaManager::SetProcessData(G4int nP, G4int nN, G4int nL,
 
 void S2SAnaManager::BeginOfEvent(const G4Event *anEvent)
 {
-  event.evnum = anEvent->GetEventID();
+  event.evnum = K18RunControl::GlobalEventIndex(anEvent);
 }
 
 void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
@@ -369,6 +479,41 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   if(experiment == 63) particle_name = "pi-"; //for E63
   //G4String particle_name = "kaon-"; //for E63
   if(experiment == 90) particle_name = "pi-";
+
+  if(confMan.Get<G4bool>("UseK18Beamline")){
+    // K1.8 detectors reuse the standard hit classes but keep separate trees.
+    for(const auto& name : k18_dc_branch_names()){
+      const auto id = SDMan->GetCollectionID(name);
+      if(id < 0)
+        continue;
+      auto* collection = dynamic_cast<DCHitsCollection*>(HCE->GetHC(id));
+      if(!collection)
+        continue;
+      for(G4int i=0, n=collection->entries(); i<n; ++i)
+        SetHitData((*collection)[i]);
+    }
+    for(const auto& name : k18_tof_branch_names()){
+      const auto id = SDMan->GetCollectionID(name);
+      if(id < 0)
+        continue;
+      auto* collection = dynamic_cast<TOFHitsCollection*>(HCE->GetHC(id));
+      if(!collection)
+        continue;
+      for(G4int i=0, n=collection->entries(); i<n; ++i)
+        SetHitData((*collection)[i]);
+    }
+  }
+
+  if(confMan.Get<G4int>("Generator") == 6381){
+    const auto& expected =
+      event.hits.at(GeneratorParticleBranches::kReactionBeamVertex);
+    const auto& transported =
+      event.hits.at(GeneratorParticleBranches::kReactionBeamVertexTransport);
+    if(expected.empty() && transported.empty()){
+      InitializeEvent();
+      return;
+    }
+  }
 
   {
     //G4String name = "SDC"+std::to_string(k);
@@ -673,6 +818,7 @@ void S2SAnaManager::EndOfEvent(const G4Event *anEvent)
   }
 
   bool storeEvent = true;
+  ValidateReactionBeamTransportMatch();
   if (experiment == 90 && confMan.Get<G4String>("BranchStyle") == "E90ML") {
     const bool isPiTrigger = trigger_flag[kE90TOF] && trigger_flag[kE90SAC];
     const bool hasExpectedTracks = (mlTrackFeatures.size() == kMlTrackCount);
@@ -706,7 +852,9 @@ void
 S2SAnaManager::SetNhits(const G4String& sd_name, G4int nhits)
 {
   if (noHist) return;
-  hmap[sd_name + "Nhits"]->Fill(nhits);
+  const auto histogram = hmap.find(sd_name + "Nhits");
+  if(histogram != hmap.end() && histogram->second)
+    histogram->second->Fill(nhits);
 }
 
 //_____________________________________________________________________________
@@ -717,7 +865,7 @@ S2SAnaManager::SetHitData(const VHitInfo* hit)
     const auto& name = hit->GetDetectorName();
     const auto& p = hit->GetParticle();
     event.hits.at(name).push_back(*p);
-    if (!noHist) {
+    if(!noHist && hmap.find(name + "HitPat") != hmap.end()){
       hmap[name + "HitPat"]->Fill(p->GetMother(1));
       hmap[name + "X"]->Fill(p->Vx());
       hmap[name + "Y"]->Fill(p->Vy());
@@ -739,6 +887,15 @@ void S2SAnaManager::InitializeEvent()
   }
   ResetMlFeatures(event, confMan, qnan, kMlTrackCount);
   event.TPCMt = 0;
+  event.xTgtTruth = qnan;
+  event.yTgtTruth = qnan;
+  event.zTgtTruth = qnan;
+  event.uTgtTruth = qnan;
+  event.vTgtTruth = qnan;
+  event.phiTgtTruth = qnan;
+  event.thetaTgtTruth = qnan;
+  event.pTgtTruth = qnan;
+  event.tTgtTruth = qnan;
 }
 
 void S2SAnaManager::DefineTree()
@@ -770,6 +927,18 @@ void S2SAnaManager::DefineTree()
   m_tree->Branch("theta0",&event.theta0, "theta0/D");
   m_tree->Branch("p0",&event.p0,   "p0/D");
   m_tree->Branch("pB",&event.pB,   "pB/D");
+  if(confMan.Get<G4bool>("UseK18Beamline")){
+    m_tree->Branch("xTgtTruth", &event.xTgtTruth, "xTgtTruth/D");
+    m_tree->Branch("yTgtTruth", &event.yTgtTruth, "yTgtTruth/D");
+    m_tree->Branch("zTgtTruth", &event.zTgtTruth, "zTgtTruth/D");
+    m_tree->Branch("uTgtTruth", &event.uTgtTruth, "uTgtTruth/D");
+    m_tree->Branch("vTgtTruth", &event.vTgtTruth, "vTgtTruth/D");
+    m_tree->Branch("phiTgtTruth", &event.phiTgtTruth, "phiTgtTruth/D");
+    m_tree->Branch("thetaTgtTruth", &event.thetaTgtTruth,
+                   "thetaTgtTruth/D");
+    m_tree->Branch("pTgtTruth", &event.pTgtTruth, "pTgtTruth/D");
+    m_tree->Branch("tTgtTruth", &event.tTgtTruth, "tTgtTruth/D");
+  }
 
   // E63 for weak pi
 #if 0

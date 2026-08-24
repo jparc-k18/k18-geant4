@@ -2,10 +2,12 @@
 
 #include "S2SDetectorConstruction.hh"
 
+#include <algorithm>
 #include <string>
 
 #include <G4FieldManager.hh>
 #include <G4ChordFinder.hh>
+#include <G4ClassicalRK4.hh>
 #include <G4TransportationManager.hh>
 
 #include <G4Polyhedra.hh>
@@ -42,6 +44,8 @@
 #include "DetectorID.hh"
 #include "DetSizeMan.hh"
 #include "MagnetConstant.hh"
+#include "K18BeamlineDetectorBuilder.hh"
+#include "K18BeamlineField.hh"
 #include "MaterialList.hh"
 #include "S2SField.hh"
 
@@ -76,6 +80,11 @@ inline G4bool is_e63(G4int experiment)
 inline G4int generator_id()
 {
   return confMan.Get<G4int>("Generator");
+}
+
+inline G4bool use_k18_beamline()
+{
+  return confMan.Get<G4bool>("UseK18Beamline");
 }
 
 inline G4bool should_construct_hbxx_ge(G4int experiment)
@@ -113,7 +122,9 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
   m_check_overlaps = confMan.Get<G4bool>("CheckOverlap");
 
   ///// World
-  const auto& half_size = sizeMan.GetSize("World")*mm/2.;
+  auto half_size = sizeMan.GetSize("World")*mm/2.;
+  if(use_k18_beamline())
+    half_size.setZ(std::max(half_size.z(), 20000.*mm));
   auto solidWorld = new G4Box
     ("World", half_size.x(), half_size.y(), half_size.z());
   m_world_lv = new G4LogicalVolume(solidWorld, mlist.at("Air"), "World");
@@ -122,8 +133,12 @@ G4VPhysicalVolume* S2SDetectorConstruction::Construct()
     (nullptr, G4ThreeVector(), m_world_lv, "World",
      nullptr, false, 0, m_check_overlaps);
 
+  if(use_k18_beamline())
+    ConstructK18Beamline();
+
 #if 1
-  ConstructBAC();
+  if(!confMan.Get<G4bool>("DisableBAC"))
+    ConstructBAC();
 #endif
 
 #if 1
@@ -200,23 +215,62 @@ S2SDetectorConstruction::AddNewDetector(G4VSensitiveDetector* sd)
 }
 
 //_____________________________________________________________________________
+void
+S2SDetectorConstruction::ConstructK18Beamline()
+{
+  K18BeamlineDetectorBuilder builder;
+  builder.Construct(m_world_lv, m_check_overlaps);
+}
+
+//_____________________________________________________________________________
 void S2SDetectorConstruction::ConstructField()
 {
-  S2SField *field = new S2SField(confMan.Get<G4String>("FLDMAP"));
+  const G4String field_map = confMan.Get<G4String>("FLDMAP");
+  const G4bool has_s2s_field = !field_map.empty() && field_map != "none"
+    && field_map != "skip" && field_map != "0";
+  G4MagneticField* field = nullptr;
+  if(use_k18_beamline()){
+    const G4ThreeVector target = geomMan.GetGlobalPosition("Target")*mm;
+    G4double target_coordinate = 1503.*mm;
+    try {
+      target_coordinate = geomMan.GetLocalZ("K18Target")*mm;
+    } catch(...) {
+      const G4double configured = confMan.Get<G4double>("K18TargetL");
+      if(configured != 0.)
+        target_coordinate = configured*mm;
+    }
+    if(has_s2s_field){
+      field = new K18CombinedField(field_map, target, target_coordinate);
+    } else {
+      field = new K18BeamlineFieldAdapter(target, target_coordinate);
+    }
+  } else if(has_s2s_field) {
+    field = new S2SField(field_map);
+  } else {
+    G4cout << "[S2SDetectorConstruction] magnetic field is disabled"
+           << G4endl;
+    return;
+  }
+
   auto fieldManager =
     G4TransportationManager::GetTransportationManager()->GetFieldManager();
   fieldManager->SetDetectorField(field);
-  fieldManager->CreateChordFinder(field);
-
-  // G4Mag_UsualEqRhs* fEquation = new G4Mag_UsualEqRhs(field);
-  // G4MagIntegratorStepper *pStepper = new G4SimpleRunge(fEquation);
-  // G4ChordFinder *pChordFinder = new G4ChordFinder(field, 1.0E-3*mm, pStepper);
-  // fieldManager->SetChordFinder(pChordFinder);
-
-  fieldManager->GetChordFinder()->SetDeltaChord(1.e-3*mm);
-  //fieldManager->SetDeltaIntersection(1.0E-6*mm);
-  //fieldManager->SetDeltaOneStep(1.0E-4*mm);
-  //fieldManager->SetMaximumEpsilonStep(1.0E-3);
+  if(use_k18_beamline()){
+    // Tight tolerances keep transport through the long QQDQQ system stable at
+    // the target plane, where the beam state is used by resolution studies.
+    auto* equation = new G4Mag_UsualEqRhs(field);
+    auto* stepper = new G4ClassicalRK4(equation);
+    auto* chord_finder = new G4ChordFinder(field, 1.e-4*mm, stepper);
+    fieldManager->SetChordFinder(chord_finder);
+    chord_finder->SetDeltaChord(1.e-5*mm);
+    fieldManager->SetDeltaIntersection(1.e-6*mm);
+    fieldManager->SetDeltaOneStep(1.e-5*mm);
+    fieldManager->SetMinimumEpsilonStep(1.e-8);
+    fieldManager->SetMaximumEpsilonStep(1.e-6);
+  } else {
+    fieldManager->CreateChordFinder(field);
+    fieldManager->GetChordFinder()->SetDeltaChord(1.e-3*mm);
+  }
 }
 
 //_____________________________________________________________________________
@@ -507,13 +561,25 @@ void
 S2SDetectorConstruction::ConstructTarget()
 {
   if(use_Tgthebag) return;
-  const auto& half_size = sizeMan.GetSize("Target")*mm/2.;
+  auto target_size = sizeMan.GetSize("Target")*mm;
+  const auto configured_size = [](const char* key, G4double fallback){
+    const auto raw = confMan.Get<G4String>(key);
+    return raw.empty() ? fallback : confMan.Get<G4double>(key)*mm;
+  };
+  target_size.setX(configured_size("TargetSizeX", target_size.x()));
+  target_size.setY(configured_size("TargetSizeY", target_size.y()));
+  target_size.setZ(configured_size("TargetSizeZ", target_size.z()));
+  const auto half_size = target_size/2.;
   G4Material *TargetMater = nullptr;
   auto Target = confMan.Get<G4String>("TargetMaterial");
   if(Target == "Be"){
     TargetMater = mlist.at("Be9");}
   else if(Target == "natLi"){
     TargetMater = mlist.at("natLi");}
+  else if(Target == "Li6"){
+    TargetMater = mlist.at("Li6");}
+  else if(Target == "Li7"){
+    TargetMater = mlist.at("Li7");}
   else if(Target == "CH2"){
     TargetMater = mlist.Polyethylene;}
   else if(Target == "HeGas"){

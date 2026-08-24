@@ -2,6 +2,7 @@
 
 #include "S2SPhysicsList.hh"
 
+#include <cstdlib>
 #include <iomanip>
 #include <CLHEP/Units/SystemOfUnits.h>
 
@@ -16,10 +17,14 @@
 #include <G4HadronElasticPhysics.hh>
 #include <G4NeutronTrackingCut.hh>
 #include <G4HadronPhysicsQGSP_BERT.hh>
+#include <G4ParticleDefinition.hh>
+#include <G4ParticleTable.hh>
+#include <G4ProcessManager.hh>
 #include <G4VPhysicsConstructor.hh>
 
 #include "ConfMan.hh"
 #include "FuncName.hh"
+#include "K18MissingMassReaction.hh"
 
 #define G4MT_physicsVector                                                    \
   ((G4VMPLsubInstanceManager.offset[g4vmplInstanceID]).physicsVector)
@@ -92,6 +97,24 @@ S2SPhysicsList::ConstructProcess()
       G4cout << FUNC_NAME << " Construct " << name << G4endl;
 
     (*itr)->ConstructProcess();
+  }
+
+  // The missing-mass reaction is attached to the transported incident beam.
+  // Its final state is generated at the target plane selected by the primary
+  // action, after ordinary field transport and material interactions.
+  if(confMan.Get<G4int>("Generator") == 6381){
+    G4String beam_name = confMan.Get<G4String>("ReactionBeamParticle");
+    if(beam_name.empty())
+      beam_name = "kaon-";
+    auto* particle = G4ParticleTable::GetParticleTable()->FindParticle(
+      beam_name);
+    if(!particle || !particle->GetProcessManager()){
+      G4cerr << FUNC_NAME << " cannot attach K18 missing-mass reaction to "
+             << beam_name << G4endl;
+      std::exit(EXIT_FAILURE);
+    }
+    particle->GetProcessManager()->AddDiscreteProcess(
+      new K18MissingMassReactionProcess());
   }
 }
 

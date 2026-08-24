@@ -11,7 +11,7 @@ namespace FdComplex
     const double mp = 938.2720813;
     const double mn = 939.5654133;
     const double hbarc = 197.327;
-    double Cj[11] = {0.88472985,
+    inline double Cj[11] = {0.88472985,
                      -0.26408759,
                      -0.44114404 * 0.1,
                      -0.14397512 * 100.,

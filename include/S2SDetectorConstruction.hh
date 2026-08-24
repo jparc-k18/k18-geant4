@@ -38,6 +38,7 @@ private:
 
   void AddNewDetector(G4VSensitiveDetector* sd);
   void ConstructField();
+  void ConstructK18Beamline();
   //     void ConstructCalorimeter();
   void ConstructBAC();
   void ConstructSAC();

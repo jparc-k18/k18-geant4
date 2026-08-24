@@ -3,6 +3,8 @@
 #ifndef PRIMARY_GENERATOR_ACTION_HH
 #define PRIMARY_GENERATOR_ACTION_HH
 
+#include <memory>
+
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <globals.hh>
 #include <TFile.h>
@@ -12,6 +14,7 @@
 class G4ParticleGun;
 class G4ParticleDefinition;
 class G4Event;
+class K18MissingMassPrimaryGenerator;
 
 //_____________________________________________________________________________
 class S2SPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
@@ -23,6 +26,8 @@ public:
 private:
   G4ParticleGun* m_particleGun;
   G4int          m_generator;
+  std::unique_ptr<K18MissingMassPrimaryGenerator>
+    m_k18_missing_mass_generator;
 
 public:
   TFile *profileK18;
@@ -49,6 +54,8 @@ private:
   void GenerateBeamGausProfile(G4Event* anEvent);
   void GenerateBeamFixSeed(G4Event* anEvent);
   void GenerateScatParticles(G4Event* anEvent);
+  void GenerateK18PhaseSpaceBeam(G4Event* anEvent);
+  void GenerateK18MissingMass(G4Event* anEvent);
   void GenerateDefocusBeam(G4Event* anEvent);
   void Generate12XiBeryllium(G4Event* anEvent);
   void GenerateElementaryXiMinus(G4Event* anEvent);

@@ -9,12 +9,12 @@
 
 namespace FermiMotion
 {
-    double pmag;
-    double cos_theta;
-    double sin_theta;
-    double phi;
-    TVector3 p;
-    TRandom* R;
+    inline double pmag;
+    inline double cos_theta;
+    inline double sin_theta;
+    inline double phi;
+    inline TVector3 p;
+    inline TRandom* R;
 
     inline double func(double x)
     {

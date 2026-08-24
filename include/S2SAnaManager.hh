@@ -75,6 +75,15 @@ struct Event
   double theta0;
   double p0;
   double pB;
+  double xTgtTruth;
+  double yTgtTruth;
+  double zTgtTruth;
+  double uTgtTruth;
+  double vTgtTruth;
+  double phiTgtTruth;
+  double thetaTgtTruth;
+  double pTgtTruth;
+  double tTgtTruth;
   double t0;
   int Id;
   int label;
@@ -215,6 +224,10 @@ public:
 		      G4double u0, G4double v0, G4double phi,
 		      G4double theta, G4double p0, G4double pB,
 		      G4int ParIdNb);
+  void SetTargetTruthData(G4double x, G4double y, G4double z,
+                          G4double u, G4double v, G4double phi,
+                          G4double theta, G4double p, G4double t);
+  G4bool HasTargetTruth() const;
   void SetSecondaryData(G4double x1, G4double y1, G4double z1,
 			G4double px1, G4double py1, G4double pz1,
 			G4double p1, G4double t1); // E63 for weak pi

@@ -54,6 +54,10 @@ MaterialList::MaterialList()
   material_map["natLi"] = new G4Material("natLi", 0.534* g/cm3, 2);
   material_map["natLi"]->AddElement(elLi7, 92.5*perCent);
   material_map["natLi"]->AddElement(elLi6, 7.5*perCent );
+  material_map["Li6"]   = new G4Material("Li6", 3., 6.0*g/mole,
+                                           0.534*g/cm3);
+  material_map["Li7"]   = new G4Material("Li7", 3., 7.0*g/mole,
+                                           0.534*g/cm3);
   material_map["C"]     = new G4Material("C",     6., 12.0     *g/mole, 1.8   * g/cm3);
   material_map["Al"]    = new G4Material("Al",   13., 26.981539*g/mole, 2.70  * g/cm3);
   material_map["Si"]    = new G4Material("Si",   14., 28.0855  *g/mole, 2.33  * g/cm3);
@@ -98,6 +102,17 @@ MaterialList::MaterialList()
   material_map["Ar50Ethane50Gas"] = new G4Material("Ar:Ethane=50:50", 1.5627*mg/cm3, 2, kStateGas);
   material_map["Ar50Ethane50Gas"]->AddMaterial(material_map["ArGas"],     0.5706);
   material_map["Ar50Ethane50Gas"]->AddMaterial(material_map["EthaneGas"], 0.4294);
+
+  // BC3/BC4 use an Ar:isobutane:methylal 76:20:4 molar mixture.  The
+  // elemental mass fractions below preserve that composition at the measured
+  // atmospheric-density operating point.
+  material_map["Ar76IsoButane20Methylal4Gas"] =
+    new G4Material("Ar76IsoButane20Methylal4Gas",
+                   2.010*mg/cm3, 4, kStateGas);
+  material_map["Ar76IsoButane20Methylal4Gas"]->AddElement(elAr, 0.67425);
+  material_map["Ar76IsoButane20Methylal4Gas"]->AddElement(elC,  0.24541);
+  material_map["Ar76IsoButane20Methylal4Gas"]->AddElement(elH,  0.05193);
+  material_map["Ar76IsoButane20Methylal4Gas"]->AddElement(elO,  0.02841);
 
   HeLiq = new G4Material( "HeLiq", 2.,  4.002602*g/mole, 0.1249* g/cm3 );
   Li    = new G4Material( "Li",    3.,  7.0     *g/mole, 0.534 * g/cm3 );

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdlib>
 
 #include <G4Event.hh>
 #include <G4ParticleGun.hh>
@@ -31,6 +32,8 @@
 #include "FermiMotion.hh"
 #include "CMSMomentum.hh"
 #include "GeneratorParticleBranches.hh"
+#include "K18MissingMassPrimaryGenerator.hh"
+#include "K18RunControl.hh"
 
 
 namespace
@@ -48,6 +51,26 @@ namespace
   const auto& zK18Target = geomMan.LocalZ("K18Target");
   BeamInfo beam;
   namespace GenBranch = GeneratorParticleBranches;
+
+  void ApplyEventSeed(const G4Event* event)
+  {
+    G4long base = 0;
+    if(!K18RunControl::ReadEnvironmentLong("K18G4_EVENT_SEED_BASE", base))
+      return;
+    const G4long global_event = K18RunControl::GlobalEventIndex(event);
+    const G4long seed = K18RunControl::CheckedAdd(
+      base, global_event, "event random seed");
+    if(seed <= 0){
+      G4cerr << "K18G4_EVENT_SEED_BASE plus global event index must be "
+             << "positive; got " << seed << G4endl;
+      std::exit(EXIT_FAILURE);
+    }
+    G4Random::setTheSeed(seed);
+    if(event->GetEventID() == 0)
+      G4cout << "[S2SPrimaryGeneratorAction] event seed base=" << base
+             << " global_event=" << global_event
+             << " first_seed=" << seed << G4endl;
+  }
 
   G4LorentzVector ToG4Lorentz(const TLorentzVector& lv)
   {
@@ -128,9 +151,13 @@ namespace
 S2SPrimaryGeneratorAction::S2SPrimaryGeneratorAction()
   : G4VUserPrimaryGeneratorAction(),
     m_particleGun(nullptr),
-    m_generator(confMan.Get<G4int>("Generator"))
+    m_generator(confMan.Get<G4int>("Generator")),
+    m_k18_missing_mass_generator()
 {
   auto igene = confMan.Get<G4int>("Generator");
+  if(igene == 6380 || igene == 6381)
+    m_k18_missing_mass_generator.reset(
+      new K18MissingMassPrimaryGenerator());
   if(igene==4 ||igene==7501 ){
     auto ifsK18name = confMan.Get<G4String>("K18ROOT");
     profileK18 = new TFile(ifsK18name);
@@ -168,6 +195,7 @@ S2SPrimaryGeneratorAction::~S2SPrimaryGeneratorAction()
 void
 S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
+  ApplyEventSeed(anEvent);
   beam = beamMan.Get();
 
   if(m_particleGun) delete m_particleGun;
@@ -180,6 +208,8 @@ S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   case 5: GenerateBeamGausProfile(anEvent); break;
   case 6: GenerateBeamFixSeed(anEvent); break;
   case 7: GenerateScatParticles(anEvent); break;
+  case 6380: GenerateK18PhaseSpaceBeam(anEvent); break;
+  case 6381: GenerateK18MissingMass(anEvent); break;
   case 7001: Generate12XiBeryllium(anEvent); break;
   case 7002: GenerateElementaryXiMinus(anEvent); break;
   case 7003: GenerateElementarySigmaMinus(anEvent); break;
@@ -200,6 +230,32 @@ S2SPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
     G4cerr << " * Generator number error : " << m_generator << G4endl;
     break;
   }
+}
+
+//_____________________________________________________________________________
+void
+S2SPrimaryGeneratorAction::GenerateK18PhaseSpaceBeam(G4Event* anEvent)
+{
+  if(!m_k18_missing_mass_generator){
+    G4cerr << "K18 upstream generator is not initialized" << G4endl;
+    std::exit(EXIT_FAILURE);
+  }
+  m_particleGun = new G4ParticleGun();
+  m_k18_missing_mass_generator->GeneratePhaseSpaceBeam(
+    anEvent, m_particleGun);
+}
+
+//_____________________________________________________________________________
+void
+S2SPrimaryGeneratorAction::GenerateK18MissingMass(G4Event* anEvent)
+{
+  if(!m_k18_missing_mass_generator){
+    G4cerr << "K18 missing-mass generator is not initialized" << G4endl;
+    std::exit(EXIT_FAILURE);
+  }
+  m_particleGun = new G4ParticleGun();
+  m_k18_missing_mass_generator->GenerateMissingMassBeam(
+    anEvent, m_particleGun);
 }
 
 //_____________________________________________________________________________

@@ -22,6 +22,14 @@ inline constexpr char kHypNucleus[]  = "HypNucleus";
 inline constexpr char kHypFragment[] = "HypFragment";
 inline constexpr char kRecoilIon[]   = "RecoilIon";
 inline constexpr char kDecGamma[]    = "DecGamma";
+inline constexpr char kReactionBeam[] = "ReactionBeam";
+inline constexpr char kReactionBeamVertexTransport[] =
+  "ReactionBeamVertexTransport";
+inline constexpr char kReactionBeamVertex[] = "ReactionBeamVertex";
+inline constexpr char kReactionTarget[] = "ReactionTarget";
+inline constexpr char kReactionResidual[] = "ReactionResidual";
+inline constexpr char kReactionScat[] = "ReactionScat";
+inline constexpr char kReactionRecoil[] = "ReactionRecoil";
 
 enum class ParticleId : G4int
 {
@@ -37,14 +45,27 @@ enum class ParticleId : G4int
   HypNucleus  = 8,
   HypFragment = 9,
   RecoilIon   = 10,
-  DecGamma    = 11
+  DecGamma    = 11,
+  ReactionBeam = 12,
+  ReactionBeamVertex = 13,
+  ReactionTarget = 14,
+  ReactionResidual = 15,
+  ReactionScat = 16,
+  ReactionRecoil = 17,
+  ReactionBeamVertexTransport = 18
 };
 
 inline std::vector<G4String> BranchList(G4int generator)
 {
   switch(generator){
   case 6376:
+  case 6380:
     return {kPrimPi};
+  case 6381:
+    return {kPrimPi, kReactionBeam, kReactionBeamVertexTransport,
+            kReactionBeamVertex,
+            kReactionTarget, kReactionResidual,
+            kReactionScat, kReactionRecoil};
   case 6375:
     return {kPrimPi, kHypNucleus, kHypFragment, kRecoilIon, kDecPi, kDecGamma};
   case 9001:
