@@ -209,6 +209,7 @@ S2SAnaManager::BeginOfRun( const G4Run* /* aRun */)
     ("git", ("\n"+gSystem->GetFromPipe("git log -1")).Data());
   git->Write();
   m_tree = new TTree("g4s2s", "S-2S simulation");
+  m_tree->GetUserInfo()->Add(new TNamed("G4DCReadoutFrame", "chamber-local-v1"));
   event.hits.clear();
   event.evnum = -1;
   event.trig.assign(kTriggerFlagSize, false);

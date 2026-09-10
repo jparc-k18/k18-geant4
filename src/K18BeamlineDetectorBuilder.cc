@@ -359,19 +359,6 @@ std::vector<G4double> bh1_segment_widths()
   return widths;
 }
 
-G4RotationMatrix* make_local_stereo_rotation(G4double tilt_angle)
-{
-  if(std::abs(tilt_angle) < 1.e-9)
-    return nullptr;
-  auto* rot = new G4RotationMatrix;
-  rot->rotateZ(tilt_angle*deg);
-  // The pointer-form G4PVPlacement constructor takes the frame rotation,
-  // i.e. the inverse of the intended daughter-object rotation.  Keep the
-  // plane-local x axis aligned with the DCGEO readout coordinate s.
-  rot->invert();
-  return rot;
-}
-
 void place_box(const G4String& name,
                G4double half_x,
                G4double half_y,
@@ -1414,7 +1401,10 @@ void place_k18_chamber(const G4String& chamber_name,
     plane_lv->SetVisAttributes(plane_vis);
     if(sd)
       plane_lv->SetSensitiveDetector(sd);
-    new G4PVPlacement(make_local_stereo_rotation(geomMan.GetTiltAngle(plane.name)),
+    // Match S2S: the sensitive face is chamber-aligned. DCGEO's stereo
+    // angle describes wires and is applied once by the analyzer to local x/y.
+    // The surrounding gas and passive cathode/window faces are unchanged.
+    new G4PVPlacement(nullptr,
                       G4ThreeVector(0., 0., l - center_l),
                       plane_lv, G4String(plane.name) + "PV", chamber_lv,
                       false, geomMan.GetDetectorId(plane.name), check_overlaps);

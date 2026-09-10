@@ -1,5 +1,17 @@
 # K1.8 upstream transport and missing-mass generator
 
+## DC readout coordinates (2026-09-08)
+
+BcOut sensitive rectangles are aligned with their chambers, like S2S; only
+the wires carry the DCGEO stereo angle. The analyzer always uses
+`s = local_x*cos(tilt) + local_y*sin(tilt)` for both systems. There is no
+`G4DCUseTiltedReadout` setting. Chamber gas, windows and cathodes are unchanged;
+the rectangular sensitive boundaries no longer rotate with the wires.
+
+The `g4s2s` tree records `G4DCReadoutFrame=chamber-local-v1` in its UserInfo.
+Use the matching analyzer update. Old BcOut ROOT has a different coordinate
+frame and must be regenerated, or read with its historical software version.
+
 ## Summary
 
 This working tree adds a reusable K1.8 QQDQQ simulation path to G4S2S.  It
