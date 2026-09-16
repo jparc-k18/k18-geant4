@@ -71,7 +71,6 @@ const G4double kDriftL4 = 0.240*m;
 const G4double kQYokeHX = 450.*mm;
 const G4double kQYokeHY = 650.*mm;
 const G4double kQYokeInner = 390.*mm;
-const G4double kQBoreR = 100.*mm;
 const G4double kQPoleLimb62 = 62.*mm;
 const G4double kQPoleLimb107 = 107.*mm;
 const G4double kQPoleBreak = 225.*mm;
@@ -1687,7 +1686,6 @@ K18BeamlineDetectorBuilder::Construct(G4LogicalVolume* world_lv,
   auto* pvc = G4Material::GetMaterial("PVC", true);
   const G4bool vacuum_windows =
     !all_vacuum && conf_bool_or("K18VacuumWindows", false);
-  const G4bool beam_pipe = conf_bool_or("K18BeamPipe", false);
   const G4double window_thickness =
     conf_double_or("K18VacuumWindowThickness", 0.5)*mm;
   const G4double window_radius =
@@ -1714,13 +1712,26 @@ K18BeamlineDetectorBuilder::Construct(G4LogicalVolume* world_lv,
     conf_double_or("K18BcOutAlCoatingThickness", 0.000005)*mm;
   const G4double bcout_carbon_coating_thickness =
     conf_double_or("K18BcOutCarbonCoatingThickness", 0.000005)*mm;
-  const G4String window_material_name =
+  G4String window_material_name =
     conf_string_or("K18VacuumWindowMaterial", "SUS316L");
-  auto* window_material = G4Material::GetMaterial(window_material_name, true);
-  const G4String bh2_material_name =
+  auto* window_material = G4Material::GetMaterial(window_material_name, false);
+  if(!window_material){
+    G4cerr << "#W [K18BeamlineDetectorBuilder] unknown "
+           << "K18VacuumWindowMaterial=" << window_material_name
+           << "; using default SUS316L" << G4endl;
+    window_material = G4Material::GetMaterial("SUS316L", true);
+    window_material_name = "SUS316L";
+  }
+  G4String bh2_material_name =
     conf_string_or("K18BH2Material", "Scintillator");
   auto* configured_bh2_material =
-    G4Material::GetMaterial(bh2_material_name, true);
+    G4Material::GetMaterial(bh2_material_name, false);
+  if(!configured_bh2_material){
+    G4cerr << "#W [K18BeamlineDetectorBuilder] unknown K18BH2Material="
+           << bh2_material_name << "; using default Scintillator" << G4endl;
+    configured_bh2_material = G4Material::GetMaterial("Scintillator", true);
+    bh2_material_name = "Scintillator";
+  }
   if(bcout_films && (bcout_window_thickness <= 0. ||
                      bcout_cathode_thickness <= 0. ||
                      bcout_anode_cathode_gap <= 0. ||
@@ -1738,8 +1749,6 @@ K18BeamlineDetectorBuilder::Construct(G4LogicalVolume* world_lv,
   coil_vis->SetForceSolid(true);
   auto* guard_vis = new G4VisAttributes(G4Colour(0.90, 0.32, 0.00, 0.90));
   guard_vis->SetForceSolid(true);
-  auto* duct_vis = new G4VisAttributes(G4Colour(0.30, 0.65, 1.00, 0.30));
-  duct_vis->SetForceWireframe(true);
   auto* chamber_vis = new G4VisAttributes(G4Colour(0.05, 0.70, 0.30, 0.24));
   chamber_vis->SetForceWireframe(true);
   auto* bc_plane_vis = new G4VisAttributes(G4Colour(0.10, 0.90, 0.20, 0.55));
@@ -1771,14 +1780,9 @@ K18BeamlineDetectorBuilder::Construct(G4LogicalVolume* world_lv,
 
   const G4double q10_l =
     -(d4_tan_half() + kDriftL2 + kQ11z + kDriftL1 + 0.5*kQ10z);
-  const G4double vc1_l =
-    -(d4_tan_half() + kDriftL2 + kQ11z + 0.5*kDriftL1);
   const G4double q11_l =
     -(d4_tan_half() + kDriftL2 + 0.5*kQ11z);
-  const G4double vc2_l = -(d4_tan_half() + 0.5*kDriftL2);
-  const G4double vc3_l = d4_tan_half() + 0.5*kDriftL3;
   const G4double q12_l = d4_tan_half() + kDriftL3 + 0.5*kQ12z;
-  const G4double vc4_l = d4_tan_half() + kDriftL3 + kQ12z + 0.5*kDriftL4;
   const G4double q13_l =
     d4_tan_half() + kDriftL3 + kQ12z + kDriftL4 + 0.5*kQ13z;
   const G4double bend = K18BeamlineFrame::BendAngle();
@@ -1800,57 +1804,43 @@ K18BeamlineDetectorBuilder::Construct(G4LogicalVolume* world_lv,
 
   // Connecting vacuum ducts stop at the magnet faces; the iron yokes own the
   // K18Q*PV and K18D4PV physical-volume names.
-  if(beam_pipe){
-    const auto star = star_opening_polygon(kPipeStarScale);
-    const auto rect = rect_opening_polygon(kPipeD4HalfW, kPipeD4HalfH);
-    G4int pcopy = 0;
-    place_pipe_span("K18PipePV", star, vi_l + win_h, disk_in_l - disk_h, 0.,
-                    frame, world_lv, check_overlaps, pipe_vis, vacuum, pcopy);
-    place_pipe_disk("K18PipePV", disk_in_l, 0.,
-                    frame, world_lv, check_overlaps, pipe_vis, window_vis,
-                    vacuum, window_material, pcopy);
-    place_pipe_span("K18PipePV", rect, disk_in_l + disk_h, d4_in_l, 0.,
-                    frame, world_lv, check_overlaps, pipe_vis, vacuum, pcopy);
-    const G4double phi_up = d4_from_fusion(d4_fusion_face_phi(kRhoD4));
-    const G4double phi_dn = d4_from_fusion(0.);
-    place_d4_tubs_at("K18PipePV",
-      make_phi_tubs("K18PipeD4", kRhoD4 - kPipeD4HalfW, kRhoD4 + kPipeD4HalfW,
-                    kPipeD4HalfH, phi_up, phi_dn),
-      G4ThreeVector(-d4_tan_half(), kRhoD4, 0.), d4rot, frame, world_lv,
-      check_overlaps, pipe_vis, vacuum, pcopy++);
-    place_pipe_span("K18PipePV", rect, d4_out_l, disk_out_l - disk_h, bend,
-                    frame, world_lv, check_overlaps, pipe_vis, vacuum, pcopy);
-    place_pipe_disk("K18PipePV", disk_out_l, bend,
-                    frame, world_lv, check_overlaps, pipe_vis, window_vis,
-                    vacuum, window_material, pcopy);
-    place_pipe_span("K18PipePV", star, disk_out_l + disk_h, vo_l - win_h, bend,
-                    frame, world_lv, check_overlaps, pipe_vis, vacuum, pcopy);
-    G4cout << "[K18BeamPipe] star scale=" << kPipeStarScale
-           << " D4 rect ±" << kPipeD4HalfW/mm << " x ±" << kPipeD4HalfH/mm
-           << " mm  face gap=" << kPipeDiskStandoff/mm
-           << " mm  disk_in=" << (disk_in_l - q11_dn_outer)/mm
-           << " mm after Q11 guard (D4 "
-           << (d4_in_l - disk_in_l)/mm
-           << " mm)  disk_out=" << (q12_up_outer - disk_out_l)/mm
-           << " mm before Q12 guard (D4 "
-           << (disk_out_l - d4_out_l)/mm
-           << " mm)  hole R=" << kPipeDiskHoleR/mm
-           << " mm, thick=" << kPipeDiskThick/mm
-           << " mm  copies=" << pcopy << G4endl;
-  }else{
-    place_window("K18VC1", kQBoreR, kDriftL1,
-                 on_straight_axis(vc1_l), 0.,
-                 frame, world_lv, check_overlaps, duct_vis, vacuum);
-    place_window("K18VC2", kQBoreR, kDriftL2,
-                 on_straight_axis(vc2_l), 0.,
-                 frame, world_lv, check_overlaps, duct_vis, vacuum);
-    place_window("K18VC3", kQBoreR, kDriftL3,
-                 on_bent_axis(vc3_l), bend,
-                 frame, world_lv, check_overlaps, duct_vis, vacuum);
-    place_window("K18VC4", kQBoreR, kDriftL4,
-                 on_bent_axis(vc4_l), bend,
-                 frame, world_lv, check_overlaps, duct_vis, vacuum);
-  }
+  const auto star = star_opening_polygon(kPipeStarScale);
+  const auto rect = rect_opening_polygon(kPipeD4HalfW, kPipeD4HalfH);
+  G4int pcopy = 0;
+  place_pipe_span("K18PipePV", star, vi_l + win_h, disk_in_l - disk_h, 0.,
+                  frame, world_lv, check_overlaps, pipe_vis, vacuum, pcopy);
+  place_pipe_disk("K18PipePV", disk_in_l, 0.,
+                  frame, world_lv, check_overlaps, pipe_vis, window_vis,
+                  vacuum, window_material, pcopy);
+  place_pipe_span("K18PipePV", rect, disk_in_l + disk_h, d4_in_l, 0.,
+                  frame, world_lv, check_overlaps, pipe_vis, vacuum, pcopy);
+  const G4double phi_up = d4_from_fusion(d4_fusion_face_phi(kRhoD4));
+  const G4double phi_dn = d4_from_fusion(0.);
+  place_d4_tubs_at("K18PipePV",
+    make_phi_tubs("K18PipeD4", kRhoD4 - kPipeD4HalfW, kRhoD4 + kPipeD4HalfW,
+                  kPipeD4HalfH, phi_up, phi_dn),
+    G4ThreeVector(-d4_tan_half(), kRhoD4, 0.), d4rot, frame, world_lv,
+    check_overlaps, pipe_vis, vacuum, pcopy++);
+  place_pipe_span("K18PipePV", rect, d4_out_l, disk_out_l - disk_h, bend,
+                  frame, world_lv, check_overlaps, pipe_vis, vacuum, pcopy);
+  place_pipe_disk("K18PipePV", disk_out_l, bend,
+                  frame, world_lv, check_overlaps, pipe_vis, window_vis,
+                  vacuum, window_material, pcopy);
+  place_pipe_span("K18PipePV", star, disk_out_l + disk_h, vo_l - win_h, bend,
+                  frame, world_lv, check_overlaps, pipe_vis, vacuum, pcopy);
+  G4cout << "[K18BeamPipeGeometry] adopted star/rectangular layout; star scale="
+         << kPipeStarScale
+         << " D4 rect ±" << kPipeD4HalfW/mm << " x ±" << kPipeD4HalfH/mm
+         << " mm  face gap=" << kPipeDiskStandoff/mm
+         << " mm  disk_in=" << (disk_in_l - q11_dn_outer)/mm
+         << " mm after Q11 guard (D4 "
+         << (d4_in_l - disk_in_l)/mm
+         << " mm)  disk_out=" << (q12_up_outer - disk_out_l)/mm
+         << " mm before Q12 guard (D4 "
+         << (disk_out_l - d4_out_l)/mm
+         << " mm)  hole R=" << kPipeDiskHoleR/mm
+         << " mm, thick=" << kPipeDiskThick/mm
+         << " mm  copies=" << pcopy << G4endl;
 
   if(!all_vacuum){
     place_quad_hardware("K18Q10", kQ10IronHZ, kQ10GuardTerm, kQ10GuardNon,
@@ -1981,9 +1971,8 @@ K18BeamlineDetectorBuilder::Construct(G4LogicalVolume* world_lv,
   else
     G4cout << "off";
   G4cout << G4endl;
-  G4cout << "[K18BeamlineDetectorBuilder] K18BeamPipe="
-         << (beam_pipe ? "on (star Q / rect D4 / circular switch disks)" : "off (circular VC1-4)")
-         << G4endl;
+  G4cout << "[K18BeamlineDetectorBuilder] beam pipe="
+         << "adopted star Q / rect D4 / circular switch disks" << G4endl;
   G4cout << "[K18BeamlineDetectorBuilder] BH2 material="
          << (bh2_enabled ? bh2_material->GetName() : "removed") << G4endl;
 

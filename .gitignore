@@ -22,3 +22,18 @@ CMakeLists.txt
 fieldmap
 rootfile*
 G4History.macro
+
+# Task-specific external group output links
+/tmp
+/.tmp
+/root
+/logs
+/out
+/qa
+/runmanager/log
+/runmanager/stat
+/runmanager/tmp
+/src/build
+/usr/build
+/dst/build
+/ana/build

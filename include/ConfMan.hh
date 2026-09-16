@@ -3,11 +3,15 @@
 #ifndef ConfMan_h
 #define ConfMan_h 1
 
+#include <exception>
 #include <iomanip>
+#include <iostream>
 #include <map>
 #include <string>
+#include <vector>
 
 #include <G4String.hh>
+#include <G4ios.hh>
 
 #include <TMath.h>
 
@@ -36,6 +40,8 @@ private:
   DoubleList m_double;
   IntList    m_int;
   BoolList   m_bool;
+  std::vector<G4String> m_config_warnings;
+  std::vector<G4String> m_config_errors;
 
 public:
   G4bool Initialize(const G4String& file_name);
@@ -46,6 +52,10 @@ public:
 
 private:
   G4String FilePath(const G4String& src) const;
+  G4bool   ValidateConfiguration();
+  void     PrintConfigurationDiagnostics() const;
+  void     StoreValue(const G4String& key, const G4String& value);
+  void     EraseValue(const G4String& key);
   G4bool   InitializeParameterFiles();
   template <typename T>
   G4bool    InitializeParameter();
@@ -125,9 +135,20 @@ template <typename T>
 inline G4bool
 ConfMan::InitializeParameter()
 {
-  return
-    ShowResult(T::GetInstance().Initialize(),
-               T::GetInstance().ClassName());
+  try {
+    return
+      ShowResult(T::GetInstance().Initialize(),
+                 T::GetInstance().ClassName());
+  } catch(const std::exception& error) {
+    G4cerr << "#E [ConfMan::InitializeParameter] "
+           << T::GetInstance().ClassName() << ": " << error.what()
+           << G4endl;
+  } catch(...) {
+    G4cerr << "#E [ConfMan::InitializeParameter] "
+           << T::GetInstance().ClassName() << ": unknown exception"
+           << G4endl;
+  }
+  return ShowResult(false, T::GetInstance().ClassName());
 }
 
 //_____________________________________________________________________________
@@ -135,9 +156,20 @@ template <typename T>
 inline G4bool
 ConfMan::InitializeParameter(const G4String& key)
 {
-  return
-    ShowResult(T::GetInstance().Initialize(m_file[key]),
-               T::GetInstance().ClassName());
+  try {
+    return
+      ShowResult(T::GetInstance().Initialize(m_file[key]),
+                 T::GetInstance().ClassName());
+  } catch(const std::exception& error) {
+    G4cerr << "#E [ConfMan::InitializeParameter] "
+           << T::GetInstance().ClassName() << ": " << error.what()
+           << G4endl;
+  } catch(...) {
+    G4cerr << "#E [ConfMan::InitializeParameter] "
+           << T::GetInstance().ClassName() << ": unknown exception"
+           << G4endl;
+  }
+  return ShowResult(false, T::GetInstance().ClassName());
 }
 
 //_____________________________________________________________________________
@@ -146,10 +178,21 @@ inline G4bool
 ConfMan::InitializeParameter(const G4String& key1,
                              const G4String& key2)
 {
-  return
-    ShowResult(T::GetInstance().Initialize(m_file[key1],
-                                           m_file[key2]),
-               T::GetInstance().ClassName());
+  try {
+    return
+      ShowResult(T::GetInstance().Initialize(m_file[key1],
+                                             m_file[key2]),
+                 T::GetInstance().ClassName());
+  } catch(const std::exception& error) {
+    G4cerr << "#E [ConfMan::InitializeParameter] "
+           << T::GetInstance().ClassName() << ": " << error.what()
+           << G4endl;
+  } catch(...) {
+    G4cerr << "#E [ConfMan::InitializeParameter] "
+           << T::GetInstance().ClassName() << ": unknown exception"
+           << G4endl;
+  }
+  return ShowResult(false, T::GetInstance().ClassName());
 }
 
 #endif

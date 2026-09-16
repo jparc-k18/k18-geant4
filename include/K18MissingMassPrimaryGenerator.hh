@@ -35,6 +35,7 @@ private:
 
   std::unique_ptr<K18PhaseSpaceProfile> m_profile;
   std::unique_ptr<K18BeamlineField> m_backpropagation_field;
+  G4bool m_profile_fallback_warned;
 };
 
 #endif

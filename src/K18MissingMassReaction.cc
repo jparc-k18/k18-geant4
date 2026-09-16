@@ -23,6 +23,7 @@
 
 #include "ConfMan.hh"
 #include "DCGeomMan.hh"
+#include "DetSizeMan.hh"
 #include "K18ReactionModelSampler.hh"
 #include "GeneratorParticleBranches.hh"
 #include "K18RunControl.hh"
@@ -32,6 +33,7 @@ namespace
 {
   const auto& confMan = ConfMan::GetInstance();
   const auto& geomMan = DCGeomMan::GetInstance();
+  const auto& sizeMan = DetSizeMan::GetInstance();
   const auto particleTable = G4ParticleTable::GetParticleTable();
   namespace GenBranch = GeneratorParticleBranches;
 
@@ -71,6 +73,15 @@ namespace
   {
     const G4String raw = confMan.Get<G4String>(key);
     return raw.empty() ? fallback : raw;
+  }
+
+  G4double
+  TargetSizeOrParameter(const G4String& key, G4int component)
+  {
+    const G4String raw = confMan.Get<G4String>(key);
+    if(!raw.empty())
+      return confMan.Get<G4double>(key)*CLHEP::mm;
+    return sizeMan.Get("Target", component)*CLHEP::mm;
   }
 
   [[noreturn]] void
@@ -447,9 +458,11 @@ GenerateAtVertex(const G4Track& track, G4ParticleChange& change)
     const auto* live_volume = track.GetVolume();
     outside = !live_volume || live_volume->GetName() != expected_volume;
   } else if(containment_mode == "box"){
-    const G4double half_x = 0.5*ConfDoubleOr("TargetSizeX", 0.)*mm;
-    const G4double half_y = 0.5*ConfDoubleOr("TargetSizeY", 0.)*mm;
-    const G4double half_z = 0.5*ConfDoubleOr("TargetSizeZ", 0.)*mm;
+    // Use the same DSIZE fallback as detector construction when an invalid
+    // TargetSize override has been removed by ConfMan.
+    const G4double half_x = 0.5*TargetSizeOrParameter("TargetSizeX", 0);
+    const G4double half_y = 0.5*TargetSizeOrParameter("TargetSizeY", 1);
+    const G4double half_z = 0.5*TargetSizeOrParameter("TargetSizeZ", 2);
     if(half_x <= 0. || half_y <= 0. || half_z <= 0.)
       Fail("TargetSizeX/Y/Z must be positive for box containment mode");
     outside = std::abs(relative.x()) > half_x + containment_tolerance

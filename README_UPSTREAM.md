@@ -34,6 +34,34 @@ fields through one Geant4 field manager.
 
 ## Configuration overview
 
+### Startup diagnostics and defaults
+
+`ConfMan` validates all managed `K18*`, `Reaction*`, and core scalar settings
+before Geant4 initialization.  It prints one numbered warning list containing
+every invalid value found in that pass.  Each warning shows the rejected value,
+the constraint, and the effective fixed default or normal fallback chain.  The
+invalid override is then replaced or removed, so the run continues with the
+same defaults that apply when that key is absent.  Schema-applied fallbacks are
+also appended as comments to the configuration text stored in the output ROOT
+file.
+
+Unknown keys in the managed `K18*` and `Reaction*` namespaces are warned about
+and ignored.  Optional unreadable K1.8 field maps fall back to the analytic
+field, and unreadable or invalid beam profiles fall back to Gaussian sampling.
+Boolean values accept `0`/`1` and case-insensitive `true`/`false`; numeric values
+must consume the complete token and be finite.
+
+A Gaussian profile fallback keeps an interactive/debug run alive; it does not
+satisfy the data-anchored beam-profile production contract.  Production still
+has to pass the external profile/config audits before submission.
+
+The four parameter managers (`DCGEO`, optional `BEAM`, `DSIZE`, and `HIST`) are
+always initialized independently, so one failure no longer hides the others.
+Ambiguous duplicate config keys, retired keys, and required parameter files
+with no safe default remain fatal, but all available startup diagnostics are
+printed before exit.  Event-data corruption and impossible sampled kinematics
+remain runtime errors rather than config-default candidates.
+
 ### Geometry and field
 
 - `UseK18Beamline` enables the QQDQQ geometry, K1.8 detector branches, and
@@ -42,8 +70,10 @@ fields through one Geant4 field manager.
   map.  Without `K18FLDMAP`, the analytic QQDQQ field is used.
 - `K18GlobalScale` and `K18Q10Scale` through `K18Q13Scale`/`K18D4Scale` scale
   the analytic magnets or back-propagation field.
-- `K18BeamPipe`, `K18VacuumWindows`, `K18BFTRealisticMaterial`, `K18BcOutFilms`,
-  and the associated thickness/material keys control passive material.
+- The adopted continuous star/rectangular K1.8 beam pipe is always constructed;
+  the retired `K18BeamPipe` switch is rejected. `K18VacuumWindows`,
+  `K18BFTRealisticMaterial`, `K18BcOutFilms`, and the associated
+  thickness/material keys control the remaining passive material.
 - `DisableBAC` allows upstream-only transport without constructing BAC.
 
 ### Phase-space beam

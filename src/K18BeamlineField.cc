@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
-#include <stdexcept>
 
 #include <G4SystemOfUnits.hh>
 #include <G4ios.hh>
@@ -95,8 +94,11 @@ std::shared_ptr<const K18FieldMap> configured_k18_field_map()
     const G4double value_calc = conf_double_or("K18FLDCALC", 1.);
     auto loaded = std::make_shared<K18FieldMap>(file_name,
                                                 value_nmr, value_calc);
-    if(!loaded->Initialize())
-      throw std::runtime_error("failed to initialize K18FLDMAP: " + file_name);
+    if(!loaded->Initialize()){
+      G4cerr << "#W [K18BeamlineField] invalid K18FLDMAP=" << file_name
+             << "; ignoring it and using the analytic K1.8 field" << G4endl;
+      return std::shared_ptr<const K18FieldMap>();
+    }
     return std::shared_ptr<const K18FieldMap>(loaded);
   }();
   return map;

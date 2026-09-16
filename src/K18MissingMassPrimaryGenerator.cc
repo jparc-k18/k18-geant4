@@ -256,7 +256,8 @@ BackPropagate(TransportState& state, G4double source_coordinate,
 K18MissingMassPrimaryGenerator::K18MissingMassPrimaryGenerator()
   : m_profile(),
     m_backpropagation_field(
-      new K18BeamlineField(BackpropagationFieldPrefix()))
+      new K18BeamlineField(BackpropagationFieldPrefix())),
+    m_profile_fallback_warned(false)
 {
   const G4bool reaction = confMan.Get<G4int>("Generator") == 6381;
   const G4String profile_name = BeamString(
@@ -275,12 +276,25 @@ K18MissingMassPrimaryGenerator::K18MissingMassPrimaryGenerator()
   const G4String particle_name = BeamString(
     reaction, "ReactionBeamParticle", "K18PhaseSpaceParticle", "kaon-");
   const auto* profile_particle = particleTable->FindParticle(particle_name);
-  if(!profile_particle)
-    Fail("unknown profile beam particle: " + particle_name);
+  if(!profile_particle){
+    G4cerr << "#W [K18MissingMassPrimaryGenerator] unknown profile beam "
+           << "particle=" << particle_name
+           << "; ignoring the profile and using Gaussian beam defaults "
+           << "(debug-only; invalid for data-anchored production)"
+           << G4endl;
+    m_profile_fallback_warned = true;
+    return;
+  }
   const G4double profile_particle_charge =
     profile_particle->GetPDGCharge()/eplus;
-  if(profile_particle_charge == 0.)
-    Fail("profile beam particle must be charged: " + particle_name);
+  if(profile_particle_charge == 0.){
+    G4cerr << "#W [K18MissingMassPrimaryGenerator] profile beam particle="
+           << particle_name << " is neutral; ignoring the profile and using "
+           << "Gaussian beam defaults (debug-only; invalid for data-anchored "
+           << "production)" << G4endl;
+    m_profile_fallback_warned = true;
+    return;
+  }
   const G4int profile_charge = profile_particle_charge > 0. ? 1 : -1;
   const G4double profile_z = BeamDouble(
     reaction, "ReactionBeamProfileTargetZ", "K18PhaseSpaceProfileTargetZ",
@@ -301,7 +315,12 @@ K18MissingMassPrimaryGenerator::K18MissingMassPrimaryGenerator()
       profile_charge, profile_p,
       static_cast<G4long>(std::lround(profile_max_tracks))));
   } catch(const std::exception& error) {
-    Fail(error.what());
+    G4cerr << "#W [K18MissingMassPrimaryGenerator] invalid beam profile: "
+           << error.what() << "; ignoring it and using Gaussian beam defaults "
+           << "(debug-only; invalid for data-anchored production)"
+           << G4endl;
+    m_profile.reset();
+    m_profile_fallback_warned = true;
   }
 }
 
@@ -329,12 +348,18 @@ K18MissingMassPrimaryGenerator::GenerateBeam(G4Event* event,
   if(!event || !particle_gun)
     Fail("event and particle gun must be valid");
 
-  const G4String particle_name = BeamString(
+  G4String particle_name = BeamString(
     attach_reaction, "ReactionBeamParticle", "K18PhaseSpaceParticle",
     "kaon-");
   auto* particle = particleTable->FindParticle(particle_name);
+  if(!particle){
+    G4cerr << "#W [K18MissingMassPrimaryGenerator] unknown incident particle="
+           << particle_name << "; using default kaon-" << G4endl;
+    particle_name = "kaon-";
+    particle = particleTable->FindParticle(particle_name);
+  }
   if(!particle)
-    Fail("unknown incident particle: " + particle_name);
+    Fail("default incident particle kaon- is unavailable");
 
   G4double momentum_mean = BeamDouble(
     attach_reaction,
@@ -361,14 +386,22 @@ K18MissingMassPrimaryGenerator::GenerateBeam(G4Event* event,
     attach_reaction,
     "ReactionBeamRejectOutsideRange",
     "K18PhaseSpaceRejectOutsideRange", false);
-  const G4bool use_profile_momentum = BeamBool(
+  G4bool use_profile_momentum = BeamBool(
     attach_reaction,
     "ReactionBeamUseProfileMomentum",
     "K18PhaseSpaceUseProfileMomentum", false);
   if(momentum_mean <= 0.)
     Fail("incident momentum must be positive");
-  if(use_profile_momentum && !m_profile)
-    Fail("profile momentum requested without a beam profile");
+  if(use_profile_momentum && !m_profile){
+    if(!m_profile_fallback_warned){
+      G4cerr << "#W [K18MissingMassPrimaryGenerator] profile momentum was "
+             << "requested without a usable profile; using configured/default "
+             << "beam momentum and Gaussian phase space (debug-only; invalid "
+             << "for data-anchored production)" << G4endl;
+      m_profile_fallback_warned = true;
+    }
+    use_profile_momentum = false;
+  }
 
   auto shoot_momentum = [&]()
   {
@@ -400,21 +433,39 @@ K18MissingMassPrimaryGenerator::GenerateBeam(G4Event* event,
         attach_reaction,
         "ReactionBeamProfileP", "K18PhaseSpaceProfileP",
         momentum/GeV);
-      const auto profile = m_profile->Shoot(
-        particle->GetPDGCharge()/eplus, profile_momentum, sample_index);
-      if(use_profile_momentum && !profile.has_p)
-        Fail("selected beam profile does not provide p_gev");
-      if(use_profile_momentum)
-        momentum = profile.p_gev*GeV;
-      return BeamSample{
-        momentum, profile.x_mm*mm, profile.y_mm*mm,
-        Shoot(BeamDouble(attach_reaction, "ReactionVertexZMean",
-                         "K18PhaseSpaceZMean", 0.)*mm,
-              BeamDouble(attach_reaction, "ReactionVertexZSigma",
-                         "K18PhaseSpaceZSigma", 0.)*mm,
-              BeamDouble(attach_reaction, "ReactionVertexZHalfWidth",
-                         "K18PhaseSpaceZHalfWidth", 0.)*mm),
-        profile.u, profile.v};
+      try {
+        const auto profile = m_profile->Shoot(
+          particle->GetPDGCharge()/eplus, profile_momentum, sample_index);
+        if(use_profile_momentum && !profile.has_p){
+          if(!m_profile_fallback_warned)
+            G4cerr << "#W [K18MissingMassPrimaryGenerator] selected profile "
+                   << "has no p_gev; using configured/default beam momentum"
+                   << G4endl;
+          m_profile_fallback_warned = true;
+          use_profile_momentum = false;
+          momentum = shoot_momentum();
+        } else if(use_profile_momentum) {
+          momentum = profile.p_gev*GeV;
+        }
+        return BeamSample{
+          momentum, profile.x_mm*mm, profile.y_mm*mm,
+          Shoot(BeamDouble(attach_reaction, "ReactionVertexZMean",
+                           "K18PhaseSpaceZMean", 0.)*mm,
+                BeamDouble(attach_reaction, "ReactionVertexZSigma",
+                           "K18PhaseSpaceZSigma", 0.)*mm,
+                BeamDouble(attach_reaction, "ReactionVertexZHalfWidth",
+                           "K18PhaseSpaceZHalfWidth", 0.)*mm),
+          profile.u, profile.v};
+      } catch(const std::exception& error) {
+        G4cerr << "#W [K18MissingMassPrimaryGenerator] profile sampling "
+               << "failed: " << error.what() << "; ignoring the profile and "
+               << "using Gaussian beam defaults (debug-only; invalid for "
+               << "data-anchored production)" << G4endl;
+        m_profile.reset();
+        m_profile_fallback_warned = true;
+        use_profile_momentum = false;
+        momentum = shoot_momentum();
+      }
     }
     return BeamSample{
       momentum,
