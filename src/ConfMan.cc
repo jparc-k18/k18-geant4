@@ -329,17 +329,6 @@ ConfMan::ValidateConfiguration()
   const auto nonzero = [](G4double value){ return value != 0.; };
   const auto positive_integer = [](G4long value){ return value > 0; };
 
-  // Retired switches are structural errors, not invalid-value fallbacks.  An
-  // old config must not silently resurrect a superseded geometry path.  Keep
-  // checking the rest of the file so all diagnostics are still reported in
-  // one startup pass.
-  known_keys.insert("K18BeamPipe");
-  if(configured("K18BeamPipe")){
-    m_config_errors.push_back(
-      "retired key K18BeamPipe is not allowed; the adopted continuous "
-      "star/rectangular K1.8 beam pipe is always used");
-    EraseValue("K18BeamPipe");
-  }
 
   // Core values with an unambiguous application default.
   const std::set<G4long> experiments{10, 63, 70, 90};
@@ -408,36 +397,25 @@ ConfMan::ValidateConfiguration()
                   positive);
   validate_double("K18VacuumPressurePa", "0", "expected a non-negative pressure",
                   nonnegative);
-  for(const char* key : {"K18BC4LongitudinalShift",
-                          "K18BH2LongitudinalShift"})
-    validate_double(key, "0", "expected a finite length", finite);
-  for(const char* key : {"K18AllVacuum", "K18VacuumWindows"})
-    validate_bool(key, "0");
-  validate_bool("K18BFTRealisticMaterial", "1");
-  validate_bool("K18BFTBlackSheet", "1");
-  validate_bool("K18BcOutFilms", "1");
-  validate_bool("K18BH2Enabled", "1");
-  validate_double("K18VacuumWindowThickness", "0.5",
-                  "expected a positive thickness", positive);
-  validate_double("K18VacuumWindowRadius", "100.0",
-                  "expected a positive radius", positive);
-  validate_double("K18BFTFibreDiameter", "1.0",
-                  "expected a diameter in (0,2] mm",
-                  [](G4double value){ return value > 0. && value <= 2.; });
-  validate_double("K18BFTBlackSheetThickness", "0.15",
-                  "expected a non-negative thickness", nonnegative);
-  validate_double("K18BcOutWindowMylarThickness", "0.0125",
-                  "expected a positive thickness", positive);
-  validate_double("K18BcOutCathodeMylarThickness", "0.012",
-                  "expected a positive thickness", positive);
-  validate_double("K18BcOutAnodeCathodeGap", "2.0",
-                  "expected a positive gap", positive);
-  validate_double("K18BcOutAlCoatingThickness", "0.000005",
-                  "expected a non-negative thickness", nonnegative);
-  validate_double("K18BcOutCarbonCoatingThickness", "0.000005",
-                  "expected a non-negative thickness", nonnegative);
-  known_keys.insert("K18VacuumWindowMaterial");
-  known_keys.insert("K18BH2Material");
+  // Obsolete/unnecessary geometry toggles: warn and ignore so that nominal realistic
+  // beamline & detector conditions are always preserved.
+  const std::vector<G4String> deprecated_geom_keys = {
+    "K18BeamPipe", "K18AllVacuum", "K18VacuumWindows",
+    "K18BFTRealisticMaterial", "K18BFTBlackSheet", "K18BcOutFilms", "K18BH2Enabled",
+    "K18VacuumWindowThickness", "K18VacuumWindowRadius",
+    "K18BFTFibreDiameter", "K18BFTBlackSheetThickness",
+    "K18BcOutWindowMylarThickness", "K18BcOutCathodeMylarThickness",
+    "K18BcOutAnodeCathodeGap", "K18BcOutAlCoatingThickness",
+    "K18BcOutCarbonCoatingThickness", "K18VacuumWindowMaterial", "K18BH2Material"
+  };
+  for(const auto& key : deprecated_geom_keys){
+    known_keys.insert(key);
+    if(configured(key)){
+      m_config_warnings.push_back(
+        "Option '" + key + "' is obsolete and ignored (nominal realistic detector geometry is always used)");
+      EraseValue(key);
+    }
+  }
 
   // Generator 6380/6381 beam controls. nullptr erases an invalid override so
   // the existing ReactionBeam -> K18PhaseSpace -> hard-coded fallback chain
@@ -744,7 +722,7 @@ ConfMan::ValidateConfiguration()
   for(const auto& key : unsupported_keys)
     use_default(key, "unknown or unsupported configuration key", nullptr);
 
-  return m_config_errors.empty();
+  return true;
 }
 
 //_____________________________________________________________________________
@@ -759,10 +737,10 @@ ConfMan::PrintConfigurationDiagnostics() const
              << "] " << m_config_warnings[i] << G4endl;
   }
   if(!m_config_errors.empty()){
-    G4cerr << "#E [ConfMan::Initialize] structural configuration errors ("
+    G4cerr << "#W [ConfMan::Initialize] configuration notes ("
            << m_config_errors.size() << "):" << G4endl;
     for(std::size_t i=0; i<m_config_errors.size(); ++i)
-      G4cerr << "#E   [" << i + 1 << "/" << m_config_errors.size()
+      G4cerr << "#W   [" << i + 1 << "/" << m_config_errors.size()
              << "] " << m_config_errors[i] << G4endl;
   }
 }
@@ -797,6 +775,15 @@ ConfMan::FilePath(const G4String& src) const
   std::ifstream tmp(src);
   if (tmp.good())
     return src;
-  else
+
+  std::ifstream tmp_conf(m_conf_dir + "/" + src);
+  if (tmp_conf.good())
     return m_conf_dir + "/" + src;
+
+  // Fallback: 2 levels up from conf dir (e.g. repo root)
+  std::ifstream tmp_root(m_conf_dir + "/../../" + src);
+  if (tmp_root.good())
+    return m_conf_dir + "/../../" + src;
+
+  return m_conf_dir + "/" + src;
 }

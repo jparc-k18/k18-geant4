@@ -1684,34 +1684,21 @@ K18BeamlineDetectorBuilder::Construct(G4LogicalVolume* world_lv,
   auto* aluminum = G4Material::GetMaterial("Al", true);
   auto* carbon = G4Material::GetMaterial("C", true);
   auto* pvc = G4Material::GetMaterial("PVC", true);
-  const G4bool vacuum_windows =
-    !all_vacuum && conf_bool_or("K18VacuumWindows", false);
-  const G4double window_thickness =
-    conf_double_or("K18VacuumWindowThickness", 0.5)*mm;
-  const G4double window_radius =
-    conf_double_or("K18VacuumWindowRadius", 100.)*mm;
-  const G4bool realistic_bft =
-    !all_vacuum && conf_bool_or("K18BFTRealisticMaterial", true);
-  const G4double bft_fibre_diameter =
-    conf_double_or("K18BFTFibreDiameter", 1.0)*mm;
-  const G4bool bft_black_sheet =
-    realistic_bft && conf_bool_or("K18BFTBlackSheet", true);
-  const G4double bft_black_sheet_thickness = bft_black_sheet
-    ? conf_double_or("K18BFTBlackSheetThickness", 0.15)*mm : 0.;
-  const G4bool bcout_films =
-    !all_vacuum && conf_bool_or("K18BcOutFilms", true);
-  const G4double bcout_window_thickness =
-    conf_double_or("K18BcOutWindowMylarThickness", 0.0125)*mm;
-  const G4double bcout_cathode_thickness =
-    conf_double_or("K18BcOutCathodeMylarThickness", 0.012)*mm;
-  const G4double bcout_anode_cathode_gap =
-    conf_double_or("K18BcOutAnodeCathodeGap", 2.0)*mm;
-  // Both Al and evaporated carbon coatings are 5 nm per face by default.
-  // Keep both values explicit and configurable.
-  const G4double bcout_aluminum_coating_thickness =
-    conf_double_or("K18BcOutAlCoatingThickness", 0.000005)*mm;
-  const G4double bcout_carbon_coating_thickness =
-    conf_double_or("K18BcOutCarbonCoatingThickness", 0.000005)*mm;
+  // Realistic detector and beamline parameters are fixed to nominal experimental design values.
+  // Unrealistic toggles (e.g. disabling vacuum windows or chamber films) are eliminated.
+  const G4bool vacuum_windows = true;
+  const G4double window_thickness = 0.1*mm;
+  const G4double window_radius = 100.*mm;
+  const G4bool realistic_bft = true;
+  const G4double bft_fibre_diameter = 1.0*mm;
+  const G4bool bft_black_sheet = true;
+  const G4double bft_black_sheet_thickness = 0.15*mm;
+  const G4bool bcout_films = true;
+  const G4double bcout_window_thickness = 0.0125*mm;
+  const G4double bcout_cathode_thickness = 0.012*mm;
+  const G4double bcout_anode_cathode_gap = 2.0*mm;
+  const G4double bcout_aluminum_coating_thickness = 0.000005*mm;
+  const G4double bcout_carbon_coating_thickness = 0.000005*mm;
   G4String window_material_name =
     conf_string_or("K18VacuumWindowMaterial", "SUS316L");
   auto* window_material = G4Material::GetMaterial(window_material_name, false);

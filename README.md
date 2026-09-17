@@ -126,3 +126,14 @@ The five reaction examples contain only repository-relative Geant4 paths and
 can be launched directly from the repository root.  Their matching K18 and
 S-2S analyzer configurations are under
 `k18-analyzer/runmanager/runlist/k18_6381_*_{k18,s2s}.conf`.
+
+### Beamline & Detector Geometry Specification
+
+The physical K1.8 beamline and detector elements are **fixed to nominal experimental design values** to ensure realistic simulation without unnecessary configuration complexity:
+- **Continuous beam pipe** is always constructed (`K18BeamPipe` toggle is deprecated).
+- **Vacuum windows** (SUS316L, 0.1 mm thickness, 100 mm radius) are always placed at optical ends VI/VO.
+- **BFT scintillation fibers** (polystyrene, 1.0 mm diameter) and light-shielding black sheet (0.15 mm) are always active.
+- **BC3/BC4 realistic chamber films** (Mylar windows, cathode foils, Al/carbon evaporated coatings) are always active.
+- **BH2 trigger counter** is always present.
+
+Obsolete toggle keys (`K18BeamPipe`, `K18VacuumWindows`, `K18BFTRealisticMaterial`, `K18BcOutFilms`, etc.) in older configuration files will emit a warning and use these nominal experimental defaults.
