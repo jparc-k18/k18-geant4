@@ -1466,15 +1466,18 @@ make_bcout_films(const G4String& chamber_name,
     }
   }
 
-  // Each X/X', U/U', or V/V' doublet is bounded by two 12-um
-  // carbon-coated Mylar cathodes.
+  // MWDC-629 drawing: each X/X', U/U', or V/V' doublet is
+  // cathode / anode / cathode / anode / cathode, i.e. three 12-um
+  // carbon-coated Mylar cathodes per doublet and nine per chamber.
   G4int index = 0;
   for(const auto& pair : layer_pairs){
     const G4double first = geomMan.GetLocalZ(pair.first)*mm;
     const G4double second = geomMan.GetLocalZ(pair.second)*mm;
-    // The drawing places the planar cathodes 2 mm from the adjacent anode
-    // wire plane.  The u/v stereo angle belongs to the wires, not the face.
+    // The outer cathodes sit 2 mm from the adjacent anode wire plane and the
+    // shared cathode midway between the two anode planes (2 mm from each).
+    // The u/v stereo angle belongs to the wires, not the face.
     for(const auto cathode_l : {first - anode_cathode_gap,
+                                0.5*(first + second),
                                 second + anode_cathode_gap}){
       const auto cathode_name = chamber_name + "Cathode" +
         std::to_string(index++);
@@ -1971,7 +1974,7 @@ K18BeamlineDetectorBuilder::Construct(G4LogicalVolume* world_lv,
          << "BcOut films=" << (bcout_films ? "on" : "off")
          << " (window=" << bcout_window_thickness/mm
          << " mm x2/chamber, cathode=" << bcout_cathode_thickness/mm
-         << " mm x6/chamber, anode-cathode gap="
+         << " mm x9/chamber, anode-cathode gap="
          << bcout_anode_cathode_gap/mm << " mm, Al/C coatings="
          << bcout_aluminum_coating_thickness/mm << "/"
          << bcout_carbon_coating_thickness/mm << " mm/face)" << G4endl;
