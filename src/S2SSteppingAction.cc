@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include <G4Event.hh>
+#include <G4EventManager.hh>
 #include <G4SteppingManager.hh>
 #include <G4Track.hh>
 #include <G4Step.hh>
@@ -23,6 +25,36 @@ namespace
 {
   const auto& confMan = ConfMan::GetInstance();
   const auto& geomMan = DCGeomMan::GetInstance();
+
+  // Runaway guard, always on.  A particle stuck at a volume boundary in a field
+  // can make one event grow until the batch job hits its memory limit.  Normal
+  // tracks stay far below these limits.
+  const G4int kMaxStepsPerTrack = 200000;
+  const G4long kMaxStepsPerEvent = 5000000;
+
+  // Returns true when the track was killed by the guard.
+  G4bool KillRunaway(G4Track* track)
+  {
+    if(!track) return false;
+    if(track->GetCurrentStepNumber() > kMaxStepsPerTrack){
+      track->SetTrackStatus(fKillTrackAndSecondaries);
+      return true;
+    }
+    static G4int current_event = -1;
+    static G4long n_steps = 0;
+    static G4bool warned = false;
+    const auto* event = G4EventManager::GetEventManager()->GetConstCurrentEvent();
+    const G4int event_id = event ? event->GetEventID() : -1;
+    if(event_id != current_event){ current_event = event_id; n_steps = 0; warned = false; }
+    if(++n_steps <= kMaxStepsPerEvent) return false;
+    if(!warned){
+      G4cerr << "#W S2SSteppingAction: event " << event_id << " exceeded "
+             << kMaxStepsPerEvent << " steps; killing its remaining tracks" << G4endl;
+      warned = true;
+    }
+    track->SetTrackStatus(fKillTrackAndSecondaries);
+    return true;
+  }
 
   // Record the transported primary state at the nominal target plane.  Linear
   // interpolation within the crossing step avoids dependence on step length.
@@ -89,8 +121,9 @@ S2SSteppingAction::~S2SSteppingAction()
 void
 S2SSteppingAction::UserSteppingAction(const G4Step* theStep)
 {
-  RecordTargetTruth(theStep);
   auto theTrack = theStep->GetTrack();
+  if(KillRunaway(theTrack)) return;
+  RecordTargetTruth(theStep);
   auto thePrePoint = theStep->GetPreStepPoint();
   auto thePrePVname = thePrePoint->GetPhysicalVolume()->GetName();
   auto partName = theTrack->GetDefinition()->GetParticleName();

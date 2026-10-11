@@ -104,31 +104,12 @@ std::shared_ptr<const K18FieldMap> configured_k18_field_map()
   return map;
 }
 
-G4String strip_k18_prefix(const G4String& name)
+G4double magnet_scale(const G4String& name)
 {
-  const G4String prefix("K18");
-  if(name.compare(0, prefix.size(), prefix) == 0)
-    return name.substr(prefix.size());
-  return name;
-}
-
-G4double magnet_scale(const G4String& name, const G4String& scale_prefix)
-{
-  G4double global_scale = conf_double_or("K18GlobalScale", 1.0);
-  G4double local_scale = conf_double_or(name + "Scale", 1.0);
-  if(!scale_prefix.empty()){
-    global_scale = conf_double_or(scale_prefix + "GlobalScale", global_scale);
-    local_scale = conf_double_or(scale_prefix + strip_k18_prefix(name)
-                                 + "Scale", local_scale);
-    local_scale = conf_double_or(scale_prefix + name + "Scale", local_scale);
-  }
-  const G4double scale = global_scale*local_scale;
-  if(std::abs(scale - 1.0) > 1.e-12){
-    G4cout << "[K18BeamlineField] ";
-    if(!scale_prefix.empty())
-      G4cout << scale_prefix << " ";
-    G4cout << name << " scale=" << scale << G4endl;
-  }
+  const G4double scale = conf_double_or("K18GlobalScale", 1.0)
+    *conf_double_or(name + "Scale", 1.0);
+  if(std::abs(scale - 1.0) > 1.e-12)
+    G4cout << "[K18BeamlineField] " << name << " scale=" << scale << G4endl;
   return scale;
 }
 }
@@ -225,16 +206,11 @@ K18BeamlineFrame::S2SToInternalVector(const G4ThreeVector& vec) const
 }
 
 K18BeamlineField::K18BeamlineField()
-  : K18BeamlineField("")
-{
-}
-
-K18BeamlineField::K18BeamlineField(const G4String& scale_prefix)
   : m_field_map(configured_k18_field_map())
 {
   m_magnet[0].type = kQuad;
   m_magnet[0].name = "K18Q10";
-  m_magnet[0].scale = magnet_scale("K18Q10", scale_prefix);
+  m_magnet[0].scale = magnet_scale("K18Q10");
   m_magnet[0].theta = 0.;
   m_magnet[0].quad = {
     kQ10B0, kQ10a0, kQ10z,
@@ -243,7 +219,7 @@ K18BeamlineField::K18BeamlineField(const G4String& scale_prefix)
 
   m_magnet[1].type = kQuad;
   m_magnet[1].name = "K18Q11";
-  m_magnet[1].scale = magnet_scale("K18Q11", scale_prefix);
+  m_magnet[1].scale = magnet_scale("K18Q11");
   m_magnet[1].theta = 0.;
   m_magnet[1].quad = {
     kQ11B0, kQ11a0, kQ11z,
@@ -252,7 +228,7 @@ K18BeamlineField::K18BeamlineField(const G4String& scale_prefix)
 
   m_magnet[2].type = kSect;
   m_magnet[2].name = "K18D4";
-  m_magnet[2].scale = magnet_scale("K18D4", scale_prefix);
+  m_magnet[2].scale = magnet_scale("K18D4");
   m_magnet[2].theta = 0.;
   m_magnet[2].sect = {
     kD4B0,
@@ -266,7 +242,7 @@ K18BeamlineField::K18BeamlineField(const G4String& scale_prefix)
 
   m_magnet[3].type = kQuad;
   m_magnet[3].name = "K18Q12";
-  m_magnet[3].scale = magnet_scale("K18Q12", scale_prefix);
+  m_magnet[3].scale = magnet_scale("K18Q12");
   m_magnet[3].theta = kBendAngleD4;
   m_magnet[3].quad = {
     kQ12B0, kQ12a0, kQ12z,
@@ -275,7 +251,7 @@ K18BeamlineField::K18BeamlineField(const G4String& scale_prefix)
 
   m_magnet[4].type = kQuad;
   m_magnet[4].name = "K18Q13";
-  m_magnet[4].scale = magnet_scale("K18Q13", scale_prefix);
+  m_magnet[4].scale = magnet_scale("K18Q13");
   m_magnet[4].theta = kBendAngleD4;
   m_magnet[4].quad = {
     kQ13B0, kQ13a0, kQ13z,

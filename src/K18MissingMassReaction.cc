@@ -495,18 +495,16 @@ GenerateAtVertex(const G4Track& track, G4ParticleChange& change)
     ConfBoolOr("ReactionUseFermiMotion", fermi_enabled);
   const G4double fermi_sigma =
     ConfDoubleOr("ReactionFermiSigmaP", 0.090)*CLHEP::GeV;
-  const G4double target_binding = ConfDoubleOr(
-    "ReactionTargetBindingEnergy",
-    ConfDoubleOr("ReactionSeparationEnergy", 0.))*CLHEP::GeV;
+  const G4double target_binding =
+    ConfDoubleOr("ReactionTargetBindingEnergy", 0.)*CLHEP::GeV;
   const G4double target_nucleus_mass =
     ConfDoubleOr("ReactionTargetNucleusMass", 0.)*CLHEP::GeV;
   const G4double residual_mass =
     ConfDoubleOr("ReactionResidualMass", 0.)*CLHEP::GeV;
   const G4double bound_state_mass =
     ConfDoubleOr("ReactionBoundStateMass", 0.)*CLHEP::GeV;
-  const G4double bound_state_dm = ConfDoubleOr(
-    "ReactionBoundDMMeV",
-    ConfDoubleOr("ReactionBoundExcessEnergyMeV", 0.))*CLHEP::MeV;
+  const G4double bound_state_dm =
+    ConfDoubleOr("ReactionBoundDMMeV", 0.)*CLHEP::MeV;
   const G4bool use_bound_state =
     ConfBoolOr("ReactionUseBoundState", bound_state_mass > 0.);
 
@@ -521,6 +519,13 @@ GenerateAtVertex(const G4Track& track, G4ParticleChange& change)
         Fail("bound state requires ReactionResidualMass or mass override");
       reaction_recoil_mass = residual_mass + recoil_mass + bound_state_dm;
     }
+    // Optional excitation scan: add E_x drawn flat in [ExMin, ExMax] MeV;
+    // equal limits give a fixed E_x.
+    const G4double ex_min = ConfDoubleOr("ReactionBoundStateExMin", 0.);
+    const G4double ex_max = ConfDoubleOr("ReactionBoundStateExMax", ex_min);
+    if(ex_max > 0.)
+      reaction_recoil_mass +=
+        (ex_min == ex_max ? ex_min : G4RandFlat::shoot(ex_min, ex_max))*CLHEP::MeV;
   }
 
   const G4String recoil_model =

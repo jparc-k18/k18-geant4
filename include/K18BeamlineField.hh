@@ -43,7 +43,6 @@ class K18BeamlineField : public G4MagneticField
 {
 public:
   K18BeamlineField();
-  explicit K18BeamlineField(const G4String& scale_prefix);
   ~K18BeamlineField() override;
 
   void GetFieldValue(const G4double point[4], G4double* bfield) const override;

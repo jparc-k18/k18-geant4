@@ -115,24 +115,6 @@ BeamString(G4bool reaction, const G4String& reaction_key,
     : ConfStringOr(phase_space_key, fallback);
 }
 
-G4String
-BackpropagationFieldPrefix()
-{
-  if(confMan.Get<G4int>("Generator") != 6381)
-    return "K18PhaseSpaceBackProp";
-  static const char* suffixes[] = {
-    "GlobalScale", "Q10Scale", "Q11Scale", "D4Scale", "Q12Scale",
-    "Q13Scale", "K18Q10Scale", "K18Q11Scale", "K18D4Scale",
-    "K18Q12Scale", "K18Q13Scale"
-  };
-  for(const char* suffix : suffixes){
-    if(!confMan.Get<G4String>("ReactionBeamBackProp" +
-                              G4String(suffix)).empty())
-      return "ReactionBeamBackProp";
-  }
-  return "K18PhaseSpaceBackProp";
-}
-
 G4double
 Shoot(G4double mean, G4double sigma, G4double half_width)
 {
@@ -256,7 +238,7 @@ BackPropagate(TransportState& state, G4double source_coordinate,
 K18MissingMassPrimaryGenerator::K18MissingMassPrimaryGenerator()
   : m_profile(),
     m_backpropagation_field(
-      new K18BeamlineField(BackpropagationFieldPrefix())),
+      new K18BeamlineField()),
     m_profile_fallback_warned(false)
 {
   const G4bool reaction = confMan.Get<G4int>("Generator") == 6381;
@@ -512,8 +494,7 @@ K18MissingMassPrimaryGenerator::GenerateBeam(G4Event* event,
     "ReactionBeamSourcePlane", "K18PhaseSpaceSourcePlane", "");
   if(source_plane == "VI"){
     source_coordinate = 0.;
-  } else if(source_plane == "Q10Upstream" || source_plane == "Q10Front" ||
-            source_plane == "Q10Entrance"){
+  } else if(source_plane == "Q10Upstream"){
     source_coordinate = K18BeamlineFrame::Q10UpstreamOffset();
   } else if(!source_plane.empty()) {
     Fail("unknown beam source plane: " + source_plane);

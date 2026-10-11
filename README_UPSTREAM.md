@@ -69,11 +69,17 @@ remain runtime errors rather than config-default candidates.
 - `K18FLDMAP`, `K18FLDNMR`, and `K18FLDCALC` select and scale a regular field
   map.  Without `K18FLDMAP`, the analytic QQDQQ field is used.
 - `K18GlobalScale` and `K18Q10Scale` through `K18Q13Scale`/`K18D4Scale` scale
-  the analytic magnets or back-propagation field.
-- The adopted continuous star/rectangular K1.8 beam pipe is always constructed;
-  the retired `K18BeamPipe` switch is rejected. `K18VacuumWindows`,
-  `K18BFTRealisticMaterial`, `K18BcOutFilms`, and the associated
-  thickness/material keys control the remaining passive material.
+  the analytic magnets.  The back-propagation that finds the upstream starting
+  state uses the same scales; there is no separate back-propagation scale.
+- The continuous star/rectangular pipe, VI/VO SUS316L windows (0.1 mm),
+  1-mm BFT fibres, 0.15-mm PVC sheets, BC3/BC4 films and BH2 are fixed
+  nominal geometry. Old ON/OFF, thickness and material keys are obsolete:
+  `ConfMan` warns and removes them. They do not control passive material.
+- BC3/BC4 follow the MWDC-629 assembly drawing (2010): a doubly aluminized
+  12.5-um Mylar window on each side and nine 12-um Mylar cathodes, carbon on
+  both faces, per chamber (cathode / anode / cathode / anode / cathode for each
+  X, U and V doublet, 2 mm anode-cathode gap).  Wires are not modelled, as for
+  SDC1-5.
 - `DisableBAC` allows upstream-only transport without constructing BAC.
 
 ### Phase-space beam
@@ -84,8 +90,9 @@ remain runtime errors rather than config-default candidates.
   `PMin`, `PMax`, and `RejectOutsideRange`;
 - transverse state: `XMean/XSigma/XHalfWidth`, the corresponding `Y`, `U`, and
   `V` keys, plus `ZMean/ZSigma/ZHalfWidth` for target-plane sampling;
-- source and propagation: `SourcePlane`, `SourceOffset`, `UseTargetPlane`,
-  `BackPropStep`, `BackPropMaxPath`, and `BackPropMaxTrial`;
+- source and propagation: `SourcePlane` (`VI` or `Q10Upstream`),
+  `SourceOffset` (mm from VI, default −50), `UseTargetPlane`, `BackPropStep`,
+  `BackPropMaxPath`, and `BackPropMaxTrial`;
 - profile input: `K18PhaseSpaceProfile`, `K18PhaseSpaceProfileP`, and
   `K18PhaseSpaceUseProfileMomentum`.
 
@@ -128,6 +135,16 @@ Generator 6381 reads `ReactionBeam*` keys first and falls back to matching
 `K18PhaseSpace*` beam settings.  Reaction products, angular acceptance, target
 and recoil masses, Fermi motion, bound-state mass, and recoil line shape are
 configured by the `Reaction*` keys in `K18MissingMassReaction.cc`.
+
+A bound state has mass `ReactionResidualMass + recoil + ReactionBoundDMMeV`
+(or `ReactionBoundStateMass`).  `ReactionBoundStateExMin/Max` (MeV) add an
+excitation energy drawn flat in that range; `ExMin` alone, or equal limits,
+gives a fixed excitation.  The older spellings `ReactionBoundExcessEnergyMeV`
+and `ReactionSeparationEnergy` were removed; use `ReactionBoundDMMeV` and
+`ReactionTargetBindingEnergy`.
+
+Every run has a runaway guard: a track beyond 200000 steps, or every track of
+an event beyond 5000000 steps, is killed.  Normal tracks stay far below this.
 
 The output tree records `PrimPi`, `ReactionBeam`,
 `ReactionBeamVertexTransport`, `ReactionBeamVertex`, `ReactionTarget`,

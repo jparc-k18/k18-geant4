@@ -366,29 +366,7 @@ ConfMan::ValidateConfiguration()
 
   // K1.8 field and passive-material controls.
   for(const char* key : {"K18GlobalScale", "K18Q10Scale", "K18Q11Scale",
-                          "K18D4Scale", "K18Q12Scale", "K18Q13Scale",
-                          "K18PhaseSpaceBackPropGlobalScale",
-                          "K18PhaseSpaceBackPropQ10Scale",
-                          "K18PhaseSpaceBackPropQ11Scale",
-                          "K18PhaseSpaceBackPropD4Scale",
-                          "K18PhaseSpaceBackPropQ12Scale",
-                          "K18PhaseSpaceBackPropQ13Scale",
-                          "K18PhaseSpaceBackPropK18Q10Scale",
-                          "K18PhaseSpaceBackPropK18Q11Scale",
-                          "K18PhaseSpaceBackPropK18D4Scale",
-                          "K18PhaseSpaceBackPropK18Q12Scale",
-                          "K18PhaseSpaceBackPropK18Q13Scale",
-                          "ReactionBeamBackPropGlobalScale",
-                          "ReactionBeamBackPropQ10Scale",
-                          "ReactionBeamBackPropQ11Scale",
-                          "ReactionBeamBackPropD4Scale",
-                          "ReactionBeamBackPropQ12Scale",
-                          "ReactionBeamBackPropQ13Scale",
-                          "ReactionBeamBackPropK18Q10Scale",
-                          "ReactionBeamBackPropK18Q11Scale",
-                          "ReactionBeamBackPropK18D4Scale",
-                          "ReactionBeamBackPropK18Q12Scale",
-                          "ReactionBeamBackPropK18Q13Scale"})
+                          "K18D4Scale", "K18Q12Scale", "K18Q13Scale"})
     validate_double(key, nullptr, "expected a finite field scale", finite);
   validate_double("K18FLDNMR", "1.0", "expected a finite number", finite);
   validate_double("K18FLDCALC", "1.0", "expected a finite non-zero number",
@@ -459,7 +437,7 @@ ConfMan::ValidateConfiguration()
     validate_bool(prefix + "RejectOutsideRange", nullptr);
     validate_bool(prefix + "UseProfileMomentum", nullptr);
     validate_choice(prefix + "SourcePlane", nullptr,
-                    {"", "VI", "Q10Upstream", "Q10Front", "Q10Entrance"});
+                    {"", "VI", "Q10Upstream"});
     validate_double(prefix + "SourceOffset", nullptr,
                     "expected a finite source offset", finite);
     validate_double(prefix + "BackPropStep", nullptr,
@@ -518,11 +496,10 @@ ConfMan::ValidateConfiguration()
   for(const char* key : {"ReactionRecoilMass", "ReactionTargetMass",
                           "ReactionTargetNucleusMass", "ReactionResidualMass",
                           "ReactionBoundStateMass", "ReactionFermiSigmaP",
-                          "ReactionTargetBindingEnergy", "ReactionSeparationEnergy"})
+                          "ReactionTargetBindingEnergy"})
     validate_double(key, nullptr, "expected a non-negative mass or momentum",
                     nonnegative);
   for(const char* key : {"ReactionBoundDMMeV",
-                          "ReactionBoundExcessEnergyMeV",
                           "ReactionCuspScatteringLengthReal",
                           "ReactionCuspScatteringLengthImag"})
     validate_double(key, nullptr, "expected a finite number", finite);
@@ -588,8 +565,7 @@ ConfMan::ValidateConfiguration()
                 "xi-");
   const G4double configured_target_mass =
     double_value("ReactionTargetMass", 0.);
-  const G4String binding_key = configured("ReactionTargetBindingEnergy")
-    ? G4String("ReactionTargetBindingEnergy") : G4String("ReactionSeparationEnergy");
+  const G4String binding_key("ReactionTargetBindingEnergy");
   if(configured_target_mass > 0. && configured(binding_key)
      && double_value(binding_key, 0.) >= configured_target_mass)
     use_default(binding_key,
@@ -644,6 +620,23 @@ ConfMan::ValidateConfiguration()
       use_default("ReactionUseBoundState",
                   "bound-state mode needs target-nucleus mass and either "
                   "bound-state or residual mass", "0");
+  }
+  // Optional excitation scan: E_x flat in [ExMin, ExMax] MeV (ExMin alone or
+  // equal limits give a fixed E_x).
+  for(const char* key : {"ReactionBoundStateExMin", "ReactionBoundStateExMax"})
+    validate_double(key, nullptr, "expected a non-negative excitation energy (MeV)",
+                    nonnegative);
+  if(configured("ReactionBoundStateExMin") || configured("ReactionBoundStateExMax")){
+    if(!bool_value("ReactionUseBoundState",
+                   double_value("ReactionBoundStateMass", 0.) > 0.)){
+      for(const char* key : {"ReactionBoundStateExMin", "ReactionBoundStateExMax"})
+        if(configured(key)) use_default(key, "excitation needs a bound state", nullptr);
+    } else if(configured("ReactionBoundStateExMin")
+              && configured("ReactionBoundStateExMax")
+              && double_value("ReactionBoundStateExMax", 0.)
+                 < double_value("ReactionBoundStateExMin", 0.)){
+      use_default("ReactionBoundStateExMax", "ExMax must not be below ExMin", nullptr);
+    }
   }
 
   const G4String fermi_model = raw_value("ReactionFermiModel");
