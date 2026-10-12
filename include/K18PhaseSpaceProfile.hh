@@ -76,6 +76,13 @@ private:
   void LoadAscii();
   void LoadRoot();
   void LoadBcOutRoot(TTree* tree);
+  void LoadK18TrackRoot(TTree* tree);
+  void LoadDirectTrackRoot(TTree* tree, const char* tree_name,
+                           const char* ntrack_name,
+                           const char* chisqr_name,
+                           const char* x_name, const char* y_name,
+                           const char* u_name, const char* v_name,
+                           const char* p_name);
   Sample ShootGaussian(G4double charge, G4double p_gev) const;
   Sample ShootEmpiricalExact(G4double charge, G4double p_gev,
                              G4long sample_index) const;

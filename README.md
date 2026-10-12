@@ -102,6 +102,24 @@ For direct `bcout` input, the loader requires `ntrack == 1` and
 configuration or file for each momentum point.  The particle charge selects
 the charge sign and `K18PhaseSpaceProfileP` labels the anchor momentum.
 
+A `K18Tracking` ROOT file (tree `k18track`) can be used the same way when
+the momentum should come from the measured track as well:
+
+```text
+K18PhaseSpaceProfile:            /path/to/run74894_K18Tracking.root
+K18PhaseSpaceProfileTree:        k18track
+K18PhaseSpaceUseProfileMomentum: 1
+```
+
+The loader requires `ntK18 == 1` and `chisqrK18 < K18PhaseSpaceProfileChiSqMax`,
+evaluates the BcOut side of the K18 track (`xout`, `yout`, `uout`, `vout`, the
+same z=0 convention as `bcout`) at the target-plane `z`, and stores `p_3rd`
+with each track.  With `K18PhaseSpaceUseProfileMomentum: 1` the beam momentum
+is taken from the same track as x/y/u/v, so the measured correlation is kept
+and `K18PhaseSpaceDPOverP` is not used.  `K18PhaseSpaceProfileP` still labels
+the anchor and must match `K18PhaseSpaceP`.  When the tree name is omitted,
+`k18profile`, `k18track` and `bcout` are tried in that order.
+
 The existing ASCII moments format and the empirical ROOT format with a
 `k18profile` tree remain supported.  See `README_UPSTREAM.md` for the full
 configuration reference and the `6381` reaction overrides.
@@ -112,6 +130,10 @@ Minimal configurations are provided in `param/conf/`:
 - `k18_6380_bcout_example.conf`: generator 6380 with direct `bcout` input;
 - `k18_6381_bcout_reaction_example.conf`: generator 6381 with direct `bcout`
   input and an illustrative two-body reaction;
+- `k18_6380_k18track_example.conf`: generator 6380 with direct `k18track`
+  input, momentum included;
+- `k18_6381_k18track_reaction_example.conf`: generator 6381 with direct
+  `k18track` input, momentum included;
 - `k18_6381_e90_cusp_example.conf`: E90
   `d(K-,pi-)Sigma-N` cusp at 1.4 GeV/c;
 - `k18_6381_e75_phase1_li7_example.conf`: E75 phase-1
@@ -120,8 +142,8 @@ Minimal configurations are provided in `param/conf/`:
 - `k18_6381_kk_c12xibe_example.conf`: `12C(K-,K+)12_XiBe`;
 - `k18_6381_pik_c12lambda_example.conf`: `12C(pi+,K+)12_LambdaC`.
 
-For the two direct-input examples, replace the `/path/to/...BcOutTracking.root`
-entry with one calibrated ROOT file.  No converted `.dat` file is needed.
+For the four direct-input examples, replace the `/path/to/...BcOutTracking.root`
+or `/path/to/...K18Tracking.root` entry with one calibrated ROOT file.  No converted `.dat` file is needed.
 The five reaction examples contain only repository-relative Geant4 paths and
 can be launched directly from the repository root.  Their matching K18 and
 S-2S analyzer configurations are under

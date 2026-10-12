@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <memory>
 #include <random>
 #include <sstream>
 #include <stdexcept>
@@ -19,6 +20,7 @@
 #include <TBranch.h>
 #include <TFile.h>
 #include <TLeaf.h>
+#include <TObjArray.h>
 #include <TTreeReader.h>
 #include <TTreeReaderArray.h>
 #include <TTreeReaderValue.h>
@@ -208,7 +210,12 @@ K18PhaseSpaceProfile::LoadRoot()
 
   G4String tree_name = m_root_tree;
   if(tree_name.empty()){
-    tree_name = input.Get("k18profile") ? "k18profile" : "bcout";
+    if(input.Get("k18profile"))
+      tree_name = "k18profile";
+    else if(input.Get("k18track"))
+      tree_name = "k18track";
+    else
+      tree_name = "bcout";
   }
   TTree* tree = dynamic_cast<TTree*>(input.Get(tree_name.c_str()));
   if(!tree)
@@ -216,6 +223,10 @@ K18PhaseSpaceProfile::LoadRoot()
 
   if(tree_name == "bcout"){
     LoadBcOutRoot(tree);
+    return;
+  }
+  if(tree_name == "k18track"){
+    LoadK18TrackRoot(tree);
     return;
   }
 
@@ -314,45 +325,84 @@ K18PhaseSpaceProfile::LoadRoot()
 void
 K18PhaseSpaceProfile::LoadBcOutRoot(TTree* tree)
 {
-  if(m_root_charge != -1 && m_root_charge != 1)
-    throw ProfileError(m_file_name,
-                       "direct bcout ROOT input requires root charge -1 or +1");
-  if(!std::isfinite(m_root_p_gev) || m_root_p_gev <= 0.)
-    throw ProfileError(m_file_name,
-                       "direct bcout ROOT input requires positive anchor momentum");
-  if(!std::isfinite(m_root_z_mm))
-    throw ProfileError(m_file_name, "bcout target z must be finite");
-  if(!std::isfinite(m_root_chisqr_max) || m_root_chisqr_max <= 0.)
-    throw ProfileError(m_file_name, "bcout chi-square maximum must be positive");
-  if(m_root_max_tracks <= 0)
-    throw ProfileError(m_file_name, "bcout maximum track count must be positive");
+  LoadDirectTrackRoot(tree, "bcout", "ntrack", "chisqr",
+                      "x0", "y0", "u0", "v0", nullptr);
+}
 
-  RequireScalarLeaf(tree, m_file_name, "ntrack", "Int_t", "bcout");
-  for(const char* branch : {"chisqr", "x0", "y0", "u0", "v0"}){
-    TLeaf* leaf = tree->GetLeaf(branch);
+//_____________________________________________________________________________
+void
+K18PhaseSpaceProfile::LoadK18TrackRoot(TTree* tree)
+{
+  // xout/yout/uout/vout are the BcOut local track of the K18 track at z=0,
+  // the same convention as bcout x0/y0/u0/v0.
+  LoadDirectTrackRoot(tree, "k18track", "ntK18", "chisqrK18",
+                      "xout", "yout", "uout", "vout", "p_3rd");
+}
+
+//_____________________________________________________________________________
+void
+K18PhaseSpaceProfile::LoadDirectTrackRoot(
+  TTree* tree, const char* tree_name, const char* ntrack_name,
+  const char* chisqr_name, const char* x_name, const char* y_name,
+  const char* u_name, const char* v_name, const char* p_name)
+{
+  const G4String label(tree_name);
+  if(m_root_charge != -1 && m_root_charge != 1)
+    throw ProfileError(m_file_name, "direct " + label
+                       + " ROOT input requires root charge -1 or +1");
+  if(!std::isfinite(m_root_p_gev) || m_root_p_gev <= 0.)
+    throw ProfileError(m_file_name, "direct " + label
+                       + " ROOT input requires positive anchor momentum");
+  if(!std::isfinite(m_root_z_mm))
+    throw ProfileError(m_file_name, label + " target z must be finite");
+  if(!std::isfinite(m_root_chisqr_max) || m_root_chisqr_max <= 0.)
+    throw ProfileError(m_file_name,
+                       label + " chi-square maximum must be positive");
+  if(m_root_max_tracks <= 0)
+    throw ProfileError(m_file_name,
+                       label + " maximum track count must be positive");
+
+  RequireScalarLeaf(tree, m_file_name, ntrack_name, "Int_t", tree_name);
+  std::vector<const char*> arrays{chisqr_name, x_name, y_name,
+                                  u_name, v_name};
+  if(p_name)
+    arrays.push_back(p_name);
+  for(const char* branch : arrays){
+    TLeaf* leaf = tree->GetBranch(branch)
+      ? tree->GetBranch(branch)->GetLeaf(branch) : nullptr;
+    if(!leaf && tree->GetBranch(branch)){
+      // Some analyzer branches carry a leaf name different from the branch.
+      TObjArray* leaves = tree->GetBranch(branch)->GetListOfLeaves();
+      if(leaves && leaves->GetEntriesFast() == 1)
+        leaf = static_cast<TLeaf*>(leaves->At(0));
+    }
     if(!leaf)
-      throw ProfileError(m_file_name,
-                         "tree bcout is missing branch " + G4String(branch));
+      throw ProfileError(m_file_name, "tree " + label
+                         + " is missing branch " + G4String(branch));
     if(G4String(leaf->GetTypeName()) != "Double_t")
       throw ProfileError(m_file_name,
-                         "bcout branch " + G4String(branch)
+                         label + " branch " + G4String(branch)
                          + " has type " + leaf->GetTypeName()
                          + ", expected Double_t");
   }
 
   tree->SetBranchStatus("*", 0);
-  for(const char* branch : {"ntrack", "chisqr", "x0", "y0", "u0", "v0"})
+  tree->SetBranchStatus(ntrack_name, 1);
+  for(const char* branch : arrays)
     tree->SetBranchStatus(branch, 1);
   tree->SetCacheSize(64*1024*1024);
   tree->AddBranchToCache("*", true);
 
   TTreeReader reader(tree);
-  TTreeReaderValue<Int_t> ntrack(reader, "ntrack");
-  TTreeReaderArray<Double_t> chisqr(reader, "chisqr");
-  TTreeReaderArray<Double_t> x0(reader, "x0");
-  TTreeReaderArray<Double_t> y0(reader, "y0");
-  TTreeReaderArray<Double_t> u0(reader, "u0");
-  TTreeReaderArray<Double_t> v0(reader, "v0");
+  TTreeReaderValue<Int_t> ntrack(reader, ntrack_name);
+  TTreeReaderArray<Double_t> chisqr(reader, chisqr_name);
+  TTreeReaderArray<Double_t> x0(reader, x_name);
+  TTreeReaderArray<Double_t> y0(reader, y_name);
+  TTreeReaderArray<Double_t> u0(reader, u_name);
+  TTreeReaderArray<Double_t> v0(reader, v_name);
+  std::unique_ptr<TTreeReaderArray<Double_t>> p0;
+  if(p_name)
+    p0.reset(new TTreeReaderArray<Double_t>(reader, p_name));
 
   auto& tracks = m_empirical_anchors[m_root_charge];
   tracks.push_back(EmpiricalAnchor{m_root_p_gev, {}});
@@ -364,14 +414,18 @@ K18PhaseSpaceProfile::LoadBcOutRoot(TTree* tree)
     if(*ntrack != 1)
       continue;
     if(chisqr.GetSize() < 1 || x0.GetSize() < 1 || y0.GetSize() < 1
-       || u0.GetSize() < 1 || v0.GetSize() < 1)
-      throw ProfileError(m_file_name, "short array in bcout track");
+       || u0.GetSize() < 1 || v0.GetSize() < 1
+       || (p0 && p0->GetSize() < 1))
+      throw ProfileError(m_file_name, "short array in " + label + " track");
     if(!std::isfinite(chisqr[0]) || !(chisqr[0] < m_root_chisqr_max))
+      continue;
+    const G4double p_gev = p0 ? (*p0)[0] : 0.;
+    if(p0 && (!std::isfinite(p_gev) || p_gev <= 0.))
       continue;
     const Sample sample{
       x0[0] + u0[0]*m_root_z_mm,
       y0[0] + v0[0]*m_root_z_mm,
-      u0[0], v0[0], 0., false};
+      u0[0], v0[0], p_gev, p0 != nullptr};
     if(!std::isfinite(sample.x_mm) || !std::isfinite(sample.y_mm)
        || !std::isfinite(sample.u) || !std::isfinite(sample.v))
       continue;
@@ -388,12 +442,15 @@ K18PhaseSpaceProfile::LoadBcOutRoot(TTree* tree)
   }
 
   if(selected.empty())
-    throw ProfileError(m_file_name, "bcout has no selected finite tracks");
+    throw ProfileError(m_file_name,
+                       label + " has no selected finite tracks");
 
-  G4cout << "K18PhaseSpaceProfile: loaded direct bcout ROOT "
-         << m_file_name << " tree=bcout charge=" << m_root_charge
+  G4cout << "K18PhaseSpaceProfile: loaded direct " << label << " ROOT "
+         << m_file_name << " tree=" << label
+         << " charge=" << m_root_charge
          << " p_anchor=" << m_root_p_gev << " GeV/c z=" << m_root_z_mm
          << " mm chisqr<" << m_root_chisqr_max
+         << " associated momentum=" << (p_name ? p_name : "none")
          << " selected=" << n_selected << " stored=" << selected.size()
          << G4endl;
 }
